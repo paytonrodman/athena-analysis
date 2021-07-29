@@ -18,25 +18,6 @@ def main(**kwargs):
     data_dir = "/Users/paytonrodman/athena_sim/" + problem + "/data/"
     os.chdir(data_dir)
 
-    csv_time = []
-    # check if data file already exists
-    if args.update:
-        with open('../qual_with_time.csv', 'r', newline='') as f:
-            csv_reader = csv.reader(f, delimiter='\t')
-            for row in csv_reader:
-                csv_time.append(float(row[0]))
-
-    files = glob.glob('./*.athdf')
-    times = []
-    for f in files:
-        time_sec = re.findall(r'\b\d+\b', f)
-        if args.update:
-            if float(time_sec[0]) not in times and float(time_sec[0]) not in csv_time:
-                times.append(float(time_sec[0]))
-        else:
-            if float(time_sec[0]) not in times:
-                times.append(float(time_sec[0]))
-
     #filename_input = "../run/athinput." + problem
     filename_input = "../athinput." + problem
     data_input = athena_read.athinput(filename_input)
@@ -50,27 +31,75 @@ def main(**kwargs):
     x3min = data_input['mesh']['x3min']
     x3max = data_input['mesh']['x3max']
 
-    r_id = int(nx1/4.) # middle of high resolution r region
-    th_id = int(nx2/2.) # midplane
+    init_f = problem + ".cons.00000.athdf"
+    init_data = athena_read.athdf(init_f)
+    x1v = init_data['x1v'] # r
+    x2v = init_data['x2v'] # theta
+
+    if kwargs['r_lower'] is not None:
+        if not x1min <= kwargs['r_lower'] < x1max:
+            sys.exit('Error: Lower r value must be between %d and %d' % x1min,x1max)
+        rl = find_nearest(x1v, kwargs['r_lower'])
+    else:
+        rl = find_nearest(x1v, x1min)
+    if kwargs['r_upper'] is not None:
+        if not x1min <= kwargs['r_upper'] < x1max:
+            sys.exit('Error: Upper r value must be between %d and %d' % x1min,x1max)
+        ru = find_nearest(x1v, kwargs['r_upper'])
+    else:
+        ru = find_nearest(x1v, 45.)
+    if kwargs['theta_lower'] is not None:
+        if not x2min <= kwargs['theta_lower'] < x2max:
+            sys.exit('Error: Lower theta value must be between %d and %d' % x2min,x2max)
+        tl = find_nearest(x2v, kwargs['theta_lower'])
+    else:
+        tl = find_nearest(x2v, np.pi/2.)
+    if kwargs['theta_upper'] is not None:
+        if not x2min <= kwargs['theta_upper'] < x2max:
+            sys.exit('Error: Upper theta value must be between %d and %d' % x2min,x2max)
+        tu = find_nearest(x2v, kwargs['theta_upper'])
+    else:
+        tu = find_nearest(x2v, np.pi/2.)
+
+    if rl==ru:
+        ru += 1
+    if tl==tu:
+        tu += 1
+
+    filename_output = 'qual_with_time_' + str(rl) + '_' + str(ru) + '_' + str(tl) + '_' + str(tu) + '.csv'
+    csv_time = []
+    # check if data file already exists
+    if args.update:
+        with open('../' + filename_output, 'r', newline='') as f:
+            csv_reader = csv.reader(f, delimiter='\t')
+            next(csv_reader, None) # skip header
+            for row in csv_reader:
+                csv_time.append(float(row[0]))
+
+    files = glob.glob('./*.athdf')
+    times = []
+    for f in files:
+        time_sec = re.findall(r'\b\d+\b', f)
+        if args.update:
+            if float(time_sec[0]) not in times and float(time_sec[0]) not in csv_time:
+                times.append(float(time_sec[0]))
+        else:
+            if float(time_sec[0]) not in times:
+                times.append(float(time_sec[0]))
+        if len(times)==0:
+            sys.exit('No new timesteps to analyse in the given directory. Exiting.')
 
     theta_B = []
-    av_Q_theta = []
-    min_Q_theta = []
-    max_Q_theta = []
-    av_Q_phi = []
-    min_Q_phi = []
-    max_Q_phi = []
+    Q_theta_low, Q_theta_av, Q_theta_high = [], [], []
+    Q_phi_low, Q_phi_av, Q_phi_high = [], [], []
 
     prim_var_names = ['press']
-    for t in times:
+    for t in sorted(times):
         print("file number: ", t)
         str_t = str(int(t)).zfill(5)
 
-        filename_cons = problem + ".cons." + str_t + ".athdf"
-        filename_prim = problem + ".prim." + str_t + ".athdf"
-
-        data_prim = athena_read.athdf(filename_prim)
-        data_cons = athena_read.athdf(filename_cons)
+        data_prim = athena_read.athdf(problem + ".prim." + str_t + ".athdf")
+        data_cons = athena_read.athdf(problem + ".cons." + str_t + ".athdf")
 
         #constants
         gamma = 5./3.
@@ -97,55 +126,44 @@ def main(**kwargs):
         v1,v2,v3 = calc_velocity(mom1,mom2,mom3,vol,dens)
         Omega_kep = np.sqrt(GM/(x1v**3.)) #Keplerian angular velocity in midplane
 
-        if args.Qtheta or args.Qphi:
-            Qt,Qp = quality_factors(x1v,x3v,dx2f,dx3f,
-                                    dens,press,v2,
-                                    Bcc1,Bcc2,Bcc3,
-                                    Omega_kep,gamma,th_id)
-            print(Qt)
-            print(wbdjw)
-        if args.Qtheta:
-            m_Q_theta,l_Q_theta,u_Q_theta = mean_confidence_interval(Qt.flatten(), confidence=0.95)
-        else:
-            m_Q_theta = np.nan
-            l_Q_theta = np.nan
-            u_Q_theta = np.nan
-        if args.Qphi:
-            m_Q_phi,l_Q_phi,u_Q_phi = mean_confidence_interval(Qp.flatten(), confidence=0.95)
-        else:
-            m_Q_phi = np.nan
-            l_Q_phi = np.nan
-            u_Q_phi = np.nan
-        av_Q_theta.append(m_Q_theta)
-        min_Q_theta.append(l_Q_theta)
-        max_Q_theta.append(u_Q_theta)
-        av_Q_phi.append(m_Q_phi)
-        min_Q_phi.append(l_Q_phi)
-        max_Q_phi.append(u_Q_phi)
-        print(av_Q_theta)
+        tB = magnetic_angle(Bcc1,Bcc2)
+        tB_av = np.average(tB[rl:ru,tl:tu,:])
 
-        tB = magnetic_angle(Bcc1,Bcc2,th_id)
-        theta_B.append(tB)
-        #M_rphi,R_rphi = stress_tensors()
+        Qt,Qp = quality_factors(x1v,x3v,dx2f,dx3f,dens,press,v2,Bcc1,Bcc2,Bcc3,Omega_kep,gamma)
+        Qt = Qt[rl:ru,tl:tu,:]
+        Qp = Qp[rl:ru,tl:tu,:]
+        Qt_av,Qt_lc,Qt_uc = mean_confidence_interval(Qt.flatten(), confidence=0.95)
+        Qp_av,Qp_lc,Qp_uc = mean_confidence_interval(Qp.flatten(), confidence=0.95)
 
-        #X.append(Bcc3_av)
-        #Y.append(ep3_av)
+        theta_B.append(tB_av)
 
-    times,theta_B,av_Q_theta,min_Q_theta,max_Q_theta,av_Q_phi,min_Q_phi,max_Q_phi = (list(t) for t in zip(*sorted(zip(times,theta_B,av_Q_theta,min_Q_theta,max_Q_theta,av_Q_phi,min_Q_phi,max_Q_phi))))
+        Q_theta_low.append(Qt_lc)
+        Q_theta_av.append(Qt_av)
+        Q_theta_high.append(Qt_uc)
+
+        Q_phi_low.append(Qp_lc)
+        Q_phi_av.append(Qp_av)
+        Q_phi_high.append(Qp_uc)
+
+
+    times,theta_B,Q_theta_low,Q_theta_av,Q_theta_high,Q_phi_low,Q_phi_av,Q_phi_high = (list(t) for t in zip(*sorted(zip(times,theta_B,Q_theta_low,Q_theta_av,Q_theta_high,Q_phi_low,Q_phi_av,Q_phi_high))))
     os.chdir("../")
+
     if args.update:
-        with open('qual_with_time.csv', 'a', newline='') as f:
+        with open(filename_output, 'a', newline='') as f:
             writer = csv.writer(f, delimiter='\t')
-            writer.writerows(zip(times,theta_B,av_Q_theta,min_Q_theta,max_Q_theta,av_Q_phi,min_Q_phi,max_Q_phi))
+            writer.writerows(zip(times,theta_B,Q_theta_low,Q_theta_av,Q_theta_high,Q_phi_low,Q_phi_av,Q_phi_high))
     else:
-        with open('qual_with_time.csv', 'w', newline='') as f:
+        with open(filename_output, 'w', newline='') as f:
             writer = csv.writer(f, delimiter='\t')
-            writer.writerows(zip(times,theta_B,av_Q_theta,min_Q_theta,max_Q_theta,av_Q_phi,min_Q_phi,max_Q_phi))
+            writer.writerow(["Time", "theta_B", "Qt_low", "Qt_av", "Qt_high", "Qp_low", "Qp_av", "Qp_high"])
+            writer.writerows(zip(times,theta_B,Q_theta_low,Q_theta_av,Q_theta_high,Q_phi_low,Q_phi_av,Q_phi_high))
 
 
-def magnetic_angle(Bcc1,Bcc2,th_id):
-    theta_B = math.degrees(-np.arctan(np.mean(Bcc1[:,th_id,:]/Bcc2[:,th_id,:])))
-    return theta_B
+def find_nearest(array, value):
+    array = np.asarray(array)
+    idx = (np.abs(array - value)).argmin()
+    return idx
 
 def mean_confidence_interval(data, confidence=0.95):
     a = 1.0 * np.array(data)
@@ -154,20 +172,24 @@ def mean_confidence_interval(data, confidence=0.95):
     h = se * scipy.stats.t.ppf((1 + confidence) / 2., n-1)
     return m, m-h, m+h
 
-def quality_factors(x1v,x3v,dx2f,dx3f,dens,press,v2,Bcc1,Bcc2,Bcc3,Omega_kep,gamma,th_id):
-    vA_theta,vA_phi = Alfven_vel(dens,press,Bcc1,Bcc2,Bcc3,gamma,th_id)
-    lambda_MRI_theta = 2.*np.pi*np.sqrt(16/15)*np.abs(vA_theta)/Omega_kep
-    lambda_MRI_phi = 2.*np.pi*np.sqrt(16/15)*np.abs(vA_phi)/Omega_kep
-    delta_vphi = v2[:,th_id,:] - x1v*Omega_kep
+def magnetic_angle(Bcc1,Bcc2):
+    theta_B = (-np.arctan(Bcc1/Bcc2)) * (180./np.pi)
+    return theta_B
+
+def quality_factors(x1v,x3v,dx2f,dx3f,dens,press,v2,Bcc1,Bcc2,Bcc3,Omega_kep,gamma):
+    vA_theta,vA_phi = Alfven_vel(dens,press,Bcc1,Bcc2,Bcc3,gamma)
+    lambda_MRI_theta = 2.*np.pi*np.sqrt(16./15.)*np.abs(vA_theta)/Omega_kep
+    lambda_MRI_phi = 2.*np.pi*np.sqrt(16./15.)*np.abs(vA_phi)/Omega_kep
+    delta_vphi = v2 - x1v*Omega_kep
     Q_theta = lambda_MRI_theta/np.sqrt(x1v*dx3f)
     Q_phi = lambda_MRI_phi/np.sqrt(x1v*np.abs(np.sin(x3v))*dx2f)
     return Q_theta,Q_phi
 
-def Alfven_vel(dens,press,Bcc1,Bcc2,Bcc3,gamma,th_id):
-    w = dens[:,th_id,:] + (gamma/(gamma - 1.))*press[:,th_id,:]
-    B2 = Bcc1[:,th_id,:]**2 + Bcc2[:,th_id,:]**2 + Bcc3[:,th_id,:]**2
-    vA_theta = Bcc3[:,th_id,:]/(np.sqrt(w+B2)) #Alfven velocity of theta component of B
-    vA_phi = Bcc2[:,th_id,:]/(np.sqrt(w+B2)) #Alfven velocity of phi component of B
+def Alfven_vel(dens,press,Bcc1,Bcc2,Bcc3,gamma):
+    w = dens + (gamma/(gamma - 1.))*press
+    B2 = Bcc1**2. + Bcc2**2. + Bcc3**2.
+    vA_theta = Bcc3/(np.sqrt(w+B2)) #Alfven velocity of theta component of B
+    vA_phi = Bcc2/(np.sqrt(w+B2)) #Alfven velocity of phi component of B
     return vA_theta,vA_phi
 
 def calc_velocity(mom1,mom2,mom3,vol,dens):
@@ -195,12 +217,22 @@ if __name__ == '__main__':
     parser.add_argument('-u', '--update',
                         action="store_true",
                         help='specify whether the results being analysed are from a restart')
-    parser.add_argument('-Qt', '--Qtheta',
-                        action="store_true",
-                        help='calculate theta Quality factor')
-    parser.add_argument('-Qp', '--Qphi',
-                        action="store_true",
-                        help='calculate phi Quality factor')
+    parser.add_argument('-rl', '--r_lower',
+                        type=float,
+                        default=None,
+                        help='value of lower r bound of region being analysed, must be between 5 and 145 (default=5)')
+    parser.add_argument('-ru', '--r_upper',
+                        type=float,
+                        default=None,
+                        help='value of upper r bound of region being analysed, must be between 5 and 145 (default=45)')
+    parser.add_argument('-tl', '--theta_lower',
+                        type=float,
+                        default=None,
+                        help='value of lower theta bound of region being analysed, must be between 0 and pi (default=pi/2)')
+    parser.add_argument('-tu', '--theta_upper',
+                        type=float,
+                        default=None,
+                        help='value of upper theta bound of region being analysed, must be between 0 and pi (default=pi/2)')
     args = parser.parse_args()
 
     main(**vars(args))

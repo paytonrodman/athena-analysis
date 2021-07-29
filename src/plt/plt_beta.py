@@ -19,6 +19,7 @@ def main(**kwargs):
     beta = []
     with open('beta_with_time.csv', newline='\n') as csv_file:
         csv_reader = csv.reader(csv_file, delimiter='\t')
+        next(csv_reader, None) # skip header
         for row in csv_reader:
             t = row[0]
             b = row[1]
