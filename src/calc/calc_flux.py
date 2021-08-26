@@ -37,10 +37,6 @@ def main(**kwargs):
     if len(times)==0:
         sys.exit('No new timesteps to analyse in the given directory. Exiting.')
 
-    #filename_input = "../run/athinput." + problem
-    filename_input = "../athinput." + problem
-    data_input = athena_read.athinput(filename_input)
-
     mag_flux_u = []
     mag_flux_l = []
 
