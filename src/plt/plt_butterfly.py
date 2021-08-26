@@ -5,7 +5,6 @@ import matplotlib.pyplot as plt
 import os
 import sys
 sys.path.insert(0, '/Users/paytonrodman/athena/vis/python')
-import re
 import csv
 from ast import literal_eval
 import argparse
