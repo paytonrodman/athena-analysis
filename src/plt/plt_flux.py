@@ -27,7 +27,8 @@ def main(**kwargs):
             mag_flux_u.append(mf_u)
             mag_flux_l.append(mf_l)
 
-    fig, ax = plt.subplots()
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
     ax.plot(time,mag_flux_u,label='upper hem.')
     ax.plot(time,mag_flux_l,label='lower hem.')
     plt.legend(loc='best')
