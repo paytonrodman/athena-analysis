@@ -1,6 +1,5 @@
 #!/usr/bin/python
 import numpy as np
-import matplotlib.pyplot as plt
 import os
 import sys
 sys.path.insert(0, '/Users/paytonrodman/athena/vis/python')
@@ -39,20 +38,11 @@ def main(**kwargs):
 
     filename_input = "../athinput." + problem
     data_input = athena_read.athinput(filename_input)
-    nx1 = data_input['mesh']['nx1']
     nx2 = data_input['mesh']['nx2']
-    nx3 = data_input['mesh']['nx3']
-    x1min = data_input['mesh']['x1min']
-    x1max = data_input['mesh']['x1max']
-    x2min = data_input['mesh']['x2min']
-    x2max = data_input['mesh']['x2max']
-    x3min = data_input['mesh']['x3min']
-    x3max = data_input['mesh']['x3max']
 
     th_id = nx2/2. # midplane
 
     beta_list = []
-    prim_var_names = ['press']
     for t in times:
         print("file number: ", t)
         str_t = str(int(t)).zfill(5)
@@ -64,8 +54,6 @@ def main(**kwargs):
         data_cons = athena_read.athdf(filename_cons)
 
         #constants
-        gamma = 5./3.
-        GM = 1.
         beta_0 = 200.
 
         #unpack data
@@ -98,9 +86,9 @@ def calculate_beta(beta_0,th_id,x1v,x3v,press,dens,Bcc1,Bcc2,Bcc3):
     numWeight_p = 0.
     sum_b = 0.
     numWeight_b = 0.
-    for k,phi in enumerate(x3v):
+    for k in range(len(x3v)):
         #for j,theta in enumerate(x2v):
-        for i,r in enumerate(x1v):
+        for i in range(len(x1v)):
             j = int(th_id)
             pressure = press[k,j,i]
             density = dens[k,j,i]
