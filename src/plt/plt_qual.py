@@ -56,47 +56,36 @@ def main(**kwargs):
             #else:
             #    theta_B.append(tB_i)
 
-    y_label = r'$\theta_B$'
-    y_var_name = 'theta_B'
-    fig, ax = plt.subplots()
-    ax.plot(time,theta_B)
+    make_plot(time,theta_B,r'$\theta_B$','theta_B',data_dir)
+    make_plot_CI(time,Qt_av,Qt_lc,Qt_uc,r'average $Q_{\theta}$','Q_theta',data_dir)
+    make_plot(time,Qp_av,Qp_lc,Qp_uc,r'average $Q_{\phi}$','Q_phi',data_dir)
+
+def make_plot(x,y,ylabel,yname,data_dir):
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.plot(x,y)
     ax.set_xlabel('time since start (simulation units)')
-    ax.set_ylabel(y_label)
+    ax.set_ylabel(ylabel)
     ax.set_xlim(left=0)
     plt.grid(b=True, which='major', color='#666666', linestyle='-', alpha=0.5)
     plt.minorticks_on()
     plt.grid(b=True, which='minor', color='#999999', linestyle='-', alpha=0.2)
-    plt.savefig('/Users/paytonrodman/athena_sim/' + problem + '/' + y_var_name + '.png',dpi=1200)
+    plt.savefig(data_dir + yname + '.png',dpi=1200)
     plt.close()
 
-    y_label = r'average $Q_{\theta}$'
-    y_var_name = 'Q_theta'
-    fig, ax = plt.subplots()
-    ax.plot(time, Qt_av)
-    plt.fill_between(time,Qt_lc,Qt_uc,alpha=0.2)
+def make_plot_CI(x,y,y_CI_low,y_CI_high,ylabel,yname,data_dir):
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.plot(x,y)
+    plt.fill_between(x,y_CI_low,y_CI_high,alpha=0.2)
     ax.set_xlabel('time since start (simulation units)')
-    ax.set_ylabel(y_label)
+    ax.set_ylabel(ylabel)
     ax.set_xlim(left=0)
     plt.grid(b=True, which='major', color='#666666', linestyle='-', alpha=0.5)
     plt.minorticks_on()
     plt.grid(b=True, which='minor', color='#999999', linestyle='-', alpha=0.2)
-    plt.savefig('/Users/paytonrodman/athena_sim/' + problem + '/' + y_var_name + '.png',dpi=1200)
+    plt.savefig(data_dir + yname + '.png',dpi=1200)
     plt.close()
-
-    y_label = r'average $Q_{\phi}$'
-    y_var_name = 'Q_phi'
-    fig, ax = plt.subplots()
-    ax.plot(time,Qp_av)
-    plt.fill_between(time,Qp_lc,Qp_uc,alpha=0.2)
-    ax.set_xlabel('time since start (simulation units)')
-    ax.set_ylabel(y_label)
-    ax.set_xlim(left=0)
-    plt.grid(b=True, which='major', color='#666666', linestyle='-', alpha=0.5)
-    plt.minorticks_on()
-    plt.grid(b=True, which='minor', color='#999999', linestyle='-', alpha=0.2)
-    plt.savefig('/Users/paytonrodman/athena_sim/' + problem + '/' + y_var_name + '.png',dpi=1200)
-    plt.close()
-
 
 def find_nearest(array, value):
     array = np.asarray(array)
