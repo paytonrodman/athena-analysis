@@ -1,0 +1,5 @@
+# ignore everything under no-track
+no-track/
+
+# ignore .DS_Store
+.DS_Store
