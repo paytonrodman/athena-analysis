@@ -26,7 +26,8 @@ def main(**kwargs):
 
 
     y_var_name = 'scale_height'
-    fig, ax = plt.subplots()
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
     ax.plot(time,scale_height)
     ax.set_xlabel('time since start (simulation units)')
     ax.set_ylabel(r'$h/r$')
