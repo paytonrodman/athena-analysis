@@ -22,7 +22,8 @@ def main(**kwargs):
             time.append(float(t)*5.)
             beta.append(float(b))
 
-    fig, ax = plt.subplots()
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
     ax.plot(time,beta)
     ax.set_xlabel('time since start (simulation units)')
     ax.set_ylabel(r'average in-plane $\beta$ for $r<45r_g$')
@@ -33,7 +34,8 @@ def main(**kwargs):
     plt.close()
 
     if args.logy:
-        fig, ax = plt.subplots()
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
         ax.semilogy(time,beta)
         ax.grid()
         ax.set_xlabel('time since start (simulation units)')
