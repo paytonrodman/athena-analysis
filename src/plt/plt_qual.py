@@ -58,7 +58,7 @@ def main(**kwargs):
 
     make_plot(time,theta_B,r'$\theta_B$','theta_B',data_dir)
     make_plot_CI(time,Qt_av,Qt_lc,Qt_uc,r'average $Q_{\theta}$','Q_theta',data_dir)
-    make_plot(time,Qp_av,Qp_lc,Qp_uc,r'average $Q_{\phi}$','Q_phi',data_dir)
+    make_plot_CI(time,Qp_av,Qp_lc,Qp_uc,r'average $Q_{\phi}$','Q_phi',data_dir)
 
 def make_plot(x,y,ylabel,yname,data_dir):
     fig = plt.figure()
