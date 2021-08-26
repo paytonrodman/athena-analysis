@@ -1,16 +1,13 @@
 #!/usr/bin/python
 import numpy as np
-import matplotlib.pyplot as plt
 import os
 import sys
 #sys.path.insert(0, '/home/per29/athena-public-version-master/vis/python')
 sys.path.insert(0, '/Users/paytonrodman/athena/vis/python')
 import athena_read
-import math
 import glob
 import re
 import csv
-import scipy.stats
 import argparse
 
 def main(**kwargs):
@@ -45,16 +42,6 @@ def main(**kwargs):
     data_input = athena_read.athinput(filename_input)
     nx1 = data_input['mesh']['nx1']
     nx2 = data_input['mesh']['nx2']
-    nx3 = data_input['mesh']['nx3']
-    x1min = data_input['mesh']['x1min']
-    x1max = data_input['mesh']['x1max']
-    x2min = data_input['mesh']['x2min']
-    x2max = data_input['mesh']['x2max']
-    x3min = data_input['mesh']['x3min']
-    x3max = data_input['mesh']['x3max']
-
-    r_id = int(nx1/4.) # middle of high resolution r region
-    th_id = int(nx2/2.) # midplane
 
     mf_total = []
     for t in times:
@@ -65,7 +52,6 @@ def main(**kwargs):
         data_cons = athena_read.athdf(filename_cons)
 
         #constants
-        gamma = 5./3.
         GM = 1.
 
         #unpack data
@@ -82,7 +68,6 @@ def main(**kwargs):
         # Calculations
         dx1f,dx2f,dx3f,vol = calc_volume(x1f,x2f,x3f)
         v1,v2,v3 = calc_velocity(mom1,mom2,mom3,vol,dens)
-        Omega_kep = np.sqrt(GM/(x1v**3.)) #Keplerian angular velocity in midplane
 
 
         mf = []
