@@ -1,12 +1,10 @@
 #!/usr/bin/python
 import numpy as np
-import matplotlib.pyplot as plt
 import os
 import sys
 #sys.path.insert(0, '/home/per29/athena-public-version-master/vis/python')
 sys.path.insert(0, '/Users/paytonrodman/athena/vis/python')
 import athena_read
-import math
 import glob
 import re
 import csv
@@ -21,15 +19,10 @@ def main(**kwargs):
     #filename_input = "../run/athinput." + problem
     filename_input = "../athinput." + problem
     data_input = athena_read.athinput(filename_input)
-    nx1 = data_input['mesh']['nx1']
-    nx2 = data_input['mesh']['nx2']
-    nx3 = data_input['mesh']['nx3']
     x1min = data_input['mesh']['x1min']
     x1max = data_input['mesh']['x1max']
     x2min = data_input['mesh']['x2min']
     x2max = data_input['mesh']['x2max']
-    x3min = data_input['mesh']['x3min']
-    x3max = data_input['mesh']['x3max']
 
     init_f = problem + ".cons.00000.athdf"
     init_data = athena_read.athdf(init_f)
@@ -93,7 +86,6 @@ def main(**kwargs):
     Q_theta_low, Q_theta_av, Q_theta_high = [], [], []
     Q_phi_low, Q_phi_av, Q_phi_high = [], [], []
 
-    prim_var_names = ['press']
     for t in sorted(times):
         print("file number: ", t)
         str_t = str(int(t)).zfill(5)
@@ -180,7 +172,6 @@ def quality_factors(x1v,x3v,dx2f,dx3f,dens,press,v2,Bcc1,Bcc2,Bcc3,Omega_kep,gam
     vA_theta,vA_phi = Alfven_vel(dens,press,Bcc1,Bcc2,Bcc3,gamma)
     lambda_MRI_theta = 2.*np.pi*np.sqrt(16./15.)*np.abs(vA_theta)/Omega_kep
     lambda_MRI_phi = 2.*np.pi*np.sqrt(16./15.)*np.abs(vA_phi)/Omega_kep
-    delta_vphi = v2 - x1v*Omega_kep
     Q_theta = lambda_MRI_theta/np.sqrt(x1v*dx3f)
     Q_phi = lambda_MRI_phi/np.sqrt(x1v*np.abs(np.sin(x3v))*dx2f)
     return Q_theta,Q_phi
