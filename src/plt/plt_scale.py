@@ -1,12 +1,8 @@
 #!/usr/bin/python
-import numpy as np
 import matplotlib.pyplot as plt
 import os
 import sys
 sys.path.insert(0, '/Users/paytonrodman/athena/vis/python')
-import athena_read
-import glob
-import re
 import csv
 import argparse
 
