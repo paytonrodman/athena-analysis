@@ -40,8 +40,6 @@ def main(**kwargs):
     #filename_input = "../run/athinput." + problem
     filename_input = "../athinput." + problem
     data_input = athena_read.athinput(filename_input)
-    nx1 = data_input['mesh']['nx1']
-    nx2 = data_input['mesh']['nx2']
 
     mf_total = []
     for t in times:
@@ -51,11 +49,7 @@ def main(**kwargs):
         filename_cons = problem + ".cons." + str_t + ".athdf"
         data_cons = athena_read.athdf(filename_cons)
 
-        #constants
-        GM = 1.
-
         #unpack data
-        x1v = data_cons['x1v'] # r
         x2v = data_cons['x2v'] # theta
         x3v = data_cons['x3v'] # phi
         x1f = data_cons['x1f'] # r
