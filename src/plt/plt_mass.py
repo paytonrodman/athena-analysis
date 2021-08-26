@@ -26,7 +26,8 @@ def main(**kwargs):
 
 
     y_var_name = 'mass_flux'
-    fig, ax = plt.subplots()
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
     ax.plot(time,mass_flux)
     ax.set_xlabel('time since start (simulation units)')
     ax.set_ylabel('surface averaged mass flux')
