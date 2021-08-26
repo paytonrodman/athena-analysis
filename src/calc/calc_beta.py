@@ -34,8 +34,8 @@ def main(**kwargs):
         else:
             if float(time_sec[0]) not in times:
                 times.append(float(time_sec[0]))
-        if len(times)==0:
-            sys.exit('No new timesteps to analyse in the given directory. Exiting.')
+    if len(times)==0:
+        sys.exit('No new timesteps to analyse in the given directory. Exiting.')
 
     filename_input = "../athinput." + problem
     data_input = athena_read.athinput(filename_input)

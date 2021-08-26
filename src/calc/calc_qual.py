@@ -86,8 +86,8 @@ def main(**kwargs):
         else:
             if float(time_sec[0]) not in times:
                 times.append(float(time_sec[0]))
-        if len(times)==0:
-            sys.exit('No new timesteps to analyse in the given directory. Exiting.')
+    if len(times)==0:
+        sys.exit('No new timesteps to analyse in the given directory. Exiting.')
 
     theta_B = []
     Q_theta_low, Q_theta_av, Q_theta_high = [], [], []
