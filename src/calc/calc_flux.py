@@ -40,8 +40,6 @@ def main(**kwargs):
     #filename_input = "../run/athinput." + problem
     filename_input = "../athinput." + problem
     data_input = athena_read.athinput(filename_input)
-    nx1 = data_input['mesh']['nx1']
-    nx2 = data_input['mesh']['nx2']
 
     mag_flux_u = []
     mag_flux_l = []
