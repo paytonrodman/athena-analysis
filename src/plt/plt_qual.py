@@ -4,12 +4,8 @@ import matplotlib.pyplot as plt
 import os
 import sys
 sys.path.insert(0, '/Users/paytonrodman/athena/vis/python')
-import athena_read
-import glob
-import re
 import csv
 import argparse
-import scipy.stats
 
 def main(**kwargs):
     # directory containing data
@@ -20,7 +16,6 @@ def main(**kwargs):
     filename_csv = args.input_file
 
     time = []
-    tB = []
     theta_B = []
     Qt_lc,Qt_av,Qt_uc = [],[],[]
     Qp_lc,Qp_av,Qp_uc = [],[],[]
@@ -38,10 +33,13 @@ def main(**kwargs):
             Qp_uc_i = float(row[7])
 
             time.append(float(t_i)*5.)
-            #tB.append(tB_i)
             theta_B.append(tB_i)
-            Qt_lc.append(Qt_lc_i), Qt_av.append(Qt_av_i), Qt_uc.append(Qt_uc_i)
-            Qp_lc.append(Qp_lc_i), Qp_av.append(Qp_av_i), Qp_uc.append(Qp_uc_i)
+            Qt_lc.append(Qt_lc_i)
+            Qt_av.append(Qt_av_i)
+            Qt_uc.append(Qt_uc_i)
+            Qp_lc.append(Qp_lc_i)
+            Qp_av.append(Qp_av_i)
+            Qp_uc.append(Qp_uc_i)
 
 
             # Allow wrapping over 0,pi/2,pi etc to track evolution of theta_B more smoothly
@@ -57,8 +55,6 @@ def main(**kwargs):
             #        theta_B.append(tB_i)
             #else:
             #    theta_B.append(tB_i)
-
-
 
     y_label = r'$\theta_B$'
     y_var_name = 'theta_B'
