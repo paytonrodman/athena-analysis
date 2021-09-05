@@ -3,7 +3,7 @@ import numpy as np
 import os
 import sys
 #sys.path.insert(0, '/home/per29/athena-public-version-master/vis/python')
-sys.path.insert(0, '/Users/paytonrodman/athena/vis/python')
+sys.path.insert(0, '/Users/paytonrodman/athena_sim/athena-analysis/dependencies')
 import athena_read
 import glob
 import re

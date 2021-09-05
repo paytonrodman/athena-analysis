@@ -2,7 +2,7 @@
 import numpy as np
 import os
 import sys
-sys.path.insert(0, '/Users/paytonrodman/athena/vis/python')
+sys.path.insert(0, '/Users/paytonrodman/athena_sim/athena-analysis/dependencies')
 import athena_read
 import glob
 import re
@@ -43,7 +43,7 @@ def main(**kwargs):
     th_id = nx2/2. # midplane
 
     beta_list = []
-    for t in times:
+    for t in sorted(times):
         print("file number: ", t)
         str_t = str(int(t)).zfill(5)
 
