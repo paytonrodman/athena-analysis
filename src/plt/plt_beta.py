@@ -4,6 +4,9 @@ import os
 import sys
 sys.path.insert(0, '/Users/paytonrodman/athena/vis/python')
 import csv
+import numpy as np
+import numpy.ma as ma
+import scipy.stats
 import argparse
 
 def main(**kwargs):
@@ -21,6 +24,8 @@ def main(**kwargs):
             b = row[1]
             time.append(float(t)*5.)
             beta.append(float(b))
+
+    time, beta = zip(*sorted(zip(time, beta)))
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
@@ -45,6 +50,13 @@ def main(**kwargs):
         plt.grid(b=True, which='minor', color='#999999', linestyle='-', alpha=0.2)
         plt.savefig('/Users/paytonrodman/athena_sim/' + problem + '/logy_beta.png',dpi=1200)
         plt.close()
+
+def mean_confidence_interval(data, confidence=0.95):
+    a = 1.0 * np.array(data)
+    n = len(a)
+    m, se = np.nanmean(a), scipy.stats.sem(a, nan_policy='omit')
+    h = se * scipy.stats.t.ppf((1 + confidence) / 2., n-1)
+    return m-h, m+h
 
 # Execute main function
 if __name__ == '__main__':
