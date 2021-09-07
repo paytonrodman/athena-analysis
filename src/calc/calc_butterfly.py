@@ -39,13 +39,23 @@ def main(**kwargs):
 
 
     #filename_input = "../run/athinput." + problem
-    filename_input = "../athinput." + problem
-    data_input = athena_read.athinput(filename_input)
-    nx1 = data_input['mesh']['nx1']
-    nx2 = data_input['mesh']['nx2']
+    #filename_input = "../athinput." + problem
+    #data_input = athena_read.athinput(filename_input)
+    #nx1 = data_input['mesh']['nx1']
+    #nx2 = data_input['mesh']['nx2']
 
-    r_id = int(nx1/4.) # middle of high resolution r region
-    th_id = int(nx2/2.) # midplane
+    #r_id = int(nx1/4.) # middle of high resolution r region
+    #th_id = int(nx2/2.) # midplane
+
+    data_init = athena_read.athdf(problem + ".cons.00000.athdf")
+    x1v_init = data_init['x1v']
+    x2v_init = data_init['x2v']
+
+    th_id = find_nearest(x2v_init, np.pi/2.) # midplane
+    if kwargs['r'] is not None:
+        r_id = find_nearest(x1v_init, kwargs['r'])
+    else:
+        r_id = find_nearest(x1v_init, 25.) # approx. middle of high res region
 
     Bcc1_theta = []
     Bcc2_theta = []
@@ -58,14 +68,10 @@ def main(**kwargs):
         data_cons = athena_read.athdf(filename_cons)
 
         #unpack data
-        x1f = data_cons['x1f'] # r
         x2f = data_cons['x2f'] # theta
         Bcc1 = data_cons['Bcc1']
         Bcc2 = data_cons['Bcc2']
         Bcc3 = data_cons['Bcc3']
-
-        if kwargs['r'] is not None:
-            r_id = find_nearest(x1f, kwargs['r'])
 
         Bcc1_t = []
         Bcc2_t = []
@@ -78,7 +84,6 @@ def main(**kwargs):
         Bcc1_theta.append(Bcc1_t)
         Bcc2_theta.append(Bcc2_t)
         Bcc3_theta.append(Bcc3_t)
-
 
     times,Bcc1_theta,Bcc2_theta,Bcc3_theta = (list(t) for t in zip(*sorted(zip(times,Bcc1_theta,Bcc2_theta,Bcc3_theta))))
     os.chdir("../")
@@ -96,23 +101,6 @@ def find_nearest(array, value):
     array = np.asarray(array);
     idx = (np.abs(array - value)).argmin();
     return idx;
-
-def calc_velocity(mom1,mom2,mom3,vol,dens):
-    v1 = mom1*(vol.T)/dens
-    v2 = mom2*(vol.T)/dens
-    v3 = mom3*(vol.T)/dens
-    return v1,v2,v3
-
-def calc_volume(x1f,x2f,x3f):
-    vol = np.empty((len(x1f)-1,len(x2f)-1,len(x3f)-1))
-    dx1f = np.diff(x1f) # delta r
-    dx2f = np.diff(x2f) # delta phi
-    dx3f = np.diff(x3f) # delta theta
-    for idx1,x1_len in enumerate(dx1f):
-        for idx2,x2_len in enumerate(dx2f):
-            for idx3,x3_len in enumerate(dx3f):
-                vol[idx1,idx2,idx3] = x1_len*x2_len*x3_len
-    return dx1f,dx2f,dx3f,vol
 
 # Execute main function
 if __name__ == '__main__':

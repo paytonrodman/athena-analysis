@@ -26,33 +26,33 @@ def main(**kwargs):
 
     init_f = problem + ".cons.00000.athdf"
     init_data = athena_read.athdf(init_f)
-    x1v = init_data['x1v'] # r
-    x2v = init_data['x2v'] # theta
+    x1v_init = init_data['x1v'] # r
+    x2v_init = init_data['x2v'] # theta
 
     if kwargs['r_lower'] is not None:
         if not x1min <= kwargs['r_lower'] < x1max:
             sys.exit('Error: Lower r value must be between %d and %d' % x1min,x1max)
-        rl = find_nearest(x1v, kwargs['r_lower'])
+        rl = find_nearest(x1v_init, kwargs['r_lower'])
     else:
-        rl = find_nearest(x1v, x1min)
+        rl = find_nearest(x1v_init, x1min)
     if kwargs['r_upper'] is not None:
         if not x1min <= kwargs['r_upper'] < x1max:
             sys.exit('Error: Upper r value must be between %d and %d' % x1min,x1max)
-        ru = find_nearest(x1v, kwargs['r_upper'])
+        ru = find_nearest(x1v_init, kwargs['r_upper'])
     else:
-        ru = find_nearest(x1v, 45.)
+        ru = find_nearest(x1v_init, 45.)
     if kwargs['theta_lower'] is not None:
         if not x2min <= kwargs['theta_lower'] < x2max:
             sys.exit('Error: Lower theta value must be between %d and %d' % x2min,x2max)
-        tl = find_nearest(x2v, kwargs['theta_lower'])
+        tl = find_nearest(x2v_init, kwargs['theta_lower'])
     else:
-        tl = find_nearest(x2v, np.pi/2.)
+        tl = find_nearest(x2v_init, np.pi/2.)
     if kwargs['theta_upper'] is not None:
         if not x2min <= kwargs['theta_upper'] < x2max:
             sys.exit('Error: Upper theta value must be between %d and %d' % x2min,x2max)
-        tu = find_nearest(x2v, kwargs['theta_upper'])
+        tu = find_nearest(x2v_init, kwargs['theta_upper'])
     else:
-        tu = find_nearest(x2v, np.pi/2.)
+        tu = find_nearest(x2v_init, np.pi/2.)
 
     if rl==ru:
         ru += 1

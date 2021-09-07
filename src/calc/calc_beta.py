@@ -36,11 +36,10 @@ def main(**kwargs):
     if len(times)==0:
         sys.exit('No new timesteps to analyse in the given directory. Exiting.')
 
-    filename_input = "../athinput." + problem
-    data_input = athena_read.athinput(filename_input)
-    nx2 = data_input['mesh']['nx2']
-
-    th_id = nx2/2. # midplane
+    data_init = athena_read.athinput(problem + ".cons.00000.athdf")
+    x2v = data_input['x2v']
+    th_mid = np.pi/2.
+    th_id = find_nearest(x2v, th_mid)
 
     beta_list = []
     for t in sorted(times):
@@ -109,6 +108,11 @@ def calculate_beta(beta_0,th_id,x1v,x3v,press,dens,Bcc1,Bcc2,Bcc3):
         current_beta = np.nan
 
     return current_beta
+
+def find_nearest(array, value):
+    array = np.asarray(array)
+    idx = (np.abs(array - value)).argmin()
+    return idx
 
 # Execute main function
 if __name__ == '__main__':

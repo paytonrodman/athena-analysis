@@ -56,9 +56,8 @@ def main(**kwargs):
         mom2 = data_cons['mom2']
         mom3 = data_cons['mom3']
         # Calculations
-        dx1f,dx2f,dx3f,vol = calc_volume(x1f,x2f,x3f)
-        v1,v2,v3 = calc_velocity(mom1,mom2,mom3,vol,dens)
-
+        dx1f,dx2f,dx3f = calc_diff(x1f,x2f,x3f)
+        v1,v2,v3 = calc_velocity(mom1,mom2,mom3,dens)
 
         mf = []
         for j in np.arange(0,len(x2v)):
@@ -82,22 +81,18 @@ def main(**kwargs):
             writer.writerow(["Time", "mass_flux"])
             writer.writerows(zip(times,mf_total))
 
-def calc_velocity(mom1,mom2,mom3,vol,dens):
-    v1 = mom1*(vol.T)/dens
-    v2 = mom2*(vol.T)/dens
-    v3 = mom3*(vol.T)/dens
+def calc_velocity(mom1,mom2,mom3,dens):
+    v1 = mom1/dens
+    v2 = mom2/dens
+    v3 = mom3/dens
     return v1,v2,v3
 
-def calc_volume(x1f,x2f,x3f):
+def calc_diff(x1f,x2f,x3f):
     vol = np.empty((len(x1f)-1,len(x2f)-1,len(x3f)-1))
     dx1f = np.diff(x1f) # delta r
     dx2f = np.diff(x2f) # delta phi
     dx3f = np.diff(x3f) # delta theta
-    for idx1,x1_len in enumerate(dx1f):
-        for idx2,x2_len in enumerate(dx2f):
-            for idx3,x3_len in enumerate(dx3f):
-                vol[idx1,idx2,idx3] = x1_len*x2_len*x3_len
-    return dx1f,dx2f,dx3f,vol
+    return dx1f,dx2f,dx3f
 
 # Execute main function
 if __name__ == '__main__':
