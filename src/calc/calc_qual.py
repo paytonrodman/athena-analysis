@@ -2,9 +2,9 @@
 import numpy as np
 import os
 import sys
-#sys.path.insert(0, '/home/per29/athena-public-version-master/vis/python')
-sys.path.insert(0, '/Users/paytonrodman/athena_sim/athena-analysis/dependencies')
+sys.path.insert(0, '../../dependencies')
 import athena_read
+from AAT import find_nearest,calculate_delta,calculate_velocity
 import glob
 import re
 import csv
@@ -114,8 +114,8 @@ def main(**kwargs):
         press = data_prim['press']
 
         # Calculations
-        dx1f,dx2f,dx3f,vol = calc_volume(x1f,x2f,x3f)
-        v1,v2,v3 = calc_velocity(mom1,mom2,mom3,vol,dens)
+        dx1f,dx2f,dx3f = calculate_delta(x1f,x2f,x3f)
+        v1,v2,v3 = calculate_velocity(mom1,mom2,mom3,dens)
         Omega_kep = np.sqrt(GM/(x1v**3.)) #Keplerian angular velocity in midplane
 
         tB = magnetic_angle(Bcc1,Bcc2)
@@ -151,12 +151,6 @@ def main(**kwargs):
             writer.writerow(["Time", "theta_B", "Qt_low", "Qt_av", "Qt_high", "Qp_low", "Qp_av", "Qp_high"])
             writer.writerows(zip(times,theta_B,Q_theta_low,Q_theta_av,Q_theta_high,Q_phi_low,Q_phi_av,Q_phi_high))
 
-
-def find_nearest(array, value):
-    array = np.asarray(array)
-    idx = (np.abs(array - value)).argmin()
-    return idx
-
 def mean_confidence_interval(data, confidence=0.95):
     a = 1.0 * np.array(data)
     n = len(a)
@@ -183,22 +177,6 @@ def Alfven_vel(dens,press,Bcc1,Bcc2,Bcc3,gamma):
     vA_phi = Bcc2/(np.sqrt(w+B2)) #Alfven velocity of phi component of B
     return vA_theta,vA_phi
 
-def calc_velocity(mom1,mom2,mom3,vol,dens):
-    v1 = mom1*(vol.T)/dens
-    v2 = mom2*(vol.T)/dens
-    v3 = mom3*(vol.T)/dens
-    return v1,v2,v3
-
-def calc_volume(x1f,x2f,x3f):
-    vol = np.empty((len(x1f)-1,len(x2f)-1,len(x3f)-1))
-    dx1f = np.diff(x1f) # delta r
-    dx2f = np.diff(x2f) # delta phi
-    dx3f = np.diff(x3f) # delta theta
-    for idx1,x1_len in enumerate(dx1f):
-        for idx2,x2_len in enumerate(dx2f):
-            for idx3,x3_len in enumerate(dx3f):
-                vol[idx1,idx2,idx3] = x1_len*x2_len*x3_len
-    return dx1f,dx2f,dx3f,vol
 
 # Execute main function
 if __name__ == '__main__':

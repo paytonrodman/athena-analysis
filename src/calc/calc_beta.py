@@ -2,8 +2,9 @@
 import numpy as np
 import os
 import sys
-sys.path.insert(0, '/Users/paytonrodman/athena_sim/athena-analysis/dependencies')
+sys.path.insert(0, '../../dependencies')
 import athena_read
+from AAT import find_nearest
 import glob
 import re
 import csv
@@ -103,11 +104,6 @@ def calculate_beta(th_id,x1v,x3v,press,dens,Bcc1,Bcc2,Bcc3):
         current_beta = np.nan
 
     return current_beta
-
-def find_nearest(array, value):
-    array = np.asarray(array)
-    idx = (np.abs(array - value)).argmin()
-    return idx
 
 # Execute main function
 if __name__ == '__main__':

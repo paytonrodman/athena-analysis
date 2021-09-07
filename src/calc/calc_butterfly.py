@@ -2,9 +2,9 @@
 import numpy as np
 import os
 import sys
-#sys.path.insert(0, '/home/per29/athena-public-version-master/vis/python')
-sys.path.insert(0, '/Users/paytonrodman/athena_sim/athena-analysis/dependencies')
+sys.path.insert(0, '../../dependencies')
 import athena_read
+from AAT import find_nearest
 import glob
 import re
 import csv
@@ -36,16 +36,6 @@ def main(**kwargs):
                 times.append(float(time_sec[0]))
     if len(times)==0:
         sys.exit('No new timesteps to analyse in the given directory. Exiting.')
-
-
-    #filename_input = "../run/athinput." + problem
-    #filename_input = "../athinput." + problem
-    #data_input = athena_read.athinput(filename_input)
-    #nx1 = data_input['mesh']['nx1']
-    #nx2 = data_input['mesh']['nx2']
-
-    #r_id = int(nx1/4.) # middle of high resolution r region
-    #th_id = int(nx2/2.) # midplane
 
     data_init = athena_read.athdf(problem + ".cons.00000.athdf")
     x1v_init = data_init['x1v']
@@ -96,11 +86,6 @@ def main(**kwargs):
             writer = csv.writer(f, delimiter='\t')
             writer.writerow(["Time", "Bcc1", "Bcc2", "Bcc3"])
             writer.writerows(zip(times,Bcc1_theta,Bcc2_theta,Bcc3_theta))
-
-def find_nearest(array, value):
-    array = np.asarray(array);
-    idx = (np.abs(array - value)).argmin();
-    return idx;
 
 # Execute main function
 if __name__ == '__main__':

@@ -2,9 +2,9 @@
 import numpy as np
 import os
 import sys
-#sys.path.insert(0, '/home/per29/athena-public-version-master/vis/python')
-sys.path.insert(0, '/Users/paytonrodman/athena_sim/athena-analysis/dependencies')
+sys.path.insert(0, '../../dependencies')
 import athena_read
+from AAT import calculate_delta
 import glob
 import re
 import csv
@@ -56,7 +56,7 @@ def main(**kwargs):
         Bcc1 = data_cons['Bcc1']
 
         # Calculations
-        dx1f,dx2f,dx3f = calc_diff(x1f,x2f,x3f)
+        dx1f,dx2f,dx3f = calculate_delta(x1f,x2f,x3f)
 
         mf_l = []
         mf_u = []
@@ -88,13 +88,6 @@ def main(**kwargs):
             writer = csv.writer(f, delimiter='\t')
             writer.writerow(["Time", "mag_flux_u", "mag_flux_l"])
             writer.writerows(zip(times,mag_flux_u,mag_flux_l))
-
-
-def calc_diff(x1f,x2f,x3f):
-    dx1f = np.diff(x1f) # delta r
-    dx2f = np.diff(x2f) # delta theta
-    dx3f = np.diff(x3f) # delta phi
-    return dx1f,dx2f,dx3f
 
 # Execute main function
 if __name__ == '__main__':

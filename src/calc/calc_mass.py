@@ -2,9 +2,9 @@
 import numpy as np
 import os
 import sys
-#sys.path.insert(0, '/home/per29/athena-public-version-master/vis/python')
-sys.path.insert(0, '/Users/paytonrodman/athena_sim/athena-analysis/dependencies')
+sys.path.insert(0, '../../dependencies')
 import athena_read
+from AAT import calculate_delta,calculate_velocity
 import glob
 import re
 import csv
@@ -56,8 +56,8 @@ def main(**kwargs):
         mom2 = data_cons['mom2']
         mom3 = data_cons['mom3']
         # Calculations
-        dx1f,dx2f,dx3f = calc_diff(x1f,x2f,x3f)
-        v1,v2,v3 = calc_velocity(mom1,mom2,mom3,dens)
+        dx1f,dx2f,dx3f = calculate_delta(x1f,x2f,x3f)
+        v1,v2,v3 = calculate_velocity(mom1,mom2,mom3,dens)
 
         mf = []
         for j in np.arange(0,len(x2v)):
@@ -80,19 +80,6 @@ def main(**kwargs):
             writer = csv.writer(f, delimiter='\t')
             writer.writerow(["Time", "mass_flux"])
             writer.writerows(zip(times,mf_total))
-
-def calc_velocity(mom1,mom2,mom3,dens):
-    v1 = mom1/dens
-    v2 = mom2/dens
-    v3 = mom3/dens
-    return v1,v2,v3
-
-def calc_diff(x1f,x2f,x3f):
-    vol = np.empty((len(x1f)-1,len(x2f)-1,len(x3f)-1))
-    dx1f = np.diff(x1f) # delta r
-    dx2f = np.diff(x2f) # delta phi
-    dx3f = np.diff(x3f) # delta theta
-    return dx1f,dx2f,dx3f
 
 # Execute main function
 if __name__ == '__main__':

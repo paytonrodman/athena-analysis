@@ -2,9 +2,9 @@
 import numpy as np
 import os
 import sys
-#sys.path.insert(0, '/home/per29/athena-public-version-master/vis/python')
-sys.path.insert(0, '/Users/paytonrodman/athena_sim/athena-analysis/dependencies')
+sys.path.insert(0, '../../dependencies')
 import athena_read
+from AAT import calculate_delta
 import glob
 import re
 import csv
@@ -52,7 +52,7 @@ def main(**kwargs):
         x3f = data_cons['x3f'] # phi
         dens = data_cons['dens']
         # Calculations
-        dx1f,dx2f,dx3f = calc_diff(x1f,x2f,x3f)
+        dx1f,dx2f,dx3f = calculate_delta(x1f,x2f,x3f)
 
         up = x2v*dens*np.sin(x2v)*dx2f*dx3f
         down = dens*np.sin(x2v)*dx2f*dx3f
@@ -79,17 +79,6 @@ def main(**kwargs):
             writer.writerow(["Time", "scale_height"])
             writer.writerows(zip(times,scale_height))
 
-def calc_velocity(mom1,mom2,mom3,vol,dens):
-    v1 = mom1*(vol.T)/dens
-    v2 = mom2*(vol.T)/dens
-    v3 = mom3*(vol.T)/dens
-    return v1,v2,v3
-
-def calc_diff(x1f,x2f,x3f):
-    dx1f = np.diff(x1f) # delta r
-    dx2f = np.diff(x2f) # delta phi
-    dx3f = np.diff(x3f) # delta theta
-    return dx1f,dx2f,dx3f
 
 # Execute main function
 if __name__ == '__main__':
