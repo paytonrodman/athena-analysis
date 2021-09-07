@@ -12,7 +12,8 @@ import argparse
 
 def main(**kwargs):
     problem  = args.prob_id
-    data_dir = "/Users/paytonrodman/athena_sim/" + problem + "/data/"
+    root_dir = "/Users/paytonrodman/athena_sim/"
+    data_dir = root_dir + problem + "/data/"
     os.chdir(data_dir)
 
     csv_time = []
@@ -89,7 +90,7 @@ def main(**kwargs):
 
 # Execute main function
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Calculate average magnetic field values for a given radius (r) and zenith angle (theta) for butterfly plots')
+    parser = argparse.ArgumentParser(description='Calculate average magnetic field values within the midplane at a given radius (r)')
     parser.add_argument('prob_id',
                         help='base name of the data being analysed, e.g. inflow_var or disk_base')
     parser.add_argument('-u', '--update',
@@ -98,7 +99,7 @@ if __name__ == '__main__':
     parser.add_argument('--r',
                         type=float,
                         default=None,
-                        help=('value of r where averages are calculated (default: 45rg)'))
+                        help=('value of r where averages are calculated (default: 25rg)'))
     args = parser.parse_args()
 
     main(**vars(args))
