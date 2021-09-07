@@ -38,8 +38,7 @@ def main(**kwargs):
 
     data_init = athena_read.athinput(problem + ".cons.00000.athdf")
     x2v = data_input['x2v']
-    th_mid = np.pi/2.
-    th_id = find_nearest(x2v, th_mid)
+    th_id = find_nearest(x2v, np.pi/2.)
 
     beta_list = []
     for t in sorted(times):
@@ -82,10 +81,9 @@ def calculate_beta(th_id,x1v,x3v,press,dens,Bcc1,Bcc2,Bcc3):
     numWeight_p = 0.
     sum_b = 0.
     numWeight_b = 0.
+    j = int(th_id)
     for k in range(len(x3v)):
-        #for j,theta in enumerate(x2v):
         for i in range(len(x1v)):
-            j = int(th_id)
             pressure = press[k,j,i]
             density = dens[k,j,i]
             # Find volume centred total magnetic field
