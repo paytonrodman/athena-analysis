@@ -52,9 +52,6 @@ def main(**kwargs):
         data_prim = athena_read.athdf(filename_prim)
         data_cons = athena_read.athdf(filename_cons)
 
-        #constants
-        beta_0 = 200.
-
         #unpack data
         x1v = data_cons['x1v'] # r
         x3v = data_cons['x3v'] # phi
@@ -64,7 +61,7 @@ def main(**kwargs):
         Bcc3 = data_cons['Bcc3']
         press = data_prim['press']
 
-        current_beta = calculate_beta(beta_0,th_id,x1v,x3v,press,dens,Bcc1,Bcc2,Bcc3)
+        current_beta = calculate_beta(th_id,x1v,x3v,press,dens,Bcc1,Bcc2,Bcc3)
         beta_list.append(current_beta)
 
     times, beta_list = (list(t) for t in zip(*sorted(zip(times, beta_list))))
@@ -79,7 +76,7 @@ def main(**kwargs):
             writer.writerow(["Time", "plasma_beta"])
             writer.writerows(zip(times,beta_list))
 
-def calculate_beta(beta_0,th_id,x1v,x3v,press,dens,Bcc1,Bcc2,Bcc3):
+def calculate_beta(th_id,x1v,x3v,press,dens,Bcc1,Bcc2,Bcc3):
     # Density-weighted mean gas pressure
     sum_p = 0.
     numWeight_p = 0.
