@@ -100,7 +100,6 @@ def main(**kwargs):
 
         #unpack data
         x1v = data_cons['x1v'] # r
-        x2v = data_cons['x2v'] # theta
         x3v = data_cons['x3v'] # phi
         x1f = data_cons['x1f'] # r
         x2f = data_cons['x2f'] # theta

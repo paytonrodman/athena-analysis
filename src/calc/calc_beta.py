@@ -39,7 +39,7 @@ def main(**kwargs):
         sys.exit('No new timesteps to analyse in the given directory. Exiting.')
 
     data_init = athena_read.athinput(problem + ".cons.00000.athdf")
-    x2v = data_input['x2v']
+    x2v = data_init['x2v']
     th_id = find_nearest(x2v, np.pi/2.)
 
     beta_list = []

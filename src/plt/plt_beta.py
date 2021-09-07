@@ -5,7 +5,6 @@ import sys
 sys.path.insert(0, '/Users/paytonrodman/athena/vis/python')
 import csv
 import numpy as np
-import numpy.ma as ma
 import scipy.stats
 import argparse
 
