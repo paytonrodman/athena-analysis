@@ -15,10 +15,7 @@ def calculate_delta(x1,x2,x3):
     return dx1,dx2,dx3
 
 def find_nearest(array, value):
-    """For a given array, find the index of the entry closest to 'value'.
-    If there are multiple indices which match, return the first."""
+    """For a given array, find the index of the entry closest to 'value'."""
     array = np.asarray(array);
     idx = (np.abs(array - value)).argmin();
-    if len(idx)>1:
-        return idx[0]
     return idx;
