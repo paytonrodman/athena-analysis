@@ -17,16 +17,13 @@ def main(**kwargs):
     data_dir = root_dir + problem + "/data/"
     os.chdir(data_dir)
 
-    #filename_input = "../run/athinput." + problem
-    filename_input = "../athinput." + problem
-    data_input = athena_read.athinput(filename_input)
+    data_input = athena_read.athinput("../athinput." + problem)
     x1min = data_input['mesh']['x1min']
     x1max = data_input['mesh']['x1max']
     x2min = data_input['mesh']['x2min']
     x2max = data_input['mesh']['x2max']
 
-    init_f = problem + ".cons.00000.athdf"
-    init_data = athena_read.athdf(init_f)
+    init_data = athena_read.athdf(problem + ".cons.00000.athdf")
     x1v_init = init_data['x1v'] # r
     x2v_init = init_data['x2v'] # theta
 

@@ -55,8 +55,7 @@ def main(**kwargs):
         print("file number: ", t)
         str_t = str(int(t)).zfill(5)
 
-        filename_cons = problem + ".cons." + str_t + ".athdf"
-        data_cons = athena_read.athdf(filename_cons)
+        data_cons = athena_read.athdf(problem + ".cons." + str_t + ".athdf")
 
         #unpack data
         x2f = data_cons['x2f'] # theta

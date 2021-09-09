@@ -38,7 +38,7 @@ def main(**kwargs):
     if len(times)==0:
         sys.exit('No new timesteps to analyse in the given directory. Exiting.')
 
-    data_init = athena_read.athinput(problem + ".cons.00000.athdf")
+    data_init = athena_read.athdf(problem + ".cons.00000.athdf")
     x2v = data_init['x2v']
     th_id = find_nearest(x2v, np.pi/2.)
 
@@ -47,11 +47,8 @@ def main(**kwargs):
         print("file number: ", t)
         str_t = str(int(t)).zfill(5)
 
-        filename_cons = problem + ".cons." + str_t + ".athdf"
-        filename_prim = problem + ".prim." + str_t + ".athdf"
-
-        data_prim = athena_read.athdf(filename_prim)
-        data_cons = athena_read.athdf(filename_cons)
+        data_prim = athena_read.athdf(problem + ".prim." + str_t + ".athdf")
+        data_cons = athena_read.athdf(problem + ".cons." + str_t + ".athdf")
 
         #unpack data
         x1v = data_cons['x1v'] # r
