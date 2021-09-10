@@ -4,7 +4,7 @@ import os
 import sys
 sys.path.insert(0, '../../dependencies')
 import athena_read
-from AAT import find_nearest,calculate_delta,calculate_velocity
+import AAT
 import glob
 import re
 import csv
@@ -30,27 +30,27 @@ def main(**kwargs):
     if kwargs['r_lower'] is not None:
         if not x1min <= kwargs['r_lower'] < x1max:
             sys.exit('Error: Lower r value must be between %d and %d' % x1min,x1max)
-        rl = find_nearest(x1v_init, kwargs['r_lower'])
+        rl = AAT.find_nearest(x1v_init, kwargs['r_lower'])
     else:
-        rl = find_nearest(x1v_init, x1min)
+        rl = AAT.find_nearest(x1v_init, x1min)
     if kwargs['r_upper'] is not None:
         if not x1min <= kwargs['r_upper'] < x1max:
             sys.exit('Error: Upper r value must be between %d and %d' % x1min,x1max)
-        ru = find_nearest(x1v_init, kwargs['r_upper'])
+        ru = AAT.find_nearest(x1v_init, kwargs['r_upper'])
     else:
-        ru = find_nearest(x1v_init, 45.)
+        ru = AAT.find_nearest(x1v_init, 45.)
     if kwargs['theta_lower'] is not None:
         if not x2min <= kwargs['theta_lower'] < x2max:
             sys.exit('Error: Lower theta value must be between %d and %d' % x2min,x2max)
-        tl = find_nearest(x2v_init, kwargs['theta_lower'])
+        tl = AAT.find_nearest(x2v_init, kwargs['theta_lower'])
     else:
-        tl = find_nearest(x2v_init, np.pi/2.)
+        tl = AAT.find_nearest(x2v_init, np.pi/2.)
     if kwargs['theta_upper'] is not None:
         if not x2min <= kwargs['theta_upper'] < x2max:
             sys.exit('Error: Upper theta value must be between %d and %d' % x2min,x2max)
-        tu = find_nearest(x2v_init, kwargs['theta_upper'])
+        tu = AAT.find_nearest(x2v_init, kwargs['theta_upper'])
     else:
-        tu = find_nearest(x2v_init, np.pi/2.)
+        tu = AAT.find_nearest(x2v_init, np.pi/2.)
 
     if rl==ru:
         ru += 1
@@ -111,8 +111,8 @@ def main(**kwargs):
         press = data_prim['press']
 
         # Calculations
-        dx1f,dx2f,dx3f = calculate_delta(x1f,x2f,x3f)
-        v1,v2,v3 = calculate_velocity(mom1,mom2,mom3,dens)
+        dx1f,dx2f,dx3f = AAT.calculate_delta(x1f,x2f,x3f)
+        v1,v2,v3 = AAT.calculate_velocity(mom1,mom2,mom3,dens)
         Omega_kep = np.sqrt(GM/(x1v**3.)) #Keplerian angular velocity in midplane
 
         tB = magnetic_angle(Bcc1,Bcc2)

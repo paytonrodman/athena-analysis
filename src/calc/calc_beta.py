@@ -4,7 +4,7 @@ import os
 import sys
 sys.path.insert(0, '../../dependencies')
 import athena_read
-from AAT import find_nearest
+import AAT
 import glob
 import re
 import csv
@@ -40,7 +40,7 @@ def main(**kwargs):
 
     data_init = athena_read.athdf(problem + ".cons.00000.athdf")
     x2v = data_init['x2v']
-    th_id = find_nearest(x2v, np.pi/2.)
+    th_id = AAT.find_nearest(x2v, np.pi/2.)
 
     beta_list = []
     for t in sorted(times):

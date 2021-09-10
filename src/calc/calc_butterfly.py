@@ -4,7 +4,7 @@ import os
 import sys
 sys.path.insert(0, '../../dependencies')
 import athena_read
-from AAT import find_nearest
+import AAT
 import glob
 import re
 import csv
@@ -42,11 +42,11 @@ def main(**kwargs):
     x1v_init = data_init['x1v']
     x2v_init = data_init['x2v']
 
-    th_id = find_nearest(x2v_init, np.pi/2.) # midplane
+    th_id = AAT.find_nearest(x2v_init, np.pi/2.) # midplane
     if kwargs['r'] is not None:
-        r_id = find_nearest(x1v_init, kwargs['r'])
+        r_id = AAT.find_nearest(x1v_init, kwargs['r'])
     else:
-        r_id = find_nearest(x1v_init, 25.) # approx. middle of high res region
+        r_id = AAT.find_nearest(x1v_init, 25.) # approx. middle of high res region
 
     Bcc1_theta = []
     Bcc2_theta = []

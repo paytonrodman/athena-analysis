@@ -4,7 +4,7 @@ import os
 import sys
 sys.path.insert(0, '../../dependencies')
 import athena_read
-from AAT import calculate_delta
+import AAT
 import glob
 import re
 import csv
@@ -53,7 +53,7 @@ def main(**kwargs):
         x3f = data_cons['x3f'] # phi
         dens = data_cons['dens']
         # Calculations
-        dx1f,dx2f,dx3f = calculate_delta(x1f,x2f,x3f)
+        dx1f,dx2f,dx3f = AAT.calculate_delta(x1f,x2f,x3f)
 
         up = x2v*dens*np.sin(x2v)*dx2f*dx3f
         down = dens*np.sin(x2v)*dx2f*dx3f

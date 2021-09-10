@@ -4,7 +4,7 @@ import os
 import sys
 sys.path.insert(0, '../../dependencies')
 import athena_read
-from AAT import calculate_delta,calculate_velocity
+import AAT
 import glob
 import re
 import csv
@@ -56,8 +56,8 @@ def main(**kwargs):
         mom2 = data_cons['mom2']
         mom3 = data_cons['mom3']
         # Calculations
-        dx1f,dx2f,dx3f = calculate_delta(x1f,x2f,x3f)
-        v1,v2,v3 = calculate_velocity(mom1,mom2,mom3,dens)
+        dx1f,dx2f,dx3f = AAT.calculate_delta(x1f,x2f,x3f)
+        v1,v2,v3 = AAT.calculate_velocity(mom1,mom2,mom3,dens)
 
         mf = []
         for j in np.arange(0,len(x2v)):
