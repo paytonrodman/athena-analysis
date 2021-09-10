@@ -43,7 +43,7 @@ def main(**kwargs):
 
 # Execute main function
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Plot various quality factors.')
+    parser = argparse.ArgumentParser(description='Plot magnetic flux across both hemispheres over time.')
     parser.add_argument('prob_id',
                         help='base name of the data being analysed, e.g. inflow_var or disk_base')
     args = parser.parse_args()
