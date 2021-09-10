@@ -34,7 +34,6 @@ def main(**kwargs):
     beta.tolist()
     time.tolist()
 
-
     fig = plt.figure()
     ax = fig.add_subplot(111)
     ax.plot(time,beta)
