@@ -13,7 +13,7 @@ def main(**kwargs):
     data_dir = "/Users/paytonrodman/athena_sim/" + problem + "/"
     os.chdir(data_dir)
 
-    filename_csv = args.input_file
+    filename_csv = args.input_file + '.csv'
 
     time = []
     theta_B = []
@@ -55,6 +55,7 @@ def main(**kwargs):
             #        theta_B.append(tB_i)
             #else:
             #    theta_B.append(tB_i)
+    time,theta_B,Qt_lc,Qt_av,Qt_uc,Qp_lc,Qp_av,Qp_uc = zip(*sorted(zip(time,theta_B,Qt_lc,Qt_av,Qt_uc,Qp_lc,Qp_av,Qp_uc)))
 
     make_plot(time,theta_B,r'$\theta_B$','theta_B',data_dir)
     make_plot_CI(time,Qt_av,Qt_lc,Qt_uc,r'average $Q_{\theta}$','Q_theta',data_dir)

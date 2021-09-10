@@ -20,10 +20,10 @@ def main(**kwargs):
         for row in csv_reader:
             t = float(row[0])
             sh = float(row[1])
-
             time.append(float(t)*5.)
             scale_height.append(sh)
 
+    time, scale_height = zip(*sorted(zip(time, scale_height)))
 
     y_var_name = 'scale_height'
     fig = plt.figure()
