@@ -11,7 +11,7 @@ import argparse
 def main(**kwargs):
     # directory containing data
     problem  = args.prob_id
-    data_dir = "/Users/paytonrodman/athena_sim/" + problem + "/"
+    data_dir = '/Users/paytonrodman/athena_sim/' + problem + '/'
     os.chdir(data_dir)
     time = []
     beta = []
@@ -71,7 +71,7 @@ if __name__ == '__main__':
     parser.add_argument('prob_id',
                         help='base name of the data being analysed, e.g. inflow_var or disk_base')
     parser.add_argument('--logy',
-                        action="store_true",
+                        action='store_true',
                         help='plot logy version')
     args = parser.parse_args()
 

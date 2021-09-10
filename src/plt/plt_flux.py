@@ -9,7 +9,7 @@ import argparse
 def main(**kwargs):
     # directory containing data
     problem  = args.prob_id
-    data_dir = "/Users/paytonrodman/athena_sim/" + problem + "/"
+    data_dir = '/Users/paytonrodman/athena_sim/' + problem + '/'
     os.chdir(data_dir)
 
     time = []

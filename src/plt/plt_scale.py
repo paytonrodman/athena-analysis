@@ -9,7 +9,7 @@ import argparse
 def main(**kwargs):
     # directory containing data
     problem  = args.prob_id
-    data_dir = "/Users/paytonrodman/athena_sim/" + problem + "/"
+    data_dir = '/Users/paytonrodman/athena_sim/' + problem + '/'
     os.chdir(data_dir)
 
     time = []
@@ -32,7 +32,7 @@ def main(**kwargs):
     ax.set_xlabel('time since start (simulation units)')
     ax.set_ylabel(r'$h/r$')
     ax.set_xlim(left=0)
-    #plt.ticklabel_format(axis="y", style="sci", scilimits=(0,0))
+    #plt.ticklabel_format(axis='y', style='sci', scilimits=(0,0))
     plt.grid(b=True, which='major', color='#666666', linestyle='-', alpha=0.5)
     plt.minorticks_on()
     plt.grid(b=True, which='minor', color='#999999', linestyle='-', alpha=0.2)
