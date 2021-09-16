@@ -38,9 +38,12 @@ def main(**kwargs):
     if len(times)==0:
         sys.exit('No new timesteps to analyse in the given directory. Exiting.')
 
+    data_input = athena_read.athinput("../athinput." + problem)
+    scale_height = data_input['problem']['h_r']
     data_init = athena_read.athdf(problem + ".cons.00000.athdf")
     x2v = data_init['x2v']
-    th_id = AAT.find_nearest(x2v, np.pi/2.)
+    th_u = AAT.find_nearest(x2v, np.pi/2. + (3.*scale_height))
+    th_l = AAT.find_nearest(x2v, np.pi/2. - (3.*scale_height))
 
     beta_list = []
     for t in sorted(times):
@@ -51,15 +54,13 @@ def main(**kwargs):
         data_cons = athena_read.athdf(problem + ".cons." + str_t + ".athdf")
 
         #unpack data
-        x1v = data_cons['x1v'] # r
-        x3v = data_cons['x3v'] # phi
         dens = data_cons['dens']
         Bcc1 = data_cons['Bcc1']
         Bcc2 = data_cons['Bcc2']
         Bcc3 = data_cons['Bcc3']
         press = data_prim['press']
 
-        current_beta = calculate_beta(th_id,x1v,x3v,press,dens,Bcc1,Bcc2,Bcc3)
+        current_beta = calculate_beta(th_u,th_l,press,dens,Bcc1,Bcc2,Bcc3)
         beta_list.append(current_beta)
 
     times, beta_list = (list(t) for t in zip(*sorted(zip(times, beta_list))))
@@ -74,25 +75,24 @@ def main(**kwargs):
             writer.writerow(["Time", "plasma_beta"])
             writer.writerows(zip(times,beta_list))
 
-def calculate_beta(th_id,x1v,x3v,press,dens,Bcc1,Bcc2,Bcc3):
+def calculate_beta(th_u,th_l,press,dens,Bcc1,Bcc2,Bcc3):
     # Density-weighted mean gas pressure
     sum_p = 0.
     numWeight_p = 0.
     sum_b = 0.
     numWeight_b = 0.
-    j = int(th_id)
-    for k in range(len(x3v)):
-        for i in range(len(x1v)):
-            pressure = press[k,j,i]
-            density = dens[k,j,i]
-            # Find volume centred total magnetic field
-            bcc_all = np.sqrt(np.square(Bcc1[k,j,i]) +
-                              np.square(Bcc2[k,j,i]) +
-                              np.square(Bcc3[k,j,i]))
-            numWeight_p += pressure*density
-            sum_p       += density
-            numWeight_b += bcc_all*density
-            sum_b       += density
+
+    pressure = press[:,th_l:th_u,:]
+    density = dens[:,th_l:th_u,:]
+    # Find volume centred total magnetic field
+    bcc_all = np.sqrt(np.square(Bcc1[:,th_l:th_u,:]) +
+                      np.square(Bcc2[:,th_l:th_u,:]) +
+                      np.square(Bcc3[:,th_l:th_u,:]))
+
+    numWeight_p = np.sum(pressure*density)
+    sum_p       = np.sum(density)
+    numWeight_b = np.sum(bcc_all*density)
+    sum_b       = np.sum(density)
 
     pres_av = numWeight_p/sum_p
     bcc_av = numWeight_b/sum_b
