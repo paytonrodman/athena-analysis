@@ -46,7 +46,6 @@ def main(**kwargs):
         r_id = AAT.find_nearest(x1v_init, kwargs['r'])
     else:
         r_id = AAT.find_nearest(x1v_init, 25.) # approx. middle of high res region
-    th_id = AAT.find_nearest(x2v_init, np.pi/2.) # midplane
 
     Bcc1_theta = []
     Bcc2_theta = []
