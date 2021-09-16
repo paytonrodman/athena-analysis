@@ -61,7 +61,7 @@ def main(**kwargs):
 
         mf = []
         for j in range(len(x2v)):
-            for k in narange(len(x3v)):
+            for k in range(len(x3v)):
                 dOmega = np.sin(x2f[j]) * dx2f[j] * dx3f[k]
                 mf_i = -dens[k,j,0] * v1[k,j,0] * (x1f[0])**2. * dOmega
                 mf.append(mf_i)
