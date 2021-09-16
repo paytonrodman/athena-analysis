@@ -60,8 +60,8 @@ def main(**kwargs):
         v1,v2,v3 = AAT.calculate_velocity(mom1,mom2,mom3,dens)
 
         mf = []
-        for j in np.arange(0,len(x2v)):
-            for k in np.arange(0,len(x3v)):
+        for j in range(len(x2v)):
+            for k in narange(len(x3v)):
                 dOmega = np.sin(x2f[j]) * dx2f[j] * dx3f[k]
                 mf_i = -dens[k,j,0] * v1[k,j,0] * (x1f[0])**2. * dOmega
                 mf.append(mf_i)
