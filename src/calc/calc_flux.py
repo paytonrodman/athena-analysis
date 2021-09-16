@@ -38,6 +38,11 @@ def main(**kwargs):
     if len(times)==0:
         sys.exit('No new timesteps to analyse in the given directory. Exiting.')
 
+
+    data_init = athena_read.athdf(problem + ".cons.00000.athdf")
+    x2v_init = data_init['x2v']
+    th_id = AAT.find_nearest(x2v_init, np.pi/2.)
+
     mag_flux_u = []
     mag_flux_l = []
 
@@ -60,14 +65,15 @@ def main(**kwargs):
 
         mf_l = []
         mf_u = []
-        for j in np.arange(0,int(len(x2v)/2)):
-            for k in np.arange(0,len(x3v)):
+
+        for j in range(th_id):
+            for k in range(len(x3v)):
                 dS = (x1f[0]**2.)*np.sin(x2f[j])*dx2f[j]*dx3f[k] # r^2 * sin(theta) * dtheta * dphi
                 mf_i = Bcc1[k,j,0]*dS
                 mf_u.append(mf_i)
 
-        for j in np.arange(int(len(x2v)/2),len(x2v)):
-            for k in np.arange(0,len(x3v)):
+        for j in range(th_id,len(x2v)):
+            for k in range(len(x3v)):
                 dS = (x1f[0]**2.)*np.sin(x2f[j])*dx2f[j]*dx3f[k] # r^2 * sin(theta) * dtheta * dphi
                 mf_i = Bcc1[k,j,0]*dS
                 mf_l.append(mf_i)
