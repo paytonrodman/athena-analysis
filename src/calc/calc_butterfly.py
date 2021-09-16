@@ -42,11 +42,11 @@ def main(**kwargs):
     x1v_init = data_init['x1v']
     x2v_init = data_init['x2v']
 
-    th_id = AAT.find_nearest(x2v_init, np.pi/2.) # midplane
     if kwargs['r'] is not None:
         r_id = AAT.find_nearest(x1v_init, kwargs['r'])
     else:
         r_id = AAT.find_nearest(x1v_init, 25.) # approx. middle of high res region
+    th_id = AAT.find_nearest(x2v_init, np.pi/2.) # midplane
 
     Bcc1_theta = []
     Bcc2_theta = []
@@ -63,17 +63,9 @@ def main(**kwargs):
         Bcc2 = data_cons['Bcc2']
         Bcc3 = data_cons['Bcc3']
 
-        Bcc1_t = []
-        Bcc2_t = []
-        Bcc3_t = []
-        for th_id in np.arange(0,len(x2f)-1):
-            Bcc1_t.append(np.average(Bcc1[r_id,th_id,:]))
-            Bcc2_t.append(np.average(Bcc2[r_id,th_id,:]))
-            Bcc3_t.append(np.average(Bcc3[r_id,th_id,:]))
-
-        Bcc1_theta.append(Bcc1_t)
-        Bcc2_theta.append(Bcc2_t)
-        Bcc3_theta.append(Bcc3_t)
+        Bcc1_theta.append(np.average(Bcc1[r_id,:,:],axis=1))
+        Bcc2_theta.append(np.average(Bcc2[r_id,:,:],axis=1))
+        Bcc3_theta.append(np.average(Bcc3[r_id,:,:],axis=1))
 
     times,Bcc1_theta,Bcc2_theta,Bcc3_theta = (list(t) for t in zip(*sorted(zip(times,Bcc1_theta,Bcc2_theta,Bcc3_theta))))
     os.chdir("../")
