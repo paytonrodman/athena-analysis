@@ -13,7 +13,7 @@ def main(**kwargs):
     data_dir = '/Users/paytonrodman/athena_sim/' + problem + '/'
     os.chdir(data_dir)
 
-    filename_csv = args.input_file + '.csv'
+    filename_csv = args.input + '.csv'
 
     time = []
     theta_B = []
@@ -98,8 +98,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Plot various quality factors.')
     parser.add_argument('prob_id',
                         help='base name of the data being analysed, e.g. inflow_var or disk_base')
-    parser.add_argument('input_file',
-                        default='qual_with_time_0_148_127_128.csv',
+    parser.add_argument('-i','--input',
+                        default='qual_with_time_0_255_127_128',
                         help='name of the file with quality data to be analysed, including extension, e.g. qual_with_time.csv (default=qual_with_time_0_148_127_128.csv)')
     parser.add_argument('-s', '--slice',
                         action='store_true',

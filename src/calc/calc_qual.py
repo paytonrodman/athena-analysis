@@ -38,7 +38,7 @@ def main(**kwargs):
             sys.exit('Error: Upper r value must be between %d and %d' % x1min,x1max)
         ru = AAT.find_nearest(x1v_init, kwargs['r_upper'])
     else:
-        ru = AAT.find_nearest(x1v_init, 45.)
+        ru = AAT.find_nearest(x1v_init, 145.)
     if kwargs['theta_lower'] is not None:
         if not x2min <= kwargs['theta_lower'] < x2max:
             sys.exit('Error: Lower theta value must be between %d and %d' % x2min,x2max)
