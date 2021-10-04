@@ -25,6 +25,8 @@ def main(**kwargs):
             time.append(float(t)*5.)
             mass_flux.append(mf)
 
+    time, mass_flux = zip(*sorted(zip(time, mass_flux)))
+
 
     y_var_name = 'mass_flux'
     fig = plt.figure()

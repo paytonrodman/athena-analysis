@@ -28,6 +28,8 @@ def main(**kwargs):
             mag_flux_u.append(mf_u)
             mag_flux_l.append(mf_l)
 
+    time, mag_flux_u, mag_flux_l = zip(*sorted(zip(time, mag_flux_u, mag_flux_l)))
+
     fig = plt.figure()
     ax = fig.add_subplot(111)
     ax.plot(time,mag_flux_u,label='upper hem.')
