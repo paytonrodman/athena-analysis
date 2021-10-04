@@ -10,10 +10,10 @@ from ast import literal_eval
 import argparse
 
 def main(**kwargs):
-
     # directory containing data
     problem  = args.prob_id
-    data_dir = '/Users/paytonrodman/athena_sim/' + problem + '/'
+    root_dir = '/Users/paytonrodman/athena-sim/'
+    data_dir = root_dir + problem + '/'
     os.chdir(data_dir)
 
     time = []
