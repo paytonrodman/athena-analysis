@@ -56,7 +56,7 @@ def make_plots(data,problem,xlabel,save_name,x_min,x_max,y_min,y_max):
     cbar1.ax.set_ylabel(xlabel,fontsize=14)
     plt.tick_params(axis='both', which='major', labelsize=14)
     plt.tight_layout()
-    plt.savefig('/Users/paytonrodman/athena_sim/' + problem + '/' + save_name + '.png',dpi=1200)
+    plt.savefig(data_dir + save_name + '.png',dpi=1200)
     plt.close()
 
 # Execute main function

@@ -43,7 +43,7 @@ def main(**kwargs):
     plt.grid(b=True, which='major', color='#666666', linestyle='-', alpha=0.5)
     plt.minorticks_on()
     plt.grid(b=True, which='minor', color='#999999', linestyle='-', alpha=0.2)
-    plt.savefig('/Users/paytonrodman/athena_sim/' + problem + '/beta.png',dpi=1200)
+    plt.savefig(data_dir + 'beta' + '.png', dpi=1200)
     plt.close()
 
     if args.logy:
@@ -56,7 +56,7 @@ def main(**kwargs):
         plt.grid(b=True, which='major', color='#666666', linestyle='-', alpha=0.5)
         plt.minorticks_on()
         plt.grid(b=True, which='minor', color='#999999', linestyle='-', alpha=0.2)
-        plt.savefig('/Users/paytonrodman/athena_sim/' + problem + '/logy_beta.png',dpi=1200)
+        plt.savefig(data_dir + 'logy_beta' + '.png', dpi=1200)
         plt.close()
 
 def mean_confidence_interval(data, confidence=0.95):
