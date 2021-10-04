@@ -12,7 +12,7 @@ import argparse
 
 def main(**kwargs):
     problem  = args.prob_id
-    root_dir = "/Users/paytonrodman/athena_sim/"
+    root_dir = "/Users/paytonrodman/athena-sim/"
     data_dir = root_dir + problem + "/data/"
     os.chdir(data_dir)
 
@@ -62,6 +62,17 @@ def main(**kwargs):
 
         # Calculations
         dx1f,dx2f,dx3f = AAT.calculate_delta(x1f,x2f,x3f)
+        print(np.average(dx1f[0]))
+        print(np.average(dx2f[:128]))
+        print(np.average(dx3f))
+
+        aspect_r = np.average(dx1f)
+        aspect_th = np.average(dx1f) * np.average(np.sin(x2f)) * np.average(dx2f)
+        aspect_ph = np.average(x1f) * np.average(dx3f)
+        print(aspect_r)
+        print(aspect_th)
+        print(aspect_ph)
+        print(jwbdjw)
 
         mf_l = []
         mf_u = []

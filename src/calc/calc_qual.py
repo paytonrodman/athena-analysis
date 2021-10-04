@@ -13,7 +13,7 @@ import argparse
 
 def main(**kwargs):
     problem  = args.prob_id
-    root_dir = "/Users/paytonrodman/athena_sim/"
+    root_dir = "/Users/paytonrodman/athena-sim/"
     data_dir = root_dir + problem + "/data/"
     os.chdir(data_dir)
 
