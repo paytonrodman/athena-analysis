@@ -38,6 +38,19 @@ def main(**kwargs):
     if len(times)==0:
         sys.exit('No new timesteps to analyse in the given directory. Exiting.')
 
+    # get mesh data for all files (static)
+    data_init = athena_read.athdf(problem + ".cons.00000.athdf")
+    x1v = data_init['x1v'] # r
+    x2v = data_init['x2v'] # theta
+    x3v = data_init['x3v'] # phi
+    x1f = data_init['x1f'] # r
+    x2f = data_init['x2f'] # theta
+    x3f = data_init['x3f'] # phi
+    dx1f,dx2f,dx3f = AAT.calculate_delta(x1f,x2f,x3f)
+    phi,theta,r = np.meshgrid(x3v,x2v,x1v, sparse=False, indexing='ij')
+    dphi,dtheta,dr = np.meshgrid(dx3f,dx2f,dx1f, sparse=False, indexing='ij')
+    dOmega = np.sin(theta)*dtheta*dphi
+
     scale_height = []
     for t in sorted(times):
         print("file number: ", t)
@@ -47,35 +60,14 @@ def main(**kwargs):
         data_cons = athena_read.athdf(filename_cons)
 
         #unpack data
-        x1v = data_cons['x1v'] # r
-        x2v = data_cons['x2v'] # theta
-        x3v = data_cons['x3v'] # phi
-        x1f = data_cons['x1f'] # r
-        x2f = data_cons['x2f'] # theta
-        x3f = data_cons['x3f'] # phi
         dens = data_cons['dens']
         # Calculations
-        dx1f,dx2f,dx3f = AAT.calculate_delta(x1f,x2f,x3f)
-
-        phi,theta,r = np.meshgrid(x3v,x2v,x1v, sparse=False, indexing='ij')
-        dphi,dtheta,dr = np.meshgrid(dx3f,dx2f,dx1f, sparse=False, indexing='ij')
-
-        dOmega = np.sin(theta)*dtheta*dphi #sin(theta)*dtheta*dphi
-
         polar_ang = np.sum(theta*dens*dOmega,axis=(0,1))/np.sum(dens*dOmega,axis=(0,1))
-
-
         h_up = (theta-polar_ang)**2. * dens*dOmega
         h_down = dens*dOmega
         scale_h = np.sqrt(np.sum(h_up,axis=(0,1))/np.sum(h_down,axis=(0,1)))
-        print(scale_h)
-        print(np.shape(scale_h))
-        print(jwbdjw)
-        scale_h_av = np.average(scale_h)#,weights=dx1f)
-
+        scale_h_av = np.average(scale_h,weights=dx1f)
         scale_height.append(scale_h_av)
-
-
 
     times,scale_height = (list(t) for t in zip(*sorted(zip(times,scale_height))))
     os.chdir("../")
