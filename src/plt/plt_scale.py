@@ -33,6 +33,7 @@ def main(**kwargs):
     ax.set_xlabel('time since start (simulation units)')
     ax.set_ylabel(r'$h/r$')
     ax.set_xlim(left=0)
+    ax.set_ylim(0,0.5)
     #plt.ticklabel_format(axis='y', style='sci', scilimits=(0,0))
     plt.grid(b=True, which='major', color='#666666', linestyle='-', alpha=0.5)
     plt.minorticks_on()
