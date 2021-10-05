@@ -38,7 +38,7 @@ def main(**kwargs):
             sys.exit('Error: Upper r value must be between %d and %d' % x1min,x1max)
         ru = AAT.find_nearest(x1v_init, kwargs['r_upper'])
     else:
-        ru = AAT.find_nearest(x1v_init, 145.)
+        ru = AAT.find_nearest(x1v_init, x1max)
     if kwargs['theta_lower'] is not None:
         if not x2min <= kwargs['theta_lower'] < x2max:
             sys.exit('Error: Lower theta value must be between %d and %d' % x2min,x2max)
@@ -97,6 +97,7 @@ def main(**kwargs):
 
         #unpack data
         x1v = data_cons['x1v'] # r
+        x2v = data_cons['x2v'] # r
         x3v = data_cons['x3v'] # phi
         x1f = data_cons['x1f'] # r
         x2f = data_cons['x2f'] # theta
@@ -118,7 +119,7 @@ def main(**kwargs):
         tB = magnetic_angle(Bcc1,Bcc2)
         tB_av = np.average(tB[rl:ru,tl:tu,:])
 
-        Qt,Qp = quality_factors(x1v,x3v,dx2f,dx3f,dens,press,v2,Bcc1,Bcc2,Bcc3,Omega_kep,gamma)
+        Qt,Qp = quality_factors(x1v,x2v,x3v,dx1f,dx2f,dx3f,dens,press,v2,Bcc1,Bcc2,Bcc3,Omega_kep,gamma)
         Qt = Qt[rl:ru,tl:tu,:]
         Qp = Qp[rl:ru,tl:tu,:]
         Qt_av,Qt_lc,Qt_uc = mean_confidence_interval(Qt.flatten(), confidence=0.95)
@@ -159,12 +160,16 @@ def magnetic_angle(Bcc1,Bcc2):
     theta_B = (-np.arctan(Bcc1/Bcc2)) * (180./np.pi)
     return theta_B
 
-def quality_factors(x1v,x3v,dx2f,dx3f,dens,press,v2,Bcc1,Bcc2,Bcc3,Omega_kep,gamma):
+def quality_factors(x1v,x2v,x3v,dx1f,dx2f,dx3f,dens,press,v2,Bcc1,Bcc2,Bcc3,Omega_kep,gamma):
     vA_theta,vA_phi = Alfven_vel(dens,press,Bcc1,Bcc2,Bcc3,gamma)
     lambda_MRI_theta = 2.*np.pi*np.sqrt(16./15.)*np.abs(vA_theta)/Omega_kep
     lambda_MRI_phi = 2.*np.pi*np.sqrt(16./15.)*np.abs(vA_phi)/Omega_kep
-    Q_theta = lambda_MRI_theta/np.sqrt(x1v*dx3f)
-    Q_phi = lambda_MRI_phi/np.sqrt(x1v*np.abs(np.sin(x3v))*dx2f)
+
+    phi,theta,r = np.meshgrid(x3v,x2v,x1v, sparse=False, indexing='ij')
+    dphi,dtheta,dr = np.meshgrid(dx3f,dx2f,dx1f, sparse=False, indexing='ij')
+
+    Q_theta = lambda_MRI_theta/np.sqrt(r*dphi)
+    Q_phi = lambda_MRI_phi/np.sqrt(r*np.abs(np.sin(phi))*dtheta)
     return Q_theta,Q_phi
 
 def Alfven_vel(dens,press,Bcc1,Bcc2,Bcc3,gamma):
@@ -186,19 +191,19 @@ if __name__ == '__main__':
     parser.add_argument('-rl', '--r_lower',
                         type=float,
                         default=None,
-                        help='value of lower r bound of region being analysed, must be between 5 and 145 (default=5)')
+                        help='value of lower r bound of region being analysed, must be between x1min and x1max (default=x1min)')
     parser.add_argument('-ru', '--r_upper',
                         type=float,
                         default=None,
-                        help='value of upper r bound of region being analysed, must be between 5 and 145 (default=45)')
+                        help='value of upper r bound of region being analysed, must be between x1min and x1max (default=x1max)')
     parser.add_argument('-tl', '--theta_lower',
                         type=float,
                         default=None,
-                        help='value of lower theta bound of region being analysed, must be between 0 and pi (default=pi/2)')
+                        help='value of lower theta bound of region being analysed, must be between x2min and x2max (default=pi/2)')
     parser.add_argument('-tu', '--theta_upper',
                         type=float,
                         default=None,
-                        help='value of upper theta bound of region being analysed, must be between 0 and pi (default=pi/2)')
+                        help='value of upper theta bound of region being analysed, must be between x2min and x2max (default=pi/2)')
     args = parser.parse_args()
 
     main(**vars(args))
