@@ -12,14 +12,16 @@ import argparse
 
 def main(**kwargs):
     problem  = args.prob_id
-    root_dir = "/Users/paytonrodman/athena-sim/"
-    data_dir = root_dir + problem + "/data/"
+    #root_dir = "/Users/paytonrodman/athena-sim/"
+    root_dir = '~/rds/rds-accretion-zyNhkonJSR8/'
+    prob_dir = root_dir + problem + '/'
+    data_dir = prob_dir + '/data/'
     os.chdir(data_dir)
 
     csv_time = []
     # check if data file already exists
     if args.update:
-        with open('../mass_with_time.csv', 'r', newline='') as f:
+        with open(prob_dir + 'mass_with_time.csv', 'r', newline='') as f:
             csv_reader = csv.reader(f, delimiter='\t')
             next(csv_reader, None) # skip header
             for row in csv_reader:
@@ -40,10 +42,10 @@ def main(**kwargs):
 
     mf_total = []
     for t in sorted(times):
-        print("file number: ", t)
+        #print('file number: ', t)
         str_t = str(int(t)).zfill(5)
 
-        data_cons = athena_read.athdf(problem + ".cons." + str_t + ".athdf")
+        data_cons = athena_read.athdf(problem + '.cons.' + str_t + '.athdf')
 
         #unpack data
         x2v = data_cons['x2v'] # theta
@@ -70,7 +72,7 @@ def main(**kwargs):
 
 
     times,mf_total = (list(t) for t in zip(*sorted(zip(times,mf_total))))
-    os.chdir("../")
+    os.chdir(prob_dir)
     if args.update:
         with open('mass_with_time.csv', 'a', newline='') as f:
             writer = csv.writer(f, delimiter='\t')

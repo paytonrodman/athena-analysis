@@ -12,14 +12,16 @@ import argparse
 
 def main(**kwargs):
     problem  = args.prob_id
-    root_dir = "/Users/paytonrodman/athena-sim/"
-    data_dir = root_dir + problem + "/data/"
+    #root_dir = "/Users/paytonrodman/athena-sim/"
+    root_dir = '~/rds/rds-accretion-zyNhkonJSR8/'
+    prob_dir = root_dir + problem + '/'
+    data_dir = prob_dir + '/data/'
     os.chdir(data_dir)
 
     csv_time = []
     # check if data file already exists
     if args.update:
-        with open('../butterfly_with_time.csv', 'r', newline='') as f:
+        with open(prob_dir + 'butterfly_with_time.csv', 'r', newline='') as f:
             csv_reader = csv.reader(f, delimiter='\t')
             next(csv_reader, None) # skip header
             for row in csv_reader:
@@ -38,7 +40,7 @@ def main(**kwargs):
     if len(times)==0:
         sys.exit('No new timesteps to analyse in the given directory. Exiting.')
 
-    data_init = athena_read.athdf(problem + ".cons.00000.athdf")
+    data_init = athena_read.athdf(problem + '.cons.00000.athdf')
     x1v_init = data_init['x1v']
     x2v_init = data_init['x2v']
 
@@ -51,10 +53,10 @@ def main(**kwargs):
     Bcc2_theta = []
     Bcc3_theta = []
     for t in sorted(times):
-        print("file number: ", t)
+        #print('file number: ,' t)
         str_t = str(int(t)).zfill(5)
 
-        data_cons = athena_read.athdf(problem + ".cons." + str_t + ".athdf")
+        data_cons = athena_read.athdf(problem + '.cons.' + str_t + '.athdf')
 
         #unpack data
         x2f = data_cons['x2f'] # theta
@@ -67,7 +69,7 @@ def main(**kwargs):
         Bcc3_theta.append(np.average(Bcc3[r_id,:,:],axis=1).tolist())
 
     times,Bcc1_theta,Bcc2_theta,Bcc3_theta = (list(t) for t in zip(*sorted(zip(times,Bcc1_theta,Bcc2_theta,Bcc3_theta))))
-    os.chdir("../")
+    os.chdir(prob_dir)
     if args.update:
         with open('butterfly_with_time.csv', 'a', newline='') as f:
             writer = csv.writer(f, delimiter='\t')

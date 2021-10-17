@@ -12,14 +12,16 @@ import argparse
 
 def main(**kwargs):
     problem  = args.prob_id
-    root_dir = "/Users/paytonrodman/athena-sim/"
-    data_dir = root_dir + problem + "/data/"
+    #root_dir = "/Users/paytonrodman/athena-sim/"
+    root_dir = '~/rds/rds-accretion-zyNhkonJSR8/'
+    prob_dir = root_dir + problem + '/'
+    data_dir = prob_dir + '/data/'
     os.chdir(data_dir)
 
     csv_time = []
     # check if data file already exists
     if args.update:
-        with open('../scale_with_time.csv', 'r', newline='') as f:
+        with open(prob_dir + 'scale_with_time.csv', 'r', newline='') as f:
             csv_reader = csv.reader(f, delimiter='\t')
             next(csv_reader, None) # skip header
             for row in csv_reader:
@@ -39,7 +41,7 @@ def main(**kwargs):
         sys.exit('No new timesteps to analyse in the given directory. Exiting.')
 
     # get mesh data for all files (static)
-    data_init = athena_read.athdf(problem + ".cons.00000.athdf")
+    data_init = athena_read.athdf(problem + '.cons.00000.athdf')
     x1v = data_init['x1v'] # r
     x2v = data_init['x2v'] # theta
     x3v = data_init['x3v'] # phi
@@ -53,10 +55,10 @@ def main(**kwargs):
 
     scale_height = []
     for t in sorted(times):
-        print("file number: ", t)
+        #print('file number: ', t)
         str_t = str(int(t)).zfill(5)
 
-        filename_cons = problem + ".cons." + str_t + ".athdf"
+        filename_cons = problem + '.cons.' + str_t + '.athdf'
         data_cons = athena_read.athdf(filename_cons)
 
         #unpack data
@@ -70,7 +72,7 @@ def main(**kwargs):
         scale_height.append(scale_h_av)
 
     times,scale_height = (list(t) for t in zip(*sorted(zip(times,scale_height))))
-    os.chdir("../")
+    os.chdir(prob_dir)
     if args.update:
         with open('scale_with_time.csv', 'a', newline='') as f:
             writer = csv.writer(f, delimiter='\t')

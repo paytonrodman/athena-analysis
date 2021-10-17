@@ -12,14 +12,17 @@ import argparse
 
 def main(**kwargs):
     problem  = args.prob_id
-    root_dir = "/Users/paytonrodman/athena-sim/"
-    data_dir = root_dir + problem + "/data/"
+    #root_dir = "/Users/paytonrodman/athena-sim/"
+    root_dir = '~/rds/rds-accretion-zyNhkonJSR8/'
+    prob_dir = root_dir + problem + '/'
+    data_dir = prob_dir + '/data/'
+    runfile_dir = prob_dir + '/runfiles/'
     os.chdir(data_dir)
 
     csv_time = []
     # check if data file already exists
     if args.update:
-        with open('../beta_with_time.csv', 'r', newline='') as f:
+        with open(prob_dir + 'beta_with_time.csv', 'r', newline='') as f:
             csv_reader = csv.reader(f, delimiter='\t')
             next(csv_reader, None) # skip header
             for row in csv_reader:
@@ -38,16 +41,16 @@ def main(**kwargs):
     if len(times)==0:
         sys.exit('No new timesteps to analyse in the given directory. Exiting.')
 
-    data_input = athena_read.athinput("../athinput." + problem)
+    data_input = athena_read.athinput(runfile_dir + 'athinput.' + problem)
     scale_height = data_input['problem']['h_r']
-    data_init = athena_read.athdf(problem + ".cons.00000.athdf")
+    data_init = athena_read.athdf(problem + '.cons.00000.athdf')
     x2v = data_init['x2v']
     th_u = AAT.find_nearest(x2v, np.pi/2. + (3.*scale_height))
     th_l = AAT.find_nearest(x2v, np.pi/2. - (3.*scale_height))
 
     beta_list = []
     for t in sorted(times):
-        print("file number: ", t)
+        #print('file number: ', t)
         str_t = str(int(t)).zfill(5)
 
         data_prim = athena_read.athdf(problem + ".prim." + str_t + ".athdf")
@@ -64,7 +67,7 @@ def main(**kwargs):
         beta_list.append(current_beta)
 
     times, beta_list = (list(t) for t in zip(*sorted(zip(times, beta_list))))
-    os.chdir("../")
+    os.chdir(prob_dir)
     if args.update:
         with open('beta_with_time.csv', 'a', newline='') as f:
             writer = csv.writer(f, delimiter='\t')

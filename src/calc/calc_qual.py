@@ -13,17 +13,20 @@ import argparse
 
 def main(**kwargs):
     problem  = args.prob_id
-    root_dir = "/Users/paytonrodman/athena-sim/"
-    data_dir = root_dir + problem + "/data/"
+    #root_dir = "/Users/paytonrodman/athena-sim/"
+    root_dir = '~/rds/rds-accretion-zyNhkonJSR8/'
+    prob_dir = root_dir + problem + '/'
+    data_dir = prob_dir + '/data/'
+    runfile_dir = prob_dir + '/runfiles/'
     os.chdir(data_dir)
 
-    data_input = athena_read.athinput("../athinput." + problem)
+    data_input = athena_read.athinput(runfile_dir + 'athinput.' + problem)
     x1min = data_input['mesh']['x1min']
     x1max = data_input['mesh']['x1max']
     x2min = data_input['mesh']['x2min']
     x2max = data_input['mesh']['x2max']
 
-    init_data = athena_read.athdf(problem + ".cons.00000.athdf")
+    init_data = athena_read.athdf(problem + '.cons.00000.athdf')
     x1v_init = init_data['x1v'] # r
     x2v_init = init_data['x2v'] # theta
 
@@ -61,7 +64,7 @@ def main(**kwargs):
     csv_time = []
     # check if data file already exists
     if args.update:
-        with open('../' + filename_output, 'r', newline='') as f:
+        with open(prob_dir + filename_output, 'r', newline='') as f:
             csv_reader = csv.reader(f, delimiter='\t')
             next(csv_reader, None) # skip header
             for row in csv_reader:
@@ -85,11 +88,11 @@ def main(**kwargs):
     Q_phi_low, Q_phi_av, Q_phi_high = [], [], []
 
     for t in sorted(times):
-        print("file number: ", t)
+        #print('file number: ', t)
         str_t = str(int(t)).zfill(5)
 
-        data_prim = athena_read.athdf(problem + ".prim." + str_t + ".athdf")
-        data_cons = athena_read.athdf(problem + ".cons." + str_t + ".athdf")
+        data_prim = athena_read.athdf(problem + '.prim.' + str_t + '.athdf')
+        data_cons = athena_read.athdf(problem + '.cons.' + str_t + '.athdf')
 
         #constants
         gamma = 5./3.
@@ -137,7 +140,7 @@ def main(**kwargs):
 
 
     times,theta_B,Q_theta_low,Q_theta_av,Q_theta_high,Q_phi_low,Q_phi_av,Q_phi_high = (list(t) for t in zip(*sorted(zip(times,theta_B,Q_theta_low,Q_theta_av,Q_theta_high,Q_phi_low,Q_phi_av,Q_phi_high))))
-    os.chdir("../")
+    os.chdir(prob_dir)
 
     if args.update:
         with open(filename_output, 'a', newline='') as f:
