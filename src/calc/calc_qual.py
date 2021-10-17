@@ -150,6 +150,15 @@ def main(**kwargs):
             writer.writerows(zip(times,theta_B,Q_theta_low,Q_theta_av,Q_theta_high,Q_phi_low,Q_phi_av,Q_phi_high))
 
 def mean_confidence_interval(data, confidence=0.95):
+    """Calculate the 95% confidence interval.
+
+    Args:
+        data: the data to perfom calculations on.
+        confidence: the desired confidence interval (default:0.95).
+    Returns:
+        the 95% confidence interval.
+
+    """
     a = 1.0 * np.array(data)
     n = len(a)
     m, se = np.mean(a), scipy.stats.sem(a)
@@ -157,10 +166,36 @@ def mean_confidence_interval(data, confidence=0.95):
     return m, m-h, m+h
 
 def magnetic_angle(Bcc1,Bcc2):
+    """Calculate the magnetic angle, as per Hogg & Reynolds (2018) and others.
+
+    Args:
+        Bcc1: the cell-centred magnetic field in the x1 direction.
+        Bcc2: the cell-centred magnetic field in the x2 direction.
+    Returns:
+        the magnetic angle.
+
+    """
     theta_B = (-np.arctan(Bcc1/Bcc2)) * (180./np.pi)
     return theta_B
 
 def quality_factors(x1v,x2v,x3v,dx1f,dx2f,dx3f,dens,press,v2,Bcc1,Bcc2,Bcc3,Omega_kep,gamma):
+    """Calculate the quality factors in x2 and x3.
+
+    Args:
+        x1v,x2v,x3v: the volume-centred coordinates for x1, x2, and x3 directions.
+        dx1f,dx2f,dx3f: the length of each cell in the x1, x2, and x3 directions.
+        dens: the number density.
+        press: the gas pressure.
+        v2: the gas velocity in the x2 direction.
+        Bcc1: the cell-centred magnetic field in the x1 direction.
+        Bcc2: the cell-centred magnetic field in the x2 direction.
+        Bcc3: the cell-centred magnetic field in the x3 direction.
+        Omega_kep: the equatorial Keplerian angular velocity.
+        gamma: the ratio of specific heats.
+    Returns:
+        the quality factors in x2 and x3.
+
+    """
     vA_theta,vA_phi = Alfven_vel(dens,press,Bcc1,Bcc2,Bcc3,gamma)
     lambda_MRI_theta = 2.*np.pi*np.sqrt(16./15.)*np.abs(vA_theta)/Omega_kep
     lambda_MRI_phi = 2.*np.pi*np.sqrt(16./15.)*np.abs(vA_phi)/Omega_kep
@@ -173,6 +208,19 @@ def quality_factors(x1v,x2v,x3v,dx1f,dx2f,dx3f,dens,press,v2,Bcc1,Bcc2,Bcc3,Omeg
     return Q_theta,Q_phi
 
 def Alfven_vel(dens,press,Bcc1,Bcc2,Bcc3,gamma):
+    """Calculate the Alfven velocity.
+
+    Args:
+        dens: the number density.
+        press: the gas pressure.
+        Bcc1: the cell-centred magnetic field in the x1 direction.
+        Bcc2: the cell-centred magnetic field in the x2 direction.
+        Bcc3: the cell-centred magnetic field in the x3 direction.
+        gamma: the ratio of specific heats.
+    Returns:
+        the Alfven velocity.
+
+    """
     w = dens + (gamma/(gamma - 1.))*press
     B2 = Bcc1**2. + Bcc2**2. + Bcc3**2.
     vA_theta = Bcc3/(np.sqrt(w+B2)) #Alfven velocity of theta component of B

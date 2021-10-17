@@ -60,7 +60,7 @@ def main(**kwargs):
         Bcc3 = data_cons['Bcc3']
         press = data_prim['press']
 
-        current_beta = calculate_beta(th_u,th_l,press,dens,Bcc1,Bcc2,Bcc3)
+        current_beta = calculate_beta(th_u,th_l,dens,press,Bcc1,Bcc2,Bcc3)
         beta_list.append(current_beta)
 
     times, beta_list = (list(t) for t in zip(*sorted(zip(times, beta_list))))
@@ -75,7 +75,21 @@ def main(**kwargs):
             writer.writerow(["Time", "plasma_beta"])
             writer.writerows(zip(times,beta_list))
 
-def calculate_beta(th_u,th_l,press,dens,Bcc1,Bcc2,Bcc3):
+def calculate_beta(th_u,th_l,dens,press,Bcc1,Bcc2,Bcc3):
+    """Calculate the mean plasma beta within a specified region.
+
+    Args:
+        th_u: the upper boundary in x2.
+        th_l: the lower boundary in x2.
+        dens: the number density.
+        press: the gas pressure.
+        Bcc1: the cell-centred magnetic field in the x1 direction.
+        Bcc2: the cell-centred magnetic field in the x2 direction.
+        Bcc3: the cell-centred magnetic field in the x3 direction.
+    Returns:
+        the mean plasma beta.
+
+    """
     # Density-weighted mean gas pressure
     sum_p = 0.
     numWeight_p = 0.
