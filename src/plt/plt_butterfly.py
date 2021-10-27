@@ -50,7 +50,7 @@ def make_plots(data,data_dir,xlabel,save_name,x_min,x_max,y_min,y_max):
     fig = plt.figure()
     ax = fig.add_subplot(111)
     max_extent = np.max(np.abs(np.asarray(data).T))
-    pos = ax.imshow(np.asarray(data).T, extent=[x_min,x_max,y_min,y_max], cmap='seismic', norm=matplotlib.colors.Normalize(vmin=-max_extent, vmax=max_extent),interpolation='bicubic')
+    pos = ax.imshow(np.asarray(data).T, extent=[x_min,x_max,y_min,y_max], cmap='seismic', norm=matplotlib.colors.Normalize(vmin=-max_extent, vmax=max_extent),interpolation='none')
     ax.axis('auto')
     ax.set_xlabel('time since start (simulation units)',fontsize=14)
     ax.set_ylabel(r'$\theta - \pi/2$',fontsize=14)

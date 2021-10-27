@@ -2,7 +2,7 @@
 import numpy as np
 import os
 import sys
-sys.path.insert(0, '../../dependencies')
+sys.path.insert(0, '/home/per29/rds/rds-accretion-zyNhkonJSR8/athena-analysis/dependencies')
 import athena_read
 import AAT
 import glob
@@ -14,10 +14,10 @@ import argparse
 def main(**kwargs):
     problem  = args.prob_id
     #root_dir = "/Users/paytonrodman/athena-sim/"
-    root_dir = '~/rds/rds-accretion-zyNhkonJSR8/'
+    root_dir = '/home/per29/rds/rds-accretion-zyNhkonJSR8/'
     prob_dir = root_dir + problem + '/'
-    data_dir = prob_dir + '/data/'
-    runfile_dir = prob_dir + '/runfiles/'
+    data_dir = prob_dir + 'data/'
+    runfile_dir = prob_dir + 'runfiles/'
     os.chdir(data_dir)
 
     data_input = athena_read.athinput(runfile_dir + 'athinput.' + problem)

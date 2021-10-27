@@ -2,7 +2,7 @@
 import numpy as np
 import os
 import sys
-sys.path.insert(0, '../../dependencies')
+sys.path.insert(0, '../../../dependencies')
 import athena_read
 import AAT
 import glob
