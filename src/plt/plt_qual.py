@@ -101,8 +101,8 @@ if __name__ == '__main__':
     parser.add_argument('prob_id',
                         help='base name of the data being analysed, e.g. inflow_var or disk_base')
     parser.add_argument('-i','--input',
-                        default='qual_with_time_0_895_127_128',
-                        help='name of the file with quality data to be analysed, including extension, e.g. qual_with_time.csv (default=qual_with_time_0_148_127_128)')
+                        default='qual_with_time_0_532_127_128',
+                        help='name of the file with quality data to be analysed, including extension, e.g. qual_with_time.csv (default=qual_with_time_0_532_127_128)')
     parser.add_argument('-s', '--slice',
                         action='store_true',
                         help='plot a vertical slice (phi=0) of phi and/or theta Quality factors')
