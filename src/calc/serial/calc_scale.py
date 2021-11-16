@@ -1,8 +1,14 @@
 #!/usr/bin/python
+#
+# Calculate geometric scale height ratio
+#
+# Usage: python calc_scale.py [problem_id] [-u]
+#
 import numpy as np
 import os
 import sys
-sys.path.insert(0, '../../dependencies')
+sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies')
+#sys.path.insert(0, '/home/per29/rds/rds-accretion-zyNhkonJSR8/athena-analysis/dependencies')
 import athena_read
 import AAT
 import glob
@@ -12,11 +18,16 @@ import argparse
 
 def main(**kwargs):
     problem  = args.prob_id
-    #root_dir = "/Users/paytonrodman/athena-sim/"
-    root_dir = '~/rds/rds-accretion-zyNhkonJSR8/'
+    root_dir = "/Users/paytonrodman/athena-sim/"
+    #root_dir = '/home/per29/rds/rds-accretion-zyNhkonJSR8/'
     prob_dir = root_dir + problem + '/'
-    data_dir = prob_dir + '/data/'
+    data_dir = prob_dir + 'data/'
+    runfile_dir = prob_dir + 'runfiles/'
     os.chdir(data_dir)
+
+    data_input = athena_read.athinput(runfile_dir + 'athinput.' + problem)
+    mass = data_input['problem']['mass']
+    x1min = data_input['mesh']['x1min']
 
     csv_time = []
     # check if data file already exists
@@ -54,34 +65,44 @@ def main(**kwargs):
     dOmega = np.sin(theta)*dtheta*dphi
 
     scale_height = []
+    orbit_time = []
+    sim_time = []
     for t in sorted(times):
-        #print('file number: ', t)
-        str_t = str(int(t)).zfill(5)
+        if int(t)%10==0:
+            print('file number: ', t)
+            str_t = str(int(t)).zfill(5)
 
-        filename_cons = problem + '.cons.' + str_t + '.athdf'
-        data_cons = athena_read.athdf(filename_cons)
+            filename_cons = problem + '.cons.' + str_t + '.athdf'
+            data_cons = athena_read.athdf(filename_cons)
 
-        #unpack data
-        dens = data_cons['dens']
-        # Calculations
-        polar_ang = np.sum(theta*dens*dOmega,axis=(0,1))/np.sum(dens*dOmega,axis=(0,1))
-        h_up = (theta-polar_ang)**2. * dens*dOmega
-        h_down = dens*dOmega
-        scale_h = np.sqrt(np.sum(h_up,axis=(0,1))/np.sum(h_down,axis=(0,1)))
-        scale_h_av = np.average(scale_h,weights=dx1f)
-        scale_height.append(scale_h_av)
+            #unpack data
+            dens = data_cons['dens']
+            # Calculations
+            polar_ang = np.sum(theta*dens*dOmega,axis=(0,1))/np.sum(dens*dOmega,axis=(0,1))
+            h_up = (theta-polar_ang)**2. * dens*dOmega
+            h_down = dens*dOmega
+            scale_h = np.sqrt(np.sum(h_up,axis=(0,1))/np.sum(h_down,axis=(0,1)))
+            scale_h_av = np.average(scale_h,weights=dx1f)
+            scale_height.append(scale_h_av)
 
-    times,scale_height = (list(t) for t in zip(*sorted(zip(times,scale_height))))
+            v_Kep0 = np.sqrt(mass/x1min)
+            Omega0 = v_Kep0/x1min
+            T0 = 2.*np.pi/Omega0
+            orbit_time.append(t/T0)
+
+            sim_time.append(t)
+
+    sim_time,orbit_time,scale_height = (list(t) for t in zip(*sorted(zip(sim_time,orbit_time,scale_height))))
     os.chdir(prob_dir)
     if args.update:
         with open('scale_with_time.csv', 'a', newline='') as f:
             writer = csv.writer(f, delimiter='\t')
-            writer.writerows(zip(times,scale_height))
+            writer.writerows(zip(sim_time,orbit_time,scale_height))
     else:
         with open('scale_with_time.csv', 'w', newline='') as f:
             writer = csv.writer(f, delimiter='\t')
-            writer.writerow(["Time", "scale_height"])
-            writer.writerows(zip(times,scale_height))
+            writer.writerow(["sim_time", "orbit_time", "scale_height"])
+            writer.writerows(zip(sim_time,orbit_time,scale_height))
 
 
 # Execute main function

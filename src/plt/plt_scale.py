@@ -20,9 +20,11 @@ def main(**kwargs):
         next(csv_reader, None) # skip header
         for row in csv_reader:
             t = float(row[0])
-            sh = float(row[1])
-            time.append(float(t)*5.)
-            scale_height.append(sh)
+            t_orb = float(row[1])
+            sh = float(row[2])
+
+            time.append(t_orb*5.*5.)
+            scale_height.append(sh*(2**(1/2.))) # temporary measure, REMOVE
 
     time, scale_height = zip(*sorted(zip(time, scale_height)))
 
@@ -30,7 +32,7 @@ def main(**kwargs):
     fig = plt.figure()
     ax = fig.add_subplot(111)
     ax.plot(time,scale_height)
-    ax.set_xlabel('time since start (simulation units)')
+    ax.set_xlabel(r'time ($T_{5r_g}$)')
     ax.set_ylabel(r'$h/r$')
     ax.set_xlim(left=0)
     ax.set_ylim(0,0.5)

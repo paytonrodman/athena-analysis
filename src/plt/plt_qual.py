@@ -25,15 +25,16 @@ def main(**kwargs):
         next(csv_reader, None) # skip header
         for row in csv_reader:
             t_i = float(row[0])
-            tB_i = float(row[1])
-            Qt_lc_i = float(row[2])
-            Qt_av_i = float(row[3])
-            Qt_uc_i = float(row[4])
-            Qp_lc_i = float(row[5])
-            Qp_av_i = float(row[6])
-            Qp_uc_i = float(row[7])
+            t_orb = float(row[1])
+            tB_i = float(row[2])
+            Qt_lc_i = float(row[3])
+            Qt_av_i = float(row[4])
+            Qt_uc_i = float(row[5])
+            Qp_lc_i = float(row[6])
+            Qp_av_i = float(row[7])
+            Qp_uc_i = float(row[8])
 
-            time.append(float(t_i)*5.)
+            time.append(t_orb*5.*5.)
             theta_B.append(tB_i)
             Qt_lc.append(Qt_lc_i)
             Qt_av.append(Qt_av_i)
@@ -66,7 +67,7 @@ def make_plot(x,y,ylabel,yname,data_dir):
     fig = plt.figure()
     ax = fig.add_subplot(111)
     ax.plot(x,y)
-    ax.set_xlabel('time since start (simulation units)')
+    ax.set_xlabel(r'time ($T_{5r_g}$)')
     ax.set_ylabel(ylabel)
     ax.set_xlim(left=0)
     plt.grid(b=True, which='major', color='#666666', linestyle='-', alpha=0.5)
@@ -80,7 +81,7 @@ def make_plot_CI(x,y,y_CI_low,y_CI_high,ylabel,yname,data_dir):
     ax = fig.add_subplot(111)
     ax.plot(x,y)
     plt.fill_between(x,y_CI_low,y_CI_high,alpha=0.2)
-    ax.set_xlabel('time since start (simulation units)')
+    ax.set_xlabel(r'time ($T_{5r_g}$)')
     ax.set_ylabel(ylabel)
     ax.set_xlim(left=0)
     plt.grid(b=True, which='major', color='#666666', linestyle='-', alpha=0.5)
@@ -100,8 +101,8 @@ if __name__ == '__main__':
     parser.add_argument('prob_id',
                         help='base name of the data being analysed, e.g. inflow_var or disk_base')
     parser.add_argument('-i','--input',
-                        default='qual_with_time_0_255_127_128',
-                        help='name of the file with quality data to be analysed, including extension, e.g. qual_with_time.csv (default=qual_with_time_0_148_127_128.csv)')
+                        default='qual_with_time_0_895_127_128',
+                        help='name of the file with quality data to be analysed, including extension, e.g. qual_with_time.csv (default=qual_with_time_0_148_127_128)')
     parser.add_argument('-s', '--slice',
                         action='store_true',
                         help='plot a vertical slice (phi=0) of phi and/or theta Quality factors')

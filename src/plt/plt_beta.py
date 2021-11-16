@@ -20,10 +20,11 @@ def main(**kwargs):
         csv_reader = csv.reader(csv_file, delimiter='\t')
         next(csv_reader, None) # skip header
         for row in csv_reader:
-            t = row[0]
-            b = row[1]
-            time.append(float(t)*5.)
-            beta.append(float(b))
+            t = float(row[0])
+            t_orb = float(row[1])
+            b = float(row[2])
+            time.append(t_orb*5.*5.)
+            beta.append(b)
 
     time, beta = zip(*sorted(zip(time, beta)))
 
@@ -38,8 +39,8 @@ def main(**kwargs):
     fig = plt.figure()
     ax = fig.add_subplot(111)
     ax.plot(time,beta)
-    ax.set_xlabel('time since start (simulation units)')
-    ax.set_ylabel(r'average in-plane $\beta$ for $r<45r_g$')
+    ax.set_xlabel(r'time ($T_{5r_g}$)')
+    ax.set_ylabel(r'average $\beta$')
     plt.grid(b=True, which='major', color='#666666', linestyle='-', alpha=0.5)
     plt.minorticks_on()
     plt.grid(b=True, which='minor', color='#999999', linestyle='-', alpha=0.2)
@@ -52,7 +53,7 @@ def main(**kwargs):
         ax.semilogy(time,beta)
         ax.grid()
         ax.set_xlabel('time since start (simulation units)')
-        ax.set_ylabel(r'average in-plane $\beta$ for $r<45r_g$')
+        ax.set_ylabel(r'average $\beta$')
         plt.grid(b=True, which='major', color='#666666', linestyle='-', alpha=0.5)
         plt.minorticks_on()
         plt.grid(b=True, which='minor', color='#999999', linestyle='-', alpha=0.2)

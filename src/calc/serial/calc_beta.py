@@ -1,8 +1,14 @@
 #!/usr/bin/python
+#
+# Calculate magnetic plasma beta
+#
+# Usage: python calc_beta.py [problem_id] [-u]
+#
 import numpy as np
 import os
 import sys
-sys.path.insert(0, '../../dependencies')
+sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies')
+#sys.path.insert(0, '/home/per29/rds/rds-accretion-zyNhkonJSR8/athena-analysis/dependencies')
 import athena_read
 import AAT
 import glob
@@ -12,12 +18,16 @@ import argparse
 
 def main(**kwargs):
     problem  = args.prob_id
-    #root_dir = "/Users/paytonrodman/athena-sim/"
-    root_dir = '~/rds/rds-accretion-zyNhkonJSR8/'
+    root_dir = "/Users/paytonrodman/athena-sim/"
+    #root_dir = '/home/per29/rds/rds-accretion-zyNhkonJSR8/'
     prob_dir = root_dir + problem + '/'
-    data_dir = prob_dir + '/data/'
-    runfile_dir = prob_dir + '/runfiles/'
+    data_dir = prob_dir + 'data/'
+    runfile_dir = prob_dir + 'runfiles/'
     os.chdir(data_dir)
+
+    data_input = athena_read.athinput(runfile_dir + 'athinput.' + problem)
+    mass = data_input['problem']['mass']
+    x1min = data_input['mesh']['x1min']
 
     csv_time = []
     # check if data file already exists
@@ -44,41 +54,53 @@ def main(**kwargs):
     data_input = athena_read.athinput(runfile_dir + 'athinput.' + problem)
     scale_height = data_input['problem']['h_r']
     data_init = athena_read.athdf(problem + '.cons.00000.athdf')
+    x1v = data_init['x1v']
     x2v = data_init['x2v']
-    th_u = AAT.find_nearest(x2v, np.pi/2. + (3.*scale_height))
-    th_l = AAT.find_nearest(x2v, np.pi/2. - (3.*scale_height))
+    th_u = AAT.find_nearest(x2v, np.pi/2. + (2.*scale_height))
+    th_l = AAT.find_nearest(x2v, np.pi/2. - (2.*scale_height))
+    r_u = AAT.find_nearest(x1v, 100.)
 
+    orbit_time = []
+    sim_time = []
     beta_list = []
     for t in sorted(times):
-        #print('file number: ', t)
-        str_t = str(int(t)).zfill(5)
+        if int(t)%10==0:
+            print('file number: ', t)
+            str_t = str(int(t)).zfill(5)
 
-        data_prim = athena_read.athdf(problem + ".prim." + str_t + ".athdf")
-        data_cons = athena_read.athdf(problem + ".cons." + str_t + ".athdf")
+            data_prim = athena_read.athdf(problem + ".prim." + str_t + ".athdf")
+            data_cons = athena_read.athdf(problem + ".cons." + str_t + ".athdf")
 
-        #unpack data
-        dens = data_cons['dens']
-        Bcc1 = data_cons['Bcc1']
-        Bcc2 = data_cons['Bcc2']
-        Bcc3 = data_cons['Bcc3']
-        press = data_prim['press']
+            #unpack data
+            dens = data_cons['dens']
+            Bcc1 = data_cons['Bcc1']
+            Bcc2 = data_cons['Bcc2']
+            Bcc3 = data_cons['Bcc3']
+            press = data_prim['press']
 
-        current_beta = calculate_beta(th_u,th_l,dens,press,Bcc1,Bcc2,Bcc3)
-        beta_list.append(current_beta)
+            current_beta = calculate_beta(r_u,th_u,th_l,dens,press,Bcc1,Bcc2,Bcc3)
+            beta_list.append(current_beta)
 
-    times, beta_list = (list(t) for t in zip(*sorted(zip(times, beta_list))))
+            v_Kep0 = np.sqrt(mass/x1min)
+            Omega0 = v_Kep0/x1min
+            T0 = 2.*np.pi/Omega0
+            orbit_time.append(t/T0)
+
+            sim_time.append(t)
+
+    sim_time,orbit_time,beta_list = (list(t) for t in zip(*sorted(zip(sim_time,orbit_time,beta_list))))
     os.chdir(prob_dir)
     if args.update:
         with open('beta_with_time.csv', 'a', newline='') as f:
             writer = csv.writer(f, delimiter='\t')
-            writer.writerows(zip(times,beta_list))
+            writer.writerows(zip(sim_time,orbit_time,beta_list))
     else:
         with open('beta_with_time.csv', 'w', newline='') as f:
             writer = csv.writer(f, delimiter='\t')
-            writer.writerow(["Time", "plasma_beta"])
-            writer.writerows(zip(times,beta_list))
+            writer.writerow(["sim_time", "orbit_time", "plasma_beta"])
+            writer.writerows(zip(sim_time,orbit_time,beta_list))
 
-def calculate_beta(th_u,th_l,dens,press,Bcc1,Bcc2,Bcc3):
+def calculate_beta(r_u,th_u,th_l,dens,press,Bcc1,Bcc2,Bcc3):
     """Calculate the mean plasma beta within a specified region.
 
     Args:
@@ -99,12 +121,12 @@ def calculate_beta(th_u,th_l,dens,press,Bcc1,Bcc2,Bcc3):
     sum_b = 0.
     numWeight_b = 0.
 
-    pressure = press[:,th_l:th_u,:]
-    density = dens[:,th_l:th_u,:]
+    pressure = press[:r_u,th_l:th_u,:]
+    density = dens[:r_u,th_l:th_u,:]
     # Find volume centred total magnetic field
-    bcc_all = np.sqrt(np.square(Bcc1[:,th_l:th_u,:]) +
-                      np.square(Bcc2[:,th_l:th_u,:]) +
-                      np.square(Bcc3[:,th_l:th_u,:]))
+    bcc_all = np.sqrt(np.square(Bcc1[:r_u,th_l:th_u,:]) +
+                      np.square(Bcc2[:r_u,th_l:th_u,:]) +
+                      np.square(Bcc3[:r_u,th_l:th_u,:]))
 
     numWeight_p = np.sum(pressure*density)
     sum_p       = np.sum(density)

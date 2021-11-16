@@ -1,8 +1,14 @@
 #!/usr/bin/python
+#
+# Calculate magnetic field averages for production of butterfly plots
+#
+# Usage: python calc_butterfly.py [problem_id] [-u] [--r (25)]
+#
 import numpy as np
 import os
 import sys
-sys.path.insert(0, '../../dependencies')
+sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies')
+#sys.path.insert(0, '/home/per29/rds/rds-accretion-zyNhkonJSR8/athena-analysis/dependencies')
 import athena_read
 import AAT
 import glob
@@ -12,11 +18,16 @@ import argparse
 
 def main(**kwargs):
     problem  = args.prob_id
-    #root_dir = "/Users/paytonrodman/athena-sim/"
-    root_dir = '~/rds/rds-accretion-zyNhkonJSR8/'
+    root_dir = "/Users/paytonrodman/athena-sim/"
+    #root_dir = '/home/per29/rds/rds-accretion-zyNhkonJSR8/'
     prob_dir = root_dir + problem + '/'
-    data_dir = prob_dir + '/data/'
+    data_dir = prob_dir + 'data/'
+    runfile_dir = prob_dir + 'runfiles/'
     os.chdir(data_dir)
+
+    data_input = athena_read.athinput(runfile_dir + 'athinput.' + problem)
+    mass = data_input['problem']['mass']
+    x1min = data_input['mesh']['x1min']
 
     csv_time = []
     # check if data file already exists
@@ -49,36 +60,49 @@ def main(**kwargs):
     else:
         r_id = AAT.find_nearest(x1v_init, 25.) # approx. middle of high res region
 
+    orbit_time = []
+    sim_time = []
     Bcc1_theta = []
     Bcc2_theta = []
     Bcc3_theta = []
+    Bpol = []
     for t in sorted(times):
-        #print('file number: ,' t)
-        str_t = str(int(t)).zfill(5)
+        if int(t)%10==0:
+            print('file number: ', t)
+            str_t = str(int(t)).zfill(5)
 
-        data_cons = athena_read.athdf(problem + '.cons.' + str_t + '.athdf')
+            data_cons = athena_read.athdf(problem + '.cons.' + str_t + '.athdf')
 
-        #unpack data
-        x2f = data_cons['x2f'] # theta
-        Bcc1 = data_cons['Bcc1']
-        Bcc2 = data_cons['Bcc2']
-        Bcc3 = data_cons['Bcc3']
+            #unpack data
+            x2f = data_cons['x2f'] # theta
+            Bcc1 = data_cons['Bcc1']
+            Bcc2 = data_cons['Bcc2']
+            Bcc3 = data_cons['Bcc3']
+            Bpol_i = Bcc1 + Bcc2
 
-        Bcc1_theta.append(np.average(Bcc1[r_id,:,:],axis=1).tolist())
-        Bcc2_theta.append(np.average(Bcc2[r_id,:,:],axis=1).tolist())
-        Bcc3_theta.append(np.average(Bcc3[r_id,:,:],axis=1).tolist())
+            Bcc1_theta.append(np.average(Bcc1[r_id,:,:],axis=1).tolist())
+            Bcc2_theta.append(np.average(Bcc2[r_id,:,:],axis=1).tolist())
+            Bcc3_theta.append(np.average(Bcc3[r_id,:,:],axis=1).tolist())
+            Bpol.append(np.average(Bpol_i[r_id,:,:],axis=1).tolist())
 
-    times,Bcc1_theta,Bcc2_theta,Bcc3_theta = (list(t) for t in zip(*sorted(zip(times,Bcc1_theta,Bcc2_theta,Bcc3_theta))))
+            v_Kep0 = np.sqrt(mass/x1min)
+            Omega0 = v_Kep0/x1min
+            T0 = 2.*np.pi/Omega0
+            orbit_time.append(t/T0)
+
+            sim_time.append(t)
+
+    sim_time,orbit_time,Bcc1_theta,Bcc2_theta,Bcc3_theta,Bpol = (list(t) for t in zip(*sorted(zip(sim_time,orbit_time,Bcc1_theta,Bcc2_theta,Bcc3_theta,Bpol))))
     os.chdir(prob_dir)
     if args.update:
         with open('butterfly_with_time.csv', 'a', newline='') as f:
             writer = csv.writer(f, delimiter='\t')
-            writer.writerows(zip(times,Bcc1_theta,Bcc2_theta,Bcc3_theta))
+            writer.writerows(zip(sim_time,orbit_time,Bcc1_theta,Bcc2_theta,Bcc3_theta,Bpol))
     else:
         with open('butterfly_with_time.csv', 'w', newline='') as f:
             writer = csv.writer(f, delimiter='\t')
-            writer.writerow(["Time", "Bcc1", "Bcc2", "Bcc3"])
-            writer.writerows(zip(times,Bcc1_theta,Bcc2_theta,Bcc3_theta))
+            writer.writerow(["sim_time", "orbit_time", "Bcc1", "Bcc2", "Bcc3", "Bpol"])
+            writer.writerows(zip(sim_time,orbit_time,Bcc1_theta,Bcc2_theta,Bcc3_theta,Bpol))
 
 # Execute main function
 if __name__ == '__main__':

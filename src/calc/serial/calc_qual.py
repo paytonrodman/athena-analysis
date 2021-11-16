@@ -1,8 +1,14 @@
 #!/usr/bin/python
+#
+# Calculate various quality factors within disk
+#
+# Usage: python calc_qual.py [problem_id] [-u] [-rl] [-ru] [-tl] [-tu]
+#
 import numpy as np
 import os
 import sys
-sys.path.insert(0, '../../dependencies')
+sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies')
+#sys.path.insert(0, '/home/per29/rds/rds-accretion-zyNhkonJSR8/athena-analysis/dependencies')
 import athena_read
 import AAT
 import glob
@@ -13,14 +19,15 @@ import argparse
 
 def main(**kwargs):
     problem  = args.prob_id
-    #root_dir = "/Users/paytonrodman/athena-sim/"
-    root_dir = '~/rds/rds-accretion-zyNhkonJSR8/'
+    root_dir = "/Users/paytonrodman/athena-sim/"
+    #root_dir = '/home/per29/rds/rds-accretion-zyNhkonJSR8/'
     prob_dir = root_dir + problem + '/'
-    data_dir = prob_dir + '/data/'
-    runfile_dir = prob_dir + '/runfiles/'
+    data_dir = prob_dir + 'data/'
+    runfile_dir = prob_dir + 'runfiles/'
     os.chdir(data_dir)
 
     data_input = athena_read.athinput(runfile_dir + 'athinput.' + problem)
+    mass = data_input['problem']['mass']
     x1min = data_input['mesh']['x1min']
     x1max = data_input['mesh']['x1max']
     x2min = data_input['mesh']['x2min']
@@ -83,74 +90,83 @@ def main(**kwargs):
     if len(times)==0:
         sys.exit('No new timesteps to analyse in the given directory. Exiting.')
 
+    orbit_time = []
+    sim_time = []
     theta_B = []
     Q_theta_low, Q_theta_av, Q_theta_high = [], [], []
     Q_phi_low, Q_phi_av, Q_phi_high = [], [], []
-
     for t in sorted(times):
-        #print('file number: ', t)
-        str_t = str(int(t)).zfill(5)
+        if int(t)%10==0:
+            print('file number: ', t)
+            str_t = str(int(t)).zfill(5)
 
-        data_prim = athena_read.athdf(problem + '.prim.' + str_t + '.athdf')
-        data_cons = athena_read.athdf(problem + '.cons.' + str_t + '.athdf')
+            data_prim = athena_read.athdf(problem + '.prim.' + str_t + '.athdf')
+            data_cons = athena_read.athdf(problem + '.cons.' + str_t + '.athdf')
 
-        #constants
-        gamma = 5./3.
-        GM = 1.
+            #constants
+            gamma = 5./3.
+            GM = 1.
 
-        #unpack data
-        x1v = data_cons['x1v'] # r
-        x2v = data_cons['x2v'] # r
-        x3v = data_cons['x3v'] # phi
-        x1f = data_cons['x1f'] # r
-        x2f = data_cons['x2f'] # theta
-        x3f = data_cons['x3f'] # phi
-        dens = data_cons['dens']
-        mom1 = data_cons['mom1']
-        mom2 = data_cons['mom2']
-        mom3 = data_cons['mom3']
-        Bcc1 = data_cons['Bcc1']
-        Bcc2 = data_cons['Bcc2']
-        Bcc3 = data_cons['Bcc3']
-        press = data_prim['press']
+            #unpack data
+            x1v = data_cons['x1v'] # r
+            x2v = data_cons['x2v'] # r
+            x3v = data_cons['x3v'] # phi
+            x1f = data_cons['x1f'] # r
+            x2f = data_cons['x2f'] # theta
+            x3f = data_cons['x3f'] # phi
+            dens = data_cons['dens']
+            mom1 = data_cons['mom1']
+            mom2 = data_cons['mom2']
+            mom3 = data_cons['mom3']
+            Bcc1 = data_cons['Bcc1']
+            Bcc2 = data_cons['Bcc2']
+            Bcc3 = data_cons['Bcc3']
+            press = data_prim['press']
 
-        # Calculations
-        dx1f,dx2f,dx3f = AAT.calculate_delta(x1f,x2f,x3f)
-        v1,v2,v3 = AAT.calculate_velocity(mom1,mom2,mom3,dens)
-        Omega_kep = np.sqrt(GM/(x1v**3.)) #Keplerian angular velocity in midplane
+            # Calculations
+            dx1f,dx2f,dx3f = AAT.calculate_delta(x1f,x2f,x3f)
+            v1,v2,v3 = AAT.calculate_velocity(mom1,mom2,mom3,dens)
+            Omega_kep = np.sqrt(GM/(x1v**3.)) #Keplerian angular velocity in midplane
 
-        tB = magnetic_angle(Bcc1,Bcc2)
-        tB_av = np.average(tB[rl:ru,tl:tu,:])
+            tB = magnetic_angle(Bcc1,Bcc2)
+            tB_av = np.average(tB[rl:ru,tl:tu,:])
 
-        Qt,Qp = quality_factors(x1v,x2v,x3v,dx1f,dx2f,dx3f,dens,press,v2,Bcc1,Bcc2,Bcc3,Omega_kep,gamma)
-        Qt = Qt[rl:ru,tl:tu,:]
-        Qp = Qp[rl:ru,tl:tu,:]
-        Qt_av,Qt_lc,Qt_uc = mean_confidence_interval(Qt.flatten(), confidence=0.95)
-        Qp_av,Qp_lc,Qp_uc = mean_confidence_interval(Qp.flatten(), confidence=0.95)
+            Qt,Qp = quality_factors(x1v,x2v,x3v,dx1f,dx2f,dx3f,dens,press,v2,Bcc1,Bcc2,Bcc3,Omega_kep,gamma)
+            Qt = Qt[rl:ru,tl:tu,:]
+            Qp = Qp[rl:ru,tl:tu,:]
+            Qt_av,Qt_lc,Qt_uc = mean_confidence_interval(Qt.flatten(), confidence=0.95)
+            Qp_av,Qp_lc,Qp_uc = mean_confidence_interval(Qp.flatten(), confidence=0.95)
 
-        theta_B.append(tB_av)
+            theta_B.append(tB_av)
 
-        Q_theta_low.append(Qt_lc)
-        Q_theta_av.append(Qt_av)
-        Q_theta_high.append(Qt_uc)
+            Q_theta_low.append(Qt_lc)
+            Q_theta_av.append(Qt_av)
+            Q_theta_high.append(Qt_uc)
 
-        Q_phi_low.append(Qp_lc)
-        Q_phi_av.append(Qp_av)
-        Q_phi_high.append(Qp_uc)
+            Q_phi_low.append(Qp_lc)
+            Q_phi_av.append(Qp_av)
+            Q_phi_high.append(Qp_uc)
+
+            v_Kep0 = np.sqrt(mass/x1min)
+            Omega0 = v_Kep0/x1min
+            T0 = 2.*np.pi/Omega0
+            orbit_time.append(t/T0)
+
+            sim_time.append(t)
 
 
-    times,theta_B,Q_theta_low,Q_theta_av,Q_theta_high,Q_phi_low,Q_phi_av,Q_phi_high = (list(t) for t in zip(*sorted(zip(times,theta_B,Q_theta_low,Q_theta_av,Q_theta_high,Q_phi_low,Q_phi_av,Q_phi_high))))
+    sim_time,rbit_time,theta_B,Q_theta_low,Q_theta_av,Q_theta_high,Q_phi_low,Q_phi_av,Q_phi_high = (list(t) for t in zip(*sorted(zip(sim_time,orbit_time,theta_B,Q_theta_low,Q_theta_av,Q_theta_high,Q_phi_low,Q_phi_av,Q_phi_high))))
     os.chdir(prob_dir)
 
     if args.update:
         with open(filename_output, 'a', newline='') as f:
             writer = csv.writer(f, delimiter='\t')
-            writer.writerows(zip(times,theta_B,Q_theta_low,Q_theta_av,Q_theta_high,Q_phi_low,Q_phi_av,Q_phi_high))
+            writer.writerows(zip(sim_time,orbit_time,theta_B,Q_theta_low,Q_theta_av,Q_theta_high,Q_phi_low,Q_phi_av,Q_phi_high))
     else:
         with open(filename_output, 'w', newline='') as f:
             writer = csv.writer(f, delimiter='\t')
-            writer.writerow(["Time", "theta_B", "Qt_low", "Qt_av", "Qt_high", "Qp_low", "Qp_av", "Qp_high"])
-            writer.writerows(zip(times,theta_B,Q_theta_low,Q_theta_av,Q_theta_high,Q_phi_low,Q_phi_av,Q_phi_high))
+            writer.writerow(["sim_time", "orbit_time", "theta_B", "Qt_low", "Qt_av", "Qt_high", "Qp_low", "Qp_av", "Qp_high"])
+            writer.writerows(zip(sim_time,orbit_time,theta_B,Q_theta_low,Q_theta_av,Q_theta_high,Q_phi_low,Q_phi_av,Q_phi_high))
 
 def mean_confidence_interval(data, confidence=0.95):
     """Calculate the 95% confidence interval.

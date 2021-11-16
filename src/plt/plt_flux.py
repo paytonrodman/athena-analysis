@@ -21,10 +21,11 @@ def main(**kwargs):
         next(csv_reader, None) # skip header
         for row in csv_reader:
             t = float(row[0])
-            mf_u = float(row[1])
-            mf_l = float(row[2])
+            t_orb = float(row[1])
+            mf_u = float(row[2])
+            mf_l = float(row[3])
 
-            time.append(float(t)*5.)
+            time.append(t_orb*5.*5.)
             mag_flux_u.append(mf_u)
             mag_flux_l.append(mf_l)
 
@@ -35,7 +36,7 @@ def main(**kwargs):
     ax.plot(time,mag_flux_u,label='upper hem.')
     ax.plot(time,mag_flux_l,label='lower hem.')
     plt.legend(loc='best')
-    ax.set_xlabel('time since start (simulation units)')
+    ax.set_xlabel(r'time ($T_{5r_g}$)')
     ax.set_ylabel(r'average $\Phi_{B}$')
     ax.set_xlim(left=0)
     plt.grid(b=True, which='major', color='#666666', linestyle='-', alpha=0.5)

@@ -20,9 +20,10 @@ def main(**kwargs):
         next(csv_reader, None) # skip header
         for row in csv_reader:
             t = float(row[0])
-            mf = float(row[1])
+            t_orb = float(row[1])
+            mf = float(row[2])
 
-            time.append(float(t)*5.)
+            time.append(t_orb*5.*5.)
             mass_flux.append(mf)
 
     time, mass_flux = zip(*sorted(zip(time, mass_flux)))
@@ -32,7 +33,7 @@ def main(**kwargs):
     fig = plt.figure()
     ax = fig.add_subplot(111)
     ax.plot(time,mass_flux)
-    ax.set_xlabel('time since start (simulation units)')
+    ax.set_xlabel(r'time ($T_{5r_g}$)')
     ax.set_ylabel('surface averaged mass flux')
     ax.set_xlim(left=0)
     plt.ticklabel_format(axis='y', style='sci', scilimits=(0,0))

@@ -20,39 +20,44 @@ def main(**kwargs):
     Bcc1 = []
     Bcc2 = []
     Bcc3 = []
+    Bpol = []
     with open('butterfly_with_time.csv', newline='\n') as csv_file:
         csv_reader = csv.reader(csv_file, delimiter='\t')
         next(csv_reader, None) # skip header
         for row in csv_reader:
             t = float(row[0])
-            Bcc1_av = row[1]
-            Bcc2_av = row[2]
-            Bcc3_av = row[3]
+            t_orb = float(row[1])
+            Bcc1_av = row[2]
+            Bcc2_av = row[3]
+            Bcc3_av = row[4]
+            Bpol_av = row[5]
 
-            time.append(float(t)*5.)
+            time.append(float(t_orb)*5.*5.)
             Bcc1.append(literal_eval(Bcc1_av))
             Bcc2.append(literal_eval(Bcc2_av))
             Bcc3.append(literal_eval(Bcc3_av))
+            Bpol.append(literal_eval(Bpol_av))
 
     theta_min = -np.pi/2.
     theta_max = np.pi/2.
     t_min = 0
     t_max = time[-1]
 
-    time, Bcc1, Bcc2, Bcc3 = zip(*sorted(zip(time, Bcc1, Bcc2, Bcc3)))
+    time, Bcc1, Bcc2, Bcc3, Bpol = zip(*sorted(zip(time, Bcc1, Bcc2, Bcc3, Bpol)))
 
     make_plots(Bcc1,data_dir,r'$B_r$','butterfly_Bcc1',t_min,t_max,theta_min,theta_max)
     make_plots(Bcc2,data_dir,r'$B_\theta$','butterfly_Bcc2',t_min,t_max,theta_min,theta_max)
     make_plots(Bcc3,data_dir,r'$B_\phi$','butterfly_Bcc3',t_min,t_max,theta_min,theta_max)
+    make_plots(Bpol,data_dir,r'$B_{\rm pol}$','butterfly_Bpol',t_min,t_max,theta_min,theta_max)
 
 
 def make_plots(data,data_dir,xlabel,save_name,x_min,x_max,y_min,y_max):
     fig = plt.figure()
     ax = fig.add_subplot(111)
     max_extent = np.max(np.abs(np.asarray(data).T))
-    pos = ax.imshow(np.asarray(data).T, extent=[x_min,x_max,y_min,y_max], cmap='seismic', norm=matplotlib.colors.Normalize(vmin=-max_extent, vmax=max_extent),interpolation='bicubic')
+    pos = ax.imshow(np.asarray(data).T, extent=[x_min,x_max,y_min,y_max], cmap='seismic', norm=matplotlib.colors.Normalize(vmin=-max_extent, vmax=max_extent),interpolation='none')
     ax.axis('auto')
-    ax.set_xlabel('time since start (simulation units)',fontsize=14)
+    ax.set_xlabel(r'time ($T_{5r_g}$)',fontsize=14)
     ax.set_ylabel(r'$\theta - \pi/2$',fontsize=14)
     cbar1 = plt.colorbar(pos,extend='both')
     cbar1.ax.set_ylabel(xlabel,fontsize=14)
