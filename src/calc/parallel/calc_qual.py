@@ -87,7 +87,8 @@ def main(**kwargs):
     theta_B = []
     Q_theta_low, Q_theta_av, Q_theta_high = [], [], []
     Q_phi_low, Q_phi_av, Q_phi_high = [], [], []
-
+    orbit_time = []
+    sim_time = []
     for t in sorted(times):
         #print('file number: ', t)
         str_t = str(int(t)).zfill(5)
@@ -139,19 +140,26 @@ def main(**kwargs):
         Q_phi_av.append(Qp_av)
         Q_phi_high.append(Qp_uc)
 
+        v_Kep0 = np.sqrt(mass/x1min)
+        Omega0 = v_Kep0/x1min
+        T0 = 2.*np.pi/Omega0
+        orbit_time.append(t/T0)
 
-    times,theta_B,Q_theta_low,Q_theta_av,Q_theta_high,Q_phi_low,Q_phi_av,Q_phi_high = (list(t) for t in zip(*sorted(zip(times,theta_B,Q_theta_low,Q_theta_av,Q_theta_high,Q_phi_low,Q_phi_av,Q_phi_high))))
+        sim_time.append(t)
+
+
+    sim_time,orbit_time,theta_B,Q_theta_low,Q_theta_av,Q_theta_high,Q_phi_low,Q_phi_av,Q_phi_high = (list(t) for t in zip(*sorted(zip(sim_time,orbit_time,theta_B,Q_theta_low,Q_theta_av,Q_theta_high,Q_phi_low,Q_phi_av,Q_phi_high))))
     os.chdir(prob_dir)
 
     if args.update:
         with open(filename_output, 'a', newline='') as f:
             writer = csv.writer(f, delimiter='\t')
-            writer.writerows(zip(times,theta_B,Q_theta_low,Q_theta_av,Q_theta_high,Q_phi_low,Q_phi_av,Q_phi_high))
+            writer.writerows(zip(sim_time,orbit_time,theta_B,Q_theta_low,Q_theta_av,Q_theta_high,Q_phi_low,Q_phi_av,Q_phi_high))
     else:
         with open(filename_output, 'w', newline='') as f:
             writer = csv.writer(f, delimiter='\t')
-            writer.writerow(["Time", "theta_B", "Qt_low", "Qt_av", "Qt_high", "Qp_low", "Qp_av", "Qp_high"])
-            writer.writerows(zip(times,theta_B,Q_theta_low,Q_theta_av,Q_theta_high,Q_phi_low,Q_phi_av,Q_phi_high))
+            writer.writerow(["sim_time", "orbit_time", "theta_B", "Qt_low", "Qt_av", "Qt_high", "Qp_low", "Qp_av", "Qp_high"])
+            writer.writerows(zip(sim_time,orbit_time,theta_B,Q_theta_low,Q_theta_av,Q_theta_high,Q_phi_low,Q_phi_av,Q_phi_high))
 
 def mean_confidence_interval(data, confidence=0.95):
     """Calculate the 95% confidence interval.

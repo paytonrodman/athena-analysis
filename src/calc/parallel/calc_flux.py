@@ -48,7 +48,8 @@ def main(**kwargs):
 
     mag_flux_u = []
     mag_flux_l = []
-
+    orbit_time = []
+    sim_time = []
     for t in sorted(times):
         #print('file number: ', t)
         str_t = str(int(t)).zfill(5)
@@ -84,19 +85,24 @@ def main(**kwargs):
         mag_flux_u.append(np.sum(mf_u))
         mag_flux_l.append(np.sum(mf_l))
 
+        v_Kep0 = np.sqrt(mass/x1min)
+        Omega0 = v_Kep0/x1min
+        T0 = 2.*np.pi/Omega0
+        orbit_time.append(t/T0)
 
+        sim_time.append(t)
 
-    times,mag_flux_u,mag_flux_l = (list(t) for t in zip(*sorted(zip(times,mag_flux_u,mag_flux_l))))
+    sim_time,orbit_time,mag_flux_u,mag_flux_l = (list(t) for t in zip(*sorted(zip(sim_time,orbit_time,mag_flux_u,mag_flux_l))))
     os.chdir(prob_dir)
     if args.update:
         with open('flux_with_time.csv', 'a', newline='') as f:
             writer = csv.writer(f, delimiter='\t')
-            writer.writerows(zip(times,mag_flux_u,mag_flux_l))
+            writer.writerows(zip(sim_time,orbit_time,mag_flux_u,mag_flux_l))
     else:
         with open('flux_with_time.csv', 'w', newline='') as f:
             writer = csv.writer(f, delimiter='\t')
-            writer.writerow(["Time", "mag_flux_u", "mag_flux_l"])
-            writer.writerows(zip(times,mag_flux_u,mag_flux_l))
+            writer.writerow(["sim_time", "orbit_time", "mag_flux_u", "mag_flux_l"])
+            writer.writerows(zip(sim_time,orbit_time,mag_flux_u,mag_flux_l))
 
 # Execute main function
 if __name__ == '__main__':

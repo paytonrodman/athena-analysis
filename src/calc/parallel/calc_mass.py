@@ -26,7 +26,6 @@ def main(**kwargs):
     data_dir = prob_dir + '/data/'
     os.chdir(data_dir)
 
-    #csv_time = []
     csv_time = np.empty(0)
     # check if data file already exists
     if args.update:
@@ -34,21 +33,18 @@ def main(**kwargs):
             csv_reader = csv.reader(f, delimiter='\t')
             next(csv_reader, None) # skip header
             for row in csv_reader:
-                #csv_time.append(float(row[0]))
                 csv_time = np.append(csv_time, float(row[0]))
 
     files = glob.glob('./*.athdf')
-    #times = []
+
     times = np.empty(0)
     for f in files:
         time_sec = re.findall(r'\b\d+\b', f)
         if args.update:
             if float(time_sec[0]) not in times and float(time_sec[0]) not in csv_time:
-                #times.append(float(time_sec[0]))
                 times = np.append(times, float(time_sec[0]))
         else:
             if float(time_sec[0]) not in times:
-                #times.append(float(time_sec[0]))
                 times = np.append(times, float(time_sec[0]))
     if len(times)==0:
         sys.exit('No new timesteps to analyse in the given directory. Exiting.')
@@ -99,8 +95,8 @@ def main(**kwargs):
         Omega0 = v_Kep0/x1min
         T0 = 2.*np.pi/Omega0
         local_orbit_time.append(t/T0)
-
         local_sim_time.append(t)
+
 
     if rank > 0:
         comm.Send(np.asarray(local_mf_total), dest=0, tag=14)  # send results to process 0
@@ -108,8 +104,8 @@ def main(**kwargs):
         comm.Send(np.asarray(local_sim_time), dest=0, tag=24)
     else:
         final_mf_tot = np.copy(local_mf_tot)  # initialize final results with results from process 0
-        final_orb_t = np.copy(local_orb_t)
-        final_sim_t = np.copy(local_s_t)
+        final_orb_t = np.copy(local_orbit_time)
+        final_sim_t = np.copy(local_sim_time)
 
         for i in range(1, size):  # determine the size of the array to be received from each process
             if i < remainder:
@@ -144,12 +140,12 @@ def main(**kwargs):
         if args.update:
             with open('mass_with_time.csv', 'a', newline='') as f:
                 writer = csv.writer(f, delimiter='\t')
-                writer.writerows(zip(sim_time,orbit_time,mf_total))
+                writer.writerows(zip(sim_t_out,orb_t_out,mf_out))
         else:
             with open('mass_with_time.csv', 'w', newline='') as f:
                 writer = csv.writer(f, delimiter='\t')
                 writer.writerow(["sim_time", "orbit_time", "mass_flux"])
-                writer.writerows(zip(sim_time,orbit_time,mf_total))
+                writer.writerows(zip(sim_t_out,orb_t_out,mf_out))
 
 # Execute main function
 if __name__ == '__main__':

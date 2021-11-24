@@ -53,6 +53,8 @@ def main(**kwargs):
     Bcc1_theta = []
     Bcc2_theta = []
     Bcc3_theta = []
+    orbit_time = []
+    sim_time = []
     for t in sorted(times):
         #print('file number: ,' t)
         str_t = str(int(t)).zfill(5)
@@ -69,17 +71,24 @@ def main(**kwargs):
         Bcc2_theta.append(np.average(Bcc2[r_id,:,:],axis=1).tolist())
         Bcc3_theta.append(np.average(Bcc3[r_id,:,:],axis=1).tolist())
 
-    times,Bcc1_theta,Bcc2_theta,Bcc3_theta = (list(t) for t in zip(*sorted(zip(times,Bcc1_theta,Bcc2_theta,Bcc3_theta))))
+        v_Kep0 = np.sqrt(mass/x1min)
+        Omega0 = v_Kep0/x1min
+        T0 = 2.*np.pi/Omega0
+        orbit_time.append(t/T0)
+
+        sim_time.append(t)
+
+    sim_time,orbit_time,Bcc1_theta,Bcc2_theta,Bcc3_theta = (list(t) for t in zip(*sorted(zip(sim_time,orbit_time,Bcc1_theta,Bcc2_theta,Bcc3_theta))))
     os.chdir(prob_dir)
     if args.update:
         with open('butterfly_with_time.csv', 'a', newline='') as f:
             writer = csv.writer(f, delimiter='\t')
-            writer.writerows(zip(times,Bcc1_theta,Bcc2_theta,Bcc3_theta))
+            writer.writerows(zip(sim_time,orbit_time,Bcc1_theta,Bcc2_theta,Bcc3_theta))
     else:
         with open('butterfly_with_time.csv', 'w', newline='') as f:
             writer = csv.writer(f, delimiter='\t')
-            writer.writerow(["Time", "Bcc1", "Bcc2", "Bcc3"])
-            writer.writerows(zip(times,Bcc1_theta,Bcc2_theta,Bcc3_theta))
+            writer.writerow(["sim_time", "orbit_time", "Bcc1", "Bcc2", "Bcc3"])
+            writer.writerows(zip(sim_time,orbit_time,Bcc1_theta,Bcc2_theta,Bcc3_theta))
 
 # Execute main function
 if __name__ == '__main__':

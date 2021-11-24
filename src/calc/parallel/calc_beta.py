@@ -50,6 +50,8 @@ def main(**kwargs):
     th_l = AAT.find_nearest(x2v, np.pi/2. - (3.*scale_height))
 
     beta_list = []
+    orbit_time = []
+    sim_time = []
     for t in sorted(times):
         #print('file number: ', t)
         str_t = str(int(t)).zfill(5)
@@ -67,17 +69,24 @@ def main(**kwargs):
         current_beta = calculate_beta(th_u,th_l,dens,press,Bcc1,Bcc2,Bcc3)
         beta_list.append(current_beta)
 
-    times, beta_list = (list(t) for t in zip(*sorted(zip(times, beta_list))))
+        v_Kep0 = np.sqrt(mass/x1min)
+        Omega0 = v_Kep0/x1min
+        T0 = 2.*np.pi/Omega0
+        orbit_time.append(t/T0)
+
+        sim_time.append(t)
+
+    sim_time,orbit_time,beta_list = (list(t) for t in zip(*sorted(zip(sime_tim,orbit_time,beta_list))))
     os.chdir(prob_dir)
     if args.update:
         with open('beta_with_time.csv', 'a', newline='') as f:
             writer = csv.writer(f, delimiter='\t')
-            writer.writerows(zip(times,beta_list))
+            writer.writerows(zip(sime_tim,orbit_time,beta_list))
     else:
         with open('beta_with_time.csv', 'w', newline='') as f:
             writer = csv.writer(f, delimiter='\t')
-            writer.writerow(["Time", "plasma_beta"])
-            writer.writerows(zip(times,beta_list))
+            writer.writerow(["sim_time","orbit_time","plasma_beta"])
+            writer.writerows(zip(sim_time,orbit_time,beta_list))
 
 def calculate_beta(th_u,th_l,dens,press,Bcc1,Bcc2,Bcc3):
     """Calculate the mean plasma beta within a specified region.
