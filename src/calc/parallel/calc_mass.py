@@ -67,7 +67,8 @@ def main(**kwargs):
 
     local_times = times[start:stop] # get the times to be analyzed by each rank
     local_mf_total = []
-    local_t = []
+    local_orbit_time = []
+    local_sim_time = []
     for t in local_times:
         str_t = str(int(t)).zfill(5)
         data_cons = athena_read.athdf(problem + '.cons.' + str_t + '.athdf')
@@ -93,14 +94,22 @@ def main(**kwargs):
                 mf_i = -dens[k,j,0] * v1[k,j,0] * (x1f[0])**2. * dOmega
                 mf.append(mf_i)
         local_mf_total.append(np.sum(mf))
-        local_t.append(t)
+
+        v_Kep0 = np.sqrt(mass/x1min)
+        Omega0 = v_Kep0/x1min
+        T0 = 2.*np.pi/Omega0
+        local_orbit_time.append(t/T0)
+
+        local_sim_time.append(t)
 
     if rank > 0:
         comm.Send(np.asarray(local_mf_total), dest=0, tag=14)  # send results to process 0
-        comm.Send(np.asarray(local_t), dest=0, tag=20)
+        comm.Send(np.asarray(local_orbit_time), dest=0, tag=20)
+        comm.Send(np.asarray(local_sim_time), dest=0, tag=24)
     else:
-        final_mf_total = np.copy(local_mf_total)  # initialize final results with results from process 0
-        final_t = np.copy(local_t)
+        final_mf_tot = np.copy(local_mf_tot)  # initialize final results with results from process 0
+        final_orb_t = np.copy(local_orb_t)
+        final_sim_t = np.copy(local_s_t)
 
         for i in range(1, size):  # determine the size of the array to be received from each process
             if i < remainder:
@@ -108,34 +117,39 @@ def main(**kwargs):
             else:
                 rank_size = count
 
-            tmp_mf = np.empty((rank_size-1, final_mf_total.shape[0]), dtype=np.float)  # create empty array to receive results
+            tmp_mf = np.empty((rank_size-1, final_mf_tot.shape[0]), dtype=np.float)  # create empty array to receive results
             comm.Recv(tmp_mf, source=i, tag=14)  # receive results from the process
-            final_mf_total = np.vstack((final_mf_total, tmp_mf))  # add the received results to the final results
+            final_mf_tot = np.vstack((final_mf_tot, tmp_mf))  # add the received results to the final results
 
-            tmp_t = np.empty((rank_size-1, final_t.shape[0]), dtype=np.int)
-            comm.Recv(tmp_t, source=i, tag=20)
-            final_t = np.vstack((final_t, tmp_t))
+            tmp_orb_t = np.empty((rank_size-1, final_orb_t.shape[0]), dtype=np.int)
+            comm.Recv(tmp_orb_t, source=i, tag=20)
+            final_orb_t = np.vstack((final_orb_t, tmp_orb_t))
 
-        mf_out = final_mf_total.flatten()
-        t_out = final_t.flatten()
+            tmp_sim_t = np.empty((rank_size-1, final_sim_t.shape[0]), dtype=np.int)
+            comm.Recv(tmp_sim_t, source=i, tag=24)
+            final_sim_t = np.vstack((final_sim_t, tmp_sim_t))
+
+        mf_out = final_mf_tot.flatten()
+        orb_t_out = final_orb_t.flatten()
+        sim_t_out = final_sim_t.flatten()
 
         print("flatten mf: ", mf_out)
-        print("flatten t: ", t_out)
-
+        print("flatten orb t: ", orb_t_out)
+        print("flatten sim t: ", sim_t_out)
 
 
     if rank == 0:
-        t_out,mf_out = (list(t) for t in zip(*sorted(zip(t_out,mf_out))))
+        sim_t_out,orb_t_out,mf_out = (list(t) for t in zip(*sorted(zip(sim_t_out,orb_t_out,mf_out))))
         os.chdir(prob_dir)
         if args.update:
             with open('mass_with_time.csv', 'a', newline='') as f:
                 writer = csv.writer(f, delimiter='\t')
-                writer.writerows(zip(times,mf_total))
+                writer.writerows(zip(sim_time,orbit_time,mf_total))
         else:
             with open('mass_with_time.csv', 'w', newline='') as f:
                 writer = csv.writer(f, delimiter='\t')
-                writer.writerow(["time", "mass_flux"])
-                writer.writerows(zip(times,mf_total))
+                writer.writerow(["sim_time", "orbit_time", "mass_flux"])
+                writer.writerows(zip(sim_time,orbit_time,mf_total))
 
 # Execute main function
 if __name__ == '__main__':
