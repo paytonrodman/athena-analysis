@@ -67,30 +67,29 @@ def main(**kwargs):
     Bcc3_theta = []
     Bpol = []
     for t in sorted(times):
-        if int(t)%10==0:
-            print('file number: ', t)
-            str_t = str(int(t)).zfill(5)
+        print('file number: ', t)
+        str_t = str(int(t)).zfill(5)
 
-            data_cons = athena_read.athdf(problem + '.cons.' + str_t + '.athdf')
+        data_cons = athena_read.athdf(problem + '.cons.' + str_t + '.athdf')
 
-            #unpack data
-            x2f = data_cons['x2f'] # theta
-            Bcc1 = data_cons['Bcc1']
-            Bcc2 = data_cons['Bcc2']
-            Bcc3 = data_cons['Bcc3']
-            Bpol_i = Bcc1 + Bcc2
+        #unpack data
+        x2f = data_cons['x2f'] # theta
+        Bcc1 = data_cons['Bcc1']
+        Bcc2 = data_cons['Bcc2']
+        Bcc3 = data_cons['Bcc3']
+        Bpol_i = Bcc1 + Bcc2
 
-            Bcc1_theta.append(np.average(Bcc1[r_id,:,:],axis=1).tolist())
-            Bcc2_theta.append(np.average(Bcc2[r_id,:,:],axis=1).tolist())
-            Bcc3_theta.append(np.average(Bcc3[r_id,:,:],axis=1).tolist())
-            Bpol.append(np.average(Bpol_i[r_id,:,:],axis=1).tolist())
+        Bcc1_theta.append(np.average(Bcc1[r_id,:,:],axis=1).tolist())
+        Bcc2_theta.append(np.average(Bcc2[r_id,:,:],axis=1).tolist())
+        Bcc3_theta.append(np.average(Bcc3[r_id,:,:],axis=1).tolist())
+        Bpol.append(np.average(Bpol_i[r_id,:,:],axis=1).tolist())
 
-            v_Kep0 = np.sqrt(mass/x1min)
-            Omega0 = v_Kep0/x1min
-            T0 = 2.*np.pi/Omega0
-            orbit_time.append(t/T0)
+        v_Kep0 = np.sqrt(mass/x1min)
+        Omega0 = v_Kep0/x1min
+        T0 = 2.*np.pi/Omega0
+        orbit_time.append(t/T0)
 
-            sim_time.append(t)
+        sim_time.append(t)
 
     sim_time,orbit_time,Bcc1_theta,Bcc2_theta,Bcc3_theta,Bpol = (list(t) for t in zip(*sorted(zip(sim_time,orbit_time,Bcc1_theta,Bcc2_theta,Bcc3_theta,Bpol))))
     os.chdir(prob_dir)
