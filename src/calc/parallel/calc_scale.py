@@ -26,7 +26,6 @@ def main(**kwargs):
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
     size = comm.Get_size()
-    print('My rank is ',rank)
 
     problem  = args.prob_id
     root_dir = "/Users/paytonrodman/athena-sim/"
@@ -35,32 +34,38 @@ def main(**kwargs):
     data_dir = prob_dir + 'data/'
     os.chdir(data_dir)
 
-    csv_time = []
+    csv_time = np.empty(0)
     # check if data file already exists
     if args.update:
-        with open(prob_dir + 'scale_with_time.csv', 'r', newline='') as f:
+        with open(prob_dir + 'mass_with_time.csv', 'r', newline='') as f:
             csv_reader = csv.reader(f, delimiter='\t')
             next(csv_reader, None) # skip header
             for row in csv_reader:
-                csv_time.append(float(row[0]))
-    else: # create empty file
-        with open(prob_dir + 'scale_with_time.csv', 'w', newline='') as f:
-            writer = csv.writer(f, delimiter='\t')
-            writer.writerow(["time", "scale_height"])
+                csv_time = np.append(csv_time, float(row[0]))
 
     files = glob.glob('./*.athdf')
-    times = []
+
+    times = np.empty(0)
     for f in files:
         time_sec = re.findall(r'\b\d+\b', f)
         if args.update:
             if float(time_sec[0]) not in times and float(time_sec[0]) not in csv_time:
-                times.append(float(time_sec[0]))
+                times = np.append(times, float(time_sec[0]))
         else:
             if float(time_sec[0]) not in times:
-                times.append(float(time_sec[0]))
+                times = np.append(times, float(time_sec[0]))
     if len(times)==0:
         sys.exit('No new timesteps to analyse in the given directory. Exiting.')
-    times = sorted(times)
+
+    count = len(times) // size  # number of files for each process to analyze
+    remainder = len(times) % size  # extra files if times is not a multiple of size
+    if rank < remainder:  # processes with rank < remainder analyze one extra catchment
+        start = rank * (count + 1)  # index of first file to analyze
+        stop = start + count + 1  # index of last file to analyze
+    else:
+        start = rank * count + remainder
+        stop = start + count
+    local_times = times[start:stop] # get the times to be analyzed by each rank
 
     # get mesh data for all files (static)
     data_init = athena_read.athdf(problem + '.cons.00000.athdf')
@@ -75,13 +80,11 @@ def main(**kwargs):
     dphi,dtheta,dr = np.meshgrid(dx3f,dx2f,dx1f, sparse=False, indexing='ij')
     dOmega = np.sin(theta)*dtheta*dphi
 
-    scale_height = []
-    scale_time = []
-    for t_select in range(comm.rank, len(times), size):
-        t = times[t_select]
-        print('file number: ',t)
+    local_scale_h = []
+    local_orbit_time = []
+    local_sim_time = []
+    for t in local_times:
         str_t = str(int(t)).zfill(5)
-
         filename_cons = problem + '.cons.' + str_t + '.athdf'
         data_cons = athena_read.athdf(filename_cons)
 
@@ -93,17 +96,61 @@ def main(**kwargs):
         h_down = dens*dOmega
         scale_h = np.sqrt(np.sum(h_up,axis=(0,1))/np.sum(h_down,axis=(0,1)))
         scale_h_av = np.average(scale_h,weights=dx1f)
+        local_scale_h.append(scale_h_av)
 
-        # rank 0 gathers data
-        sbuf = comm.gather(scale_h_av,root=0)
-        tbuf = comm.gather(t,root=0)
+        v_Kep0 = np.sqrt(mass/x1min)
+        Omega0 = v_Kep0/x1min
+        T0 = 2.*np.pi/Omega0
+        local_orbit_time.append(t/T0)
+        local_sim_time.append(t)
 
-        # rank 0 has to write into the HDF file
-        if comm.rank == 0:
-            # Append each data point
-            with open(prob_dir + 'scale_with_time.csv', 'a', newline='') as f:
+    if rank > 0:
+        comm.Send(np.asarray(local_scale_h), dest=0, tag=14)  # send results to process 0
+        comm.Send(np.asarray(local_orbit_time), dest=0, tag=20)
+        comm.Send(np.asarray(local_sim_time), dest=0, tag=24)
+    else:
+        final_sc_h = np.copy(local_scale_h)  # initialize final results with results from process 0
+        final_orb_t = np.copy(local_orbit_time)
+        final_sim_t = np.copy(local_sim_time)
+
+        for i in range(1, size):  # determine the size of the array to be received from each process
+            if i < remainder:
+                rank_size = count + 1
+            else:
+                rank_size = count
+
+            tmp_sh = np.empty((rank_size-1, final_sc_h.shape[0]), dtype=np.float)  # create empty array to receive results
+            comm.Recv(tmp_mf, source=i, tag=14)  # receive results from the process
+            final_sc_h = np.vstack((final_sc_h, tmp_sh))  # add the received results to the final results
+
+            tmp_orb_t = np.empty((rank_size-1, final_orb_t.shape[0]), dtype=np.int)
+            comm.Recv(tmp_orb_t, source=i, tag=20)
+            final_orb_t = np.vstack((final_orb_t, tmp_orb_t))
+
+            tmp_sim_t = np.empty((rank_size-1, final_sim_t.shape[0]), dtype=np.int)
+            comm.Recv(tmp_sim_t, source=i, tag=24)
+            final_sim_t = np.vstack((final_sim_t, tmp_sim_t))
+
+        sh_out = final_sc_h.flatten()
+        orb_t_out = final_orb_t.flatten()
+        sim_t_out = final_sim_t.flatten()
+        print("flatten sh: ", sh_out)
+        print("flatten orb t: ", orb_t_out)
+        print("flatten sim t: ", sim_t_out)
+
+
+    if rank == 0:
+        sim_t_out,orb_t_out,sh_out = (list(t) for t in zip(*sorted(zip(sim_t_out,orb_t_out,sh_out))))
+        os.chdir(prob_dir)
+        if args.update:
+            with open('mass_with_time.csv', 'a', newline='') as f:
                 writer = csv.writer(f, delimiter='\t')
-                writer.writerows(zip(tbuf,sbuf))
+                writer.writerows(zip(sim_t_out,orb_t_out,sh_out))
+        else:
+            with open('mass_with_time.csv', 'w', newline='') as f:
+                writer = csv.writer(f, delimiter='\t')
+                writer.writerow(["sim_time", "orbit_time", "scale_height"])
+                writer.writerows(zip(sim_t_out,orb_t_out,sh_out))
 
 # Execute main function
 if __name__ == '__main__':
