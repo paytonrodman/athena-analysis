@@ -1,8 +1,19 @@
-#!/usr/bin/python
+#!/usr/bin/python3.6
+#
+# calc_scale.py
+#
+# A program to calculate the geometric scale height of an Athena++ disk using MPI.
+#
+# To run:
+# mpirun -n [n] python calc_scale.py
+# for [n] cores.
+#
+import sys
+sys.path.insert(0,'/home/per29/.local/lib/python3.6/site-packages/')
+from mpi4py import MPI
 import numpy as np
 import os
-import sys
-sys.path.insert(0, '../../dependencies')
+sys.path.insert(0, '/home/per29/rds/rds-accretion-zyNhkonJSR8/athena-analysis/dependencies/')
 import athena_read
 import AAT
 import glob
@@ -11,11 +22,16 @@ import csv
 import argparse
 
 def main(**kwargs):
+    comm = MPI.COMM_WORLD
+    rank = comm.Get_rank()
+    size = comm.Get_size()
+    print('My rank is ',rank)
+
     problem  = args.prob_id
     #root_dir = "/Users/paytonrodman/athena-sim/"
-    root_dir = '~/rds/rds-accretion-zyNhkonJSR8/'
+    root_dir = '/home/per29/rds/rds-accretion-zyNhkonJSR8/'
     prob_dir = root_dir + problem + '/'
-    data_dir = prob_dir + '/data/'
+    data_dir = prob_dir + 'data/'
     os.chdir(data_dir)
 
     csv_time = []
@@ -26,6 +42,10 @@ def main(**kwargs):
             next(csv_reader, None) # skip header
             for row in csv_reader:
                 csv_time.append(float(row[0]))
+    else: # create empty file
+        with open(prob_dir + 'scale_with_time.csv', 'w', newline='') as f:
+            writer = csv.writer(f, delimiter='\t')
+            writer.writerow(["time", "scale_height"])
 
     files = glob.glob('./*.athdf')
     times = []
@@ -39,6 +59,7 @@ def main(**kwargs):
                 times.append(float(time_sec[0]))
     if len(times)==0:
         sys.exit('No new timesteps to analyse in the given directory. Exiting.')
+    times = sorted(times)
 
     # get mesh data for all files (static)
     data_init = athena_read.athdf(problem + '.cons.00000.athdf')
@@ -54,8 +75,10 @@ def main(**kwargs):
     dOmega = np.sin(theta)*dtheta*dphi
 
     scale_height = []
-    for t in sorted(times):
-        #print('file number: ', t)
+    scale_time = []
+    for t_select in range(comm.rank, len(times), size):
+        t = times[t_select]
+        print('file number: ',t)
         str_t = str(int(t)).zfill(5)
 
         filename_cons = problem + '.cons.' + str_t + '.athdf'
@@ -69,20 +92,17 @@ def main(**kwargs):
         h_down = dens*dOmega
         scale_h = np.sqrt(np.sum(h_up,axis=(0,1))/np.sum(h_down,axis=(0,1)))
         scale_h_av = np.average(scale_h,weights=dx1f)
-        scale_height.append(scale_h_av)
 
-    times,scale_height = (list(t) for t in zip(*sorted(zip(times,scale_height))))
-    os.chdir(prob_dir)
-    if args.update:
-        with open('scale_with_time.csv', 'a', newline='') as f:
-            writer = csv.writer(f, delimiter='\t')
-            writer.writerows(zip(times,scale_height))
-    else:
-        with open('scale_with_time.csv', 'w', newline='') as f:
-            writer = csv.writer(f, delimiter='\t')
-            writer.writerow(["Time", "scale_height"])
-            writer.writerows(zip(times,scale_height))
+        # rank 0 gathers data
+        sbuf = comm.gather(scale_h_av,root=0)
+        tbuf = comm.gather(t,root=0)
 
+        # rank 0 has to write into the HDF file
+        if comm.rank == 0:
+            # Append each data point
+            with open(prob_dir + 'scale_with_time.csv', 'a', newline='') as f:
+                writer = csv.writer(f, delimiter='\t')
+                writer.writerows(zip(tbuf,sbuf))
 
 # Execute main function
 if __name__ == '__main__':
