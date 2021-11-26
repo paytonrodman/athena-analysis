@@ -62,8 +62,7 @@ def main(**kwargs):
     mass = data_input['problem']['mass']
     x1min = data_input['mesh']['x1min']
 
-
-    times = np.asarray([0,10,20,30])
+    #times = np.asarray([0,10,20,30])
 
     count = len(times) // size  # number of files for each process to analyze
     remainder = len(times) % size  # extra files if times is not a multiple of size
@@ -79,6 +78,7 @@ def main(**kwargs):
     local_mf_total = []
     local_orbit_time = []
     local_sim_time = []
+    print("times are: ", local_times)
     for t in local_times:
         str_t = str(int(t)).zfill(5)
         data_cons = athena_read.athdf(problem + '.cons.' + str_t + '.athdf')
@@ -111,7 +111,6 @@ def main(**kwargs):
         local_orbit_time.append(t/T0)
         local_sim_time.append(t)
 
-
     if rank > 0:
         comm.Send(np.asarray(local_mf_total), dest=0, tag=14)  # send results to process 0
         comm.Send(np.asarray(local_orbit_time), dest=0, tag=20)
@@ -129,15 +128,18 @@ def main(**kwargs):
 
             tmp_mf = np.empty((rank_size-1, final_mf_tot.shape[0]), dtype=np.float)  # create empty array to receive results
             comm.Recv(tmp_mf, source=i, tag=14)  # receive results from the process
-            final_mf_tot = np.vstack((final_mf_tot, tmp_mf))  # add the received results to the final results
+            final_mf_tot = np.append(final_mf_tot,tmp_mf) # add the received results to the final results
+            #final_mf_tot = np.vstack((final_mf_tot, tmp_mf))
 
-            tmp_orb_t = np.empty((rank_size-1, final_orb_t.shape[0]), dtype=np.int)
+            tmp_orb_t = np.empty((rank_size-1, final_orb_t.shape[0]), dtype=np.float)
             comm.Recv(tmp_orb_t, source=i, tag=20)
-            final_orb_t = np.vstack((final_orb_t, tmp_orb_t))
+            final_orb_t = np.append(final_orb_t,tmp_orb_t)
+            #final_orb_t = np.vstack((final_orb_t, tmp_orb_t))
 
             tmp_sim_t = np.empty((rank_size-1, final_sim_t.shape[0]), dtype=np.int)
             comm.Recv(tmp_sim_t, source=i, tag=24)
-            final_sim_t = np.vstack((final_sim_t, tmp_sim_t))
+            final_sim_t = np.append(final_sim_t,tmp_sim_t)
+            #final_sim_t = np.vstack((final_sim_t, tmp_sim_t))
 
         mf_out = final_mf_tot.flatten()
         orb_t_out = final_orb_t.flatten()
