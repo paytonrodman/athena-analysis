@@ -34,8 +34,8 @@ def main(**kwargs):
     root_dir = "/Users/paytonrodman/athena-sim/"
     #root_dir = '/home/per29/rds/rds-accretion-zyNhkonJSR8/'
     prob_dir = root_dir + problem + '/'
-    data_dir = prob_dir + '/data/'
-    runfile_dir = prob_dir + '/runfiles/'
+    data_dir = prob_dir + 'data/'
+    runfile_dir = prob_dir + 'runfiles/'
     os.chdir(data_dir)
 
     csv_time = np.empty(0)
