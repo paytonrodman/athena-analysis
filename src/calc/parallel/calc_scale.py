@@ -8,12 +8,7 @@
 # mpirun -n [n] python calc_scale.py [options]
 # for [n] cores.
 #
-
-### TO DO
-### Need to read in input file to get mass and omegaKep. Apply change to all other files too.
 import sys
-sys.path.insert(0,'/home/per29/.local/lib/python3.6/site-packages/')
-from mpi4py import MPI
 import numpy as np
 import os
 #sys.path.insert(0, '/home/per29/rds/rds-accretion-zyNhkonJSR8/athena-analysis/dependencies')
@@ -24,6 +19,7 @@ import glob
 import re
 import csv
 import argparse
+from mpi4py import MPI
 
 def main(**kwargs):
     comm = MPI.COMM_WORLD
