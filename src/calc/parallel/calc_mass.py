@@ -1,4 +1,4 @@
-#!/usr/bin/python3.6
+#!/usr/bin/env python3
 #
 # calc_mass.py
 #
@@ -7,15 +7,11 @@
 # To run:
 # mpirun -n [n] python calc_mass.py [options]
 # for [n] cores.
-#
-
-### TO DO
-### Need to read in input file to get mass and omegaKep. Apply change to all other files too.
 import numpy as np
 import os
 import sys
-#sys.path.insert(0, '/home/per29/rds/rds-accretion-zyNhkonJSR8/athena-analysis/dependencies')
-sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies')
+sys.path.append('/home/per29/rds/rds-accretion-zyNhkonJSR8/athena-analysis/dependencies')
+#sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies')
 import athena_read
 import AAT
 import glob
@@ -32,8 +28,8 @@ def main(**kwargs):
     rank = comm.Get_rank()
 
     problem  = args.prob_id
-    root_dir = "/Users/paytonrodman/athena-sim/"
-    #root_dir = '~/rds/rds-accretion-zyNhkonJSR8/'
+    #root_dir = "/Users/paytonrodman/athena-sim/"
+    root_dir = '/home/per29/rds/rds-accretion-zyNhkonJSR8/'
     prob_dir = root_dir + problem + '/'
     data_dir = prob_dir + 'data/'
     runfile_dir = prob_dir + 'runfiles/'
@@ -64,7 +60,7 @@ def main(**kwargs):
 
     data_input = athena_read.athinput(runfile_dir + 'athinput.' + problem)
     mass = data_input['problem']['mass']
-    x1min = data_init['x1v']['x1min']
+    x1min = data_input['mesh']['x1min']
 
 
     times = np.asarray([0,10,20,30])
@@ -121,7 +117,7 @@ def main(**kwargs):
         comm.Send(np.asarray(local_orbit_time), dest=0, tag=20)
         comm.Send(np.asarray(local_sim_time), dest=0, tag=24)
     else:
-        final_mf_tot = np.copy(local_mf_tot)  # initialize final results with results from process 0
+        final_mf_tot = np.copy(local_mf_total)  # initialize final results with results from process 0
         final_orb_t = np.copy(local_orbit_time)
         final_sim_t = np.copy(local_sim_time)
 

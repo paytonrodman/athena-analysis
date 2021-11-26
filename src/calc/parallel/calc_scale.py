@@ -1,4 +1,4 @@
-#!/usr/bin/python3.6
+#!/usr/bin/env python3
 #
 # calc_scale.py
 #
@@ -73,7 +73,7 @@ def main(**kwargs):
 
     data_input = athena_read.athinput(runfile_dir + 'athinput.' + problem)
     mass = data_input['problem']['mass']
-    x1min = data_init['x1v']['x1min']
+    x1min = data_input['mesh']['x1min']
     # get mesh data for all files (static)
     data_init = athena_read.athdf(problem + '.cons.00000.athdf')
     x1v = data_init['x1v'] # r

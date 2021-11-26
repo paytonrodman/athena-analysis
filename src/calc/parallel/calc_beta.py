@@ -1,4 +1,5 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
+#
 import numpy as np
 import os
 import sys
@@ -14,7 +15,7 @@ import argparse
 def main(**kwargs):
     problem  = args.prob_id
     root_dir = "/Users/paytonrodman/athena-sim/"
-    #root_dir = '~/rds/rds-accretion-zyNhkonJSR8/'
+    #root_dir = '/home/per29/rds/rds-accretion-zyNhkonJSR8/'
     prob_dir = root_dir + problem + '/'
     data_dir = prob_dir + 'data/'
     runfile_dir = prob_dir + 'runfiles/'
@@ -45,7 +46,7 @@ def main(**kwargs):
     data_input = athena_read.athinput(runfile_dir + 'athinput.' + problem)
     scale_height = data_input['problem']['h_r']
     mass = data_input['problem']['mass']
-    x1min = data_init['x1v']['x1min']
+    x1min = data_input['mesh']['x1min']
     data_init = athena_read.athdf(problem + '.cons.00000.athdf')
     x2v = data_init['x2v']
     th_u = AAT.find_nearest(x2v, np.pi/2. + (3.*scale_height))

@@ -1,4 +1,5 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
+#
 import numpy as np
 import os
 import sys
@@ -14,7 +15,7 @@ import argparse
 def main(**kwargs):
     problem  = args.prob_id
     root_dir = "/Users/paytonrodman/athena-sim/"
-    #root_dir = '~/rds/rds-accretion-zyNhkonJSR8/'
+    #root_dir = '/home/per29/rds/rds-accretion-zyNhkonJSR8/'
     prob_dir = root_dir + problem + '/'
     data_dir = prob_dir + 'data/'
     runfile_dir = prob_dir + 'runfiles/'
@@ -47,7 +48,7 @@ def main(**kwargs):
     x2v_init = data_init['x2v']
     data_input = athena_read.athinput(runfile_dir + 'athinput.' + problem)
     mass = data_input['problem']['mass']
-    x1min = data_init['x1v']['x1min']
+    x1min = data_input['mesh']['x1min']
 
     if kwargs['r'] is not None:
         r_id = AAT.find_nearest(x1v_init, kwargs['r'])
