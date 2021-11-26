@@ -5,9 +5,12 @@
 # A program to calculate the geometric scale height of an Athena++ disk using MPI.
 #
 # To run:
-# mpirun -n [n] python calc_scale.py
+# mpirun -n [n] python calc_scale.py [options]
 # for [n] cores.
 #
+
+### TO DO
+### Need to read in input file to get mass and omegaKep. Apply change to all other files too.
 import sys
 sys.path.insert(0,'/home/per29/.local/lib/python3.6/site-packages/')
 from mpi4py import MPI
@@ -31,7 +34,8 @@ def main(**kwargs):
     root_dir = "/Users/paytonrodman/athena-sim/"
     #root_dir = '/home/per29/rds/rds-accretion-zyNhkonJSR8/'
     prob_dir = root_dir + problem + '/'
-    data_dir = prob_dir + 'data/'
+    data_dir = prob_dir + '/data/'
+    runfile_dir = prob_dir + '/runfiles/'
     os.chdir(data_dir)
 
     csv_time = np.empty(0)
@@ -67,6 +71,9 @@ def main(**kwargs):
         stop = start + count
     local_times = times[start:stop] # get the times to be analyzed by each rank
 
+    data_input = athena_read.athinput(runfile_dir + 'athinput.' + problem)
+    mass = data_input['problem']['mass']
+    x1min = data_init['x1v']['x1min']
     # get mesh data for all files (static)
     data_init = athena_read.athdf(problem + '.cons.00000.athdf')
     x1v = data_init['x1v'] # r

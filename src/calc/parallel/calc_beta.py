@@ -44,6 +44,8 @@ def main(**kwargs):
 
     data_input = athena_read.athinput(runfile_dir + 'athinput.' + problem)
     scale_height = data_input['problem']['h_r']
+    mass = data_input['problem']['mass']
+    x1min = data_init['x1v']['x1min']
     data_init = athena_read.athdf(problem + '.cons.00000.athdf')
     x2v = data_init['x2v']
     th_u = AAT.find_nearest(x2v, np.pi/2. + (3.*scale_height))

@@ -1,4 +1,16 @@
-#calc_mass.py
+#!/usr/bin/python3.6
+#
+# calc_mass.py
+#
+# A program to calculate the mass accretion rate of an Athena++ disk using MPI.
+#
+# To run:
+# mpirun -n [n] python calc_mass.py [options]
+# for [n] cores.
+#
+
+### TO DO
+### Need to read in input file to get mass and omegaKep. Apply change to all other files too.
 import numpy as np
 import os
 import sys
@@ -24,6 +36,7 @@ def main(**kwargs):
     #root_dir = '~/rds/rds-accretion-zyNhkonJSR8/'
     prob_dir = root_dir + problem + '/'
     data_dir = prob_dir + '/data/'
+    runfile_dir = prob_dir + '/runfiles/'
     os.chdir(data_dir)
 
     csv_time = np.empty(0)
@@ -48,6 +61,11 @@ def main(**kwargs):
                 times = np.append(times, float(time_sec[0]))
     if len(times)==0:
         sys.exit('No new timesteps to analyse in the given directory. Exiting.')
+
+    data_input = athena_read.athinput(runfile_dir + 'athinput.' + problem)
+    mass = data_input['problem']['mass']
+    x1min = data_init['x1v']['x1min']
+
 
     times = np.asarray([0,10,20,30])
 

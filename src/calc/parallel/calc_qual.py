@@ -26,6 +26,7 @@ def main(**kwargs):
     x1max = data_input['mesh']['x1max']
     x2min = data_input['mesh']['x2min']
     x2max = data_input['mesh']['x2max']
+    mass = data_input['problem']['mass']
 
     init_data = athena_read.athdf(problem + '.cons.00000.athdf')
     x1v_init = init_data['x1v'] # r
