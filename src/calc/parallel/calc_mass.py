@@ -62,7 +62,7 @@ def main(**kwargs):
     mass = data_input['problem']['mass']
     x1min = data_input['mesh']['x1min']
 
-    #times = np.asarray([0,10,20,30])
+    #times = np.asarray([0,10,20,30,40,50])
 
     count = len(times) // size  # number of files for each process to analyze
     remainder = len(times) % size  # extra files if times is not a multiple of size
@@ -109,7 +109,7 @@ def main(**kwargs):
         Omega0 = v_Kep0/x1min
         T0 = 2.*np.pi/Omega0
         local_orbit_time.append(t/T0)
-        local_sim_time.append(t)
+        local_sim_time.append(float(t))
 
     if rank > 0:
         comm.Send(np.asarray(local_mf_total), dest=0, tag=14)  # send results to process 0
@@ -126,17 +126,18 @@ def main(**kwargs):
             else:
                 rank_size = count
 
-            tmp_mf = np.empty((rank_size-1, final_mf_tot.shape[0]), dtype=np.float)  # create empty array to receive results
+            tmp_mf = np.empty((1, final_mf_tot.shape[0]), dtype=np.float)  # create empty array to receive results
             comm.Recv(tmp_mf, source=i, tag=14)  # receive results from the process
             final_mf_tot = np.append(final_mf_tot,tmp_mf) # add the received results to the final results
             #final_mf_tot = np.vstack((final_mf_tot, tmp_mf))
 
-            tmp_orb_t = np.empty((rank_size-1, final_orb_t.shape[0]), dtype=np.float)
+            tmp_orb_t = np.empty((1, final_orb_t.shape[0]), dtype=np.float)
             comm.Recv(tmp_orb_t, source=i, tag=20)
             final_orb_t = np.append(final_orb_t,tmp_orb_t)
             #final_orb_t = np.vstack((final_orb_t, tmp_orb_t))
 
-            tmp_sim_t = np.empty((rank_size-1, final_sim_t.shape[0]), dtype=np.int)
+            #tmp_sim_t = np.empty((rank_size-1, final_sim_t.shape[0]), dtype=np.float)
+            tmp_sim_t = np.empty((1, final_sim_t.shape[0]), dtype=np.float)
             comm.Recv(tmp_sim_t, source=i, tag=24)
             final_sim_t = np.append(final_sim_t,tmp_sim_t)
             #final_sim_t = np.vstack((final_sim_t, tmp_sim_t))
