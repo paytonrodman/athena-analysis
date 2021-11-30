@@ -30,7 +30,11 @@ def main(**kwargs):
     x1min = data_input['mesh']['x1min']
     init_data = athena_read.athdf(problem + '.cons.00000.athdf')
     x1v_init = init_data['x1v'] # r
-    r_id = AAT.find_nearest(x1v_init, 6.) # find index of ISCO
+    r_id_0 = AAT.find_nearest(x1v_init, 6.) # find index of ISCO
+    r_id_1 = AAT.find_nearest(x1v_init, 25.)
+    r_id_2 = AAT.find_nearest(x1v_init, 50.)
+    r_id_3 = AAT.find_nearest(x1v_init, 75.)
+    r_id_4 = AAT.find_nearest(x1v_init, 100.)
 
     csv_time = []
     # check if data file already exists
@@ -56,7 +60,7 @@ def main(**kwargs):
 
     orbit_time = []
     sim_time = []
-    mf_total = []
+    mf0_total,mf1_total,mf2_total,mf3_total,mf4_total = [],[],[],[],[]
     for t in sorted(times):
         str_t = str(int(t)).zfill(5)
         data_cons = athena_read.athdf(problem + '.cons.' + str_t + '.athdf')
@@ -75,14 +79,26 @@ def main(**kwargs):
         dx1f,dx2f,dx3f = AAT.calculate_delta(x1f,x2f,x3f)
         v1,v2,v3 = AAT.calculate_velocity(mom1,mom2,mom3,dens)
 
-        mf = []
+        mf0,mf1,mf2,mf3,mf4 = [],[],[],[],[]
         for j in range(len(x2v)):
             for k in range(len(x3v)):
                 dOmega = np.sin(x2f[j]) * dx2f[j] * dx3f[k]
-                mf_i = -dens[k,j,r_id] * v1[k,j,r_id] * (x1f[r_id])**2. * dOmega
-                mf.append(mf_i)
+                mf0_i = -dens[k,j,r_id_0] * v1[k,j,r_id_0] * (x1f[r_id_0])**2. * dOmega
+                mf1_i = -dens[k,j,r_id_1] * v1[k,j,r_id_1] * (x1f[r_id_1])**2. * dOmega
+                mf2_i = -dens[k,j,r_id_2] * v1[k,j,r_id_2] * (x1f[r_id_2])**2. * dOmega
+                mf3_i = -dens[k,j,r_id_3] * v1[k,j,r_id_3] * (x1f[r_id_3])**2. * dOmega
+                mf4_i = -dens[k,j,r_id_4] * v1[k,j,r_id_4] * (x1f[r_id_4])**2. * dOmega
+                mf0.append(mf0_i)
+                mf1.append(mf1_i)
+                mf2.append(mf2_i)
+                mf3.append(mf3_i)
+                mf4.append(mf4_i)
 
-        mf_total.append(np.sum(mf))
+        mf0_total.append(np.sum(mf0))
+        mf1_total.append(np.sum(mf1))
+        mf2_total.append(np.sum(mf2))
+        mf3_total.append(np.sum(mf3))
+        mf4_total.append(np.sum(mf4))
 
         v_Kep0 = np.sqrt(mass/x1min)
         Omega0 = v_Kep0/x1min
@@ -91,17 +107,17 @@ def main(**kwargs):
         sim_time.append(t)
 
 
-    sim_time,orbit_time,mf_total = (list(t) for t in zip(*sorted(zip(sim_time,orbit_time,mf_total))))
+    sim_time,orbit_time,mf0_total,mf1_total,mf2_total,mf3_total,mf4_total = (list(t) for t in zip(*sorted(zip(sim_time,orbit_time,mf0_total,mf1_total,mf2_total,mf3_total,mf4_total))))
     os.chdir(prob_dir)
     if args.update:
         with open('mass_with_time.csv', 'a', newline='') as f:
             writer = csv.writer(f, delimiter='\t')
-            writer.writerows(zip(sim_time,orbit_time,mf_total))
+            writer.writerows(zip(sim_time,orbit_time,mf0_total,mf1_total,mf2_total,mf3_total,mf4_total))
     else:
         with open('mass_with_time.csv', 'w', newline='') as f:
             writer = csv.writer(f, delimiter='\t')
-            writer.writerow(["sim_time", "orbit_time", "mass_flux"])
-            writer.writerows(zip(sim_time,orbit_time,mf_total))
+            writer.writerow(["sim_time", "orbit_time", "mass_flux_6rg", "mass_flux_25rg", "mass_flux_50rg", "mass_flux_75rg", "mass_flux_100rg"])
+            writer.writerows(zip(sim_time,orbit_time,mf0_total,mf1_total,mf2_total,mf3_total,mf4_total))
 
 # Execute main function
 if __name__ == '__main__':
