@@ -74,6 +74,7 @@ def main(**kwargs):
     local_Bcc1_theta = []
     local_Bcc2_theta = []
     local_Bcc3_theta = []
+    local_Bpol = []
     local_orbit_time = []
     local_sim_time = []
     for t in local_times:
@@ -85,10 +86,12 @@ def main(**kwargs):
         Bcc1 = data_cons['Bcc1']
         Bcc2 = data_cons['Bcc2']
         Bcc3 = data_cons['Bcc3']
+        Bpol_i = Bcc1 + Bcc2
 
         local_Bcc1_theta.append(np.average(Bcc1[r_id,:,:],axis=1).tolist())
         local_Bcc2_theta.append(np.average(Bcc2[r_id,:,:],axis=1).tolist())
         local_Bcc3_theta.append(np.average(Bcc3[r_id,:,:],axis=1).tolist())
+        local_Bpol.append(np.average(Bpol_i[r_id,:,:],axis=1).tolist())
 
         v_Kep0 = np.sqrt(mass/x1min)
         Omega0 = v_Kep0/x1min
@@ -99,6 +102,7 @@ def main(**kwargs):
     send_b1 = np.array(local_Bcc1_theta)
     send_b2 = np.array(local_Bcc2_theta)
     send_b3 = np.array(local_Bcc3_theta)
+    send_bpol = np.array(local_Bpol)
     send_orbit = np.array(local_orbit_time)
     send_sim = np.array(local_sim_time)
     # Collect local array sizes using the high-level mpi4py gather
@@ -108,44 +112,43 @@ def main(**kwargs):
         recv_b1 = np.empty(sum(sendcounts), dtype=float)
         recv_b2 = np.empty(sum(sendcounts), dtype=float)
         recv_b3 = np.empty(sum(sendcounts), dtype=float)
+        recv_bpol = np.empty(sum(sendcounts), dtype=float)
         recv_orbit = np.empty(sum(sendcounts), dtype=float)
         recv_sim = np.empty(sum(sendcounts), dtype=float)
     else:
         recv_b1 = None
         recv_b2 = None
         recv_b3 = None
+        recv_bpol = None
         recv_orbit = None
         recv_sim = None
 
     comm.Gatherv(sendbuf=send_b1, recvbuf=(recv_b1, sendcounts), root=0)
     comm.Gatherv(sendbuf=send_b2, recvbuf=(recv_b2, sendcounts), root=0)
     comm.Gatherv(sendbuf=send_b3, recvbuf=(recv_b3, sendcounts), root=0)
+    comm.Gatherv(sendbuf=send_bpol, recvbuf=(recv_bpol, sendcounts), root=0)
     comm.Gatherv(sendbuf=send_orbit, recvbuf=(recv_orbit, sendcounts), root=0)
     comm.Gatherv(sendbuf=send_sim, recvbuf=(recv_sim, sendcounts), root=0)
     if rank == 0:
-        print("Gathered array b1: {}".format(recv_b1))
-        print("Gathered array b2: {}".format(recv_b2))
-        print("Gathered array b3: {}".format(recv_b3))
-        print("Gathered array orb: {}".format(recv_orbit))
-        print("Gathered array sim: {}".format(recv_sim))
         b1_out = recv_b1.flatten()
         b2_out = recv_b2.flatten()
         b3_out = recv_b3.flatten()
+        bpol_out = recv_bpol.flatten()
         orb_t_out = recv_orbit.flatten()
         sim_t_out = recv_sim.flatten()
 
     if rank == 0:
-        sim_t_out,orb_t_out,b1_out,b2_out,b3_out = (list(t) for t in zip(*sorted(zip(sim_t_out,orb_t_out,b1_out,b2_out,b3_out))))
+        sim_t_out,orb_t_out,b1_out,b2_out,b3_out,bpol_out = (list(t) for t in zip(*sorted(zip(sim_t_out,orb_t_out,b1_out,b2_out,b3_out,bpol_out))))
         os.chdir(prob_dir)
         if args.update:
             with open('butterfly_with_time.csv', 'a', newline='') as f:
                 writer = csv.writer(f, delimiter='\t')
-                writer.writerows(zip(sim_t_out,orb_t_out,b1_out,b2_out,b3_out))
+                writer.writerows(zip(sim_t_out,orb_t_out,b1_out,b2_out,b3_out,bpol_out))
         else:
             with open('butterfly_with_time.csv', 'w', newline='') as f:
                 writer = csv.writer(f, delimiter='\t')
-                writer.writerow(["sim_time", "orbit_time", "Bcc1", "Bcc2", "Bcc3"])
-                writer.writerows(zip(sim_t_out,orb_t_out,b1_out,b2_out,b3_out))
+                writer.writerow(["sim_time", "orbit_time", "Bcc1", "Bcc2", "Bcc3", "Bpol"])
+                writer.writerows(zip(sim_t_out,orb_t_out,b1_out,b2_out,b3_out,bpol_out))
 
 # Execute main function
 if __name__ == '__main__':
