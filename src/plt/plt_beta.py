@@ -23,7 +23,7 @@ def main(**kwargs):
             t = float(row[0])
             t_orb = float(row[1])
             b = float(row[2])
-            time.append(t_orb*5.*5.)
+            time.append(t_orb*5.)
             beta.append(b)
 
     time, beta = zip(*sorted(zip(time, beta)))

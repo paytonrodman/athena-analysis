@@ -34,7 +34,7 @@ def main(**kwargs):
             Qp_av_i = float(row[7])
             Qp_uc_i = float(row[8])
 
-            time.append(t_orb*5.*5.)
+            time.append(t_orb*5.)
             theta_B.append(tB_i)
             Qt_lc.append(Qt_lc_i)
             Qt_av.append(Qt_av_i)

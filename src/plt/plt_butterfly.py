@@ -32,7 +32,7 @@ def main(**kwargs):
             Bcc3_av = row[4]
             Bpol_av = row[5]
 
-            time.append(float(t_orb)*5.*5.)
+            time.append(float(t_orb)*5.)
             Bcc1.append(literal_eval(Bcc1_av))
             Bcc2.append(literal_eval(Bcc2_av))
             Bcc3.append(literal_eval(Bcc3_av))

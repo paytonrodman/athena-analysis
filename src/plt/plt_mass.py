@@ -23,7 +23,7 @@ def main(**kwargs):
             t_orb = float(row[1])
             mf = float(row[2])
 
-            time.append(t_orb*5.*5.)
+            time.append(t_orb*5.)
             mass_flux.append(mf)
 
     time, mass_flux = zip(*sorted(zip(time, mass_flux)))
