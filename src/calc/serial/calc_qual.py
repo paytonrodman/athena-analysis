@@ -242,8 +242,8 @@ def Alfven_vel(dens,press,Bcc1,Bcc2,Bcc3,gamma):
     """
     w = dens + (gamma/(gamma - 1.))*press
     B2 = Bcc1**2. + Bcc2**2. + Bcc3**2.
-    vA_theta = Bcc3/(np.sqrt(w+B2)) #Alfven velocity of theta component of B
-    vA_phi = Bcc2/(np.sqrt(w+B2)) #Alfven velocity of phi component of B
+    vA_theta = Bcc2/(np.sqrt(w+B2)) #Alfven velocity of theta component of B
+    vA_phi = Bcc3/(np.sqrt(w+B2)) #Alfven velocity of phi component of B
     return vA_theta,vA_phi
 
 
