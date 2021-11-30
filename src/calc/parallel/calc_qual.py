@@ -236,7 +236,8 @@ def main(**kwargs):
 
 
 def mean_confidence_interval(data, confidence=0.95):
-    """Calculate the 95% confidence interval.
+    """
+    Calculate the 95% confidence interval.
 
     Args:
         data: the data to perfom calculations on.
@@ -252,7 +253,8 @@ def mean_confidence_interval(data, confidence=0.95):
     return m, m-h, m+h
 
 def magnetic_angle(Bcc1,Bcc2):
-    """Calculate the magnetic angle, as per Hogg & Reynolds (2018) and others.
+    """
+    Calculate the magnetic angle, as per Hogg & Reynolds (2018) and others.
 
     Args:
         Bcc1: the cell-centred magnetic field in the x1 direction.
@@ -265,7 +267,8 @@ def magnetic_angle(Bcc1,Bcc2):
     return theta_B
 
 def quality_factors(x1v,x2v,x3v,dx1f,dx2f,dx3f,dens,press,v2,Bcc1,Bcc2,Bcc3,Omega_kep,gamma):
-    """Calculate the quality factors in x2 and x3.
+    """
+    Calculate the quality factors in x2 and x3.
 
     Args:
         x1v,x2v,x3v: the volume-centred coordinates for x1, x2, and x3 directions.
@@ -294,7 +297,8 @@ def quality_factors(x1v,x2v,x3v,dx1f,dx2f,dx3f,dens,press,v2,Bcc1,Bcc2,Bcc3,Omeg
     return Q_theta,Q_phi
 
 def Alfven_vel(dens,press,Bcc1,Bcc2,Bcc3,gamma):
-    """Calculate the Alfven velocity.
+    """
+    Calculate the Alfven velocity.
 
     Args:
         dens: the number density.
