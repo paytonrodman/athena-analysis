@@ -25,7 +25,7 @@ def main(**kwargs):
             mf_u = float(row[2])
             mf_l = float(row[3])
 
-            time.append(t_orb*5.*5.)
+            time.append(t_orb*5.)
             mag_flux_u.append(mf_u)
             mag_flux_l.append(mf_l)
 

@@ -23,8 +23,8 @@ def main(**kwargs):
             t_orb = float(row[1])
             sh = float(row[2])
 
-            time.append(t_orb*5.*5.)
-            scale_height.append(sh*(2**(1/2.))) # temporary measure, REMOVE
+            time.append(t_orb*5.)
+            scale_height.append(sh)
 
     time, scale_height = zip(*sorted(zip(time, scale_height)))
 
