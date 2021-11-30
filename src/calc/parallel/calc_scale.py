@@ -107,53 +107,42 @@ def main(**kwargs):
         local_orbit_time.append(t/T0)
         local_sim_time.append(t)
 
-    if rank > 0:
-        comm.Send(np.asarray(local_scale_h), dest=0, tag=14)  # send results to process 0
-        comm.Send(np.asarray(local_orbit_time), dest=0, tag=20)
-        comm.Send(np.asarray(local_sim_time), dest=0, tag=24)
-    else:
-        final_sc_h = np.copy(local_scale_h)  # initialize final results with results from process 0
-        final_orb_t = np.copy(local_orbit_time)
-        final_sim_t = np.copy(local_sim_time)
-
-        for i in range(1, size):  # determine the size of the array to be received from each process
-            if i < remainder:
-                rank_size = count + 1
-            else:
-                rank_size = count
-
-            tmp_sh = np.empty((rank_size-1, final_sc_h.shape[0]), dtype=np.float)  # create empty array to receive results
-            comm.Recv(tmp_mf, source=i, tag=14)  # receive results from the process
-            final_sc_h = np.vstack((final_sc_h, tmp_sh))  # add the received results to the final results
-
-            tmp_orb_t = np.empty((rank_size-1, final_orb_t.shape[0]), dtype=np.int)
-            comm.Recv(tmp_orb_t, source=i, tag=20)
-            final_orb_t = np.vstack((final_orb_t, tmp_orb_t))
-
-            tmp_sim_t = np.empty((rank_size-1, final_sim_t.shape[0]), dtype=np.int)
-            comm.Recv(tmp_sim_t, source=i, tag=24)
-            final_sim_t = np.vstack((final_sim_t, tmp_sim_t))
-
-        sh_out = final_sc_h.flatten()
-        orb_t_out = final_orb_t.flatten()
-        sim_t_out = final_sim_t.flatten()
-        print("flatten sh: ", sh_out)
-        print("flatten orb t: ", orb_t_out)
-        print("flatten sim t: ", sim_t_out)
-
+    send_scale = np.array(local_scale_h)
+    send_orbit = np.array(local_orbit_time)
+    send_sim = np.array(local_sim_time)
+    # Collect local array sizes using the high-level mpi4py gather
+    sendcounts = np.array(comm.gather(len(send_scale), 0))
 
     if rank == 0:
-        sim_t_out,orb_t_out,sh_out = (list(t) for t in zip(*sorted(zip(sim_t_out,orb_t_out,sh_out))))
+        recv_scale = np.empty(sum(sendcounts), dtype=float)
+        recv_orbit = np.empty(sum(sendcounts), dtype=float)
+        recv_sim = np.empty(sum(sendcounts), dtype=float)
+    else:
+        recv_scale = None
+        recv_orbit = None
+        recv_sim = None
+
+    comm.Gatherv(sendbuf=send_scale, recvbuf=(recv_scale, sendcounts), root=0)
+    comm.Gatherv(sendbuf=send_orbit, recvbuf=(recv_orbit, sendcounts), root=0)
+    comm.Gatherv(sendbuf=send_sim, recvbuf=(recv_sim, sendcounts), root=0)
+    if rank == 0:
+        scale_out = recv_scale.flatten()
+        orb_t_out = recv_orbit.flatten()
+        sim_t_out = recv_sim.flatten()
+
+    if rank == 0:
+        sim_t_out,orb_t_out,scale_out = (list(t) for t in zip(*sorted(zip(sim_t_out,orb_t_out,scale_out))))
         os.chdir(prob_dir)
         if args.update:
-            with open('mass_with_time.csv', 'a', newline='') as f:
+            with open('scale_with_time.csv', 'a', newline='') as f:
                 writer = csv.writer(f, delimiter='\t')
-                writer.writerows(zip(sim_t_out,orb_t_out,sh_out))
+                writer.writerows(zip(sim_t_out,orb_t_out,scale_out))
         else:
-            with open('mass_with_time.csv', 'w', newline='') as f:
+            with open('scale_with_time.csv', 'w', newline='') as f:
                 writer = csv.writer(f, delimiter='\t')
                 writer.writerow(["sim_time", "orbit_time", "scale_height"])
-                writer.writerows(zip(sim_t_out,orb_t_out,sh_out))
+                writer.writerows(zip(sim_t_out,orb_t_out,scale_out))
+
 
 # Execute main function
 if __name__ == '__main__':

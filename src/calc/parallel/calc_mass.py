@@ -35,8 +35,8 @@ def main(**kwargs):
     runfile_dir = prob_dir + 'runfiles/'
     os.chdir(data_dir)
 
-    csv_time = np.empty(0)
     # check if data file already exists
+    csv_time = np.empty(0)
     if args.update:
         with open(prob_dir + 'mass_with_time.csv', 'r', newline='') as f:
             csv_reader = csv.reader(f, delimiter='\t')
@@ -45,7 +45,6 @@ def main(**kwargs):
                 csv_time = np.append(csv_time, float(row[0]))
 
     files = glob.glob('./*.athdf')
-
     times = np.empty(0)
     for f in files:
         time_sec = re.findall(r'\b\d+\b', f)
@@ -63,22 +62,21 @@ def main(**kwargs):
     x1min = data_input['mesh']['x1min']
 
     #times = np.asarray([0,10,20,30,40,50])
-
+    # distribute files to cores
     count = len(times) // size  # number of files for each process to analyze
     remainder = len(times) % size  # extra files if times is not a multiple of size
-
     if rank < remainder:  # processes with rank < remainder analyze one extra catchment
         start = rank * (count + 1)  # index of first file to analyze
         stop = start + count + 1  # index of last file to analyze
     else:
         start = rank * count + remainder
         stop = start + count
-
     local_times = times[start:stop] # get the times to be analyzed by each rank
+
     local_mf_total = []
     local_orbit_time = []
     local_sim_time = []
-    print("times are: ", local_times)
+    #print("times are: ", local_times)
     for t in local_times:
         str_t = str(int(t)).zfill(5)
         data_cons = athena_read.athdf(problem + '.cons.' + str_t + '.athdf')
@@ -111,45 +109,31 @@ def main(**kwargs):
         local_orbit_time.append(t/T0)
         local_sim_time.append(float(t))
 
-    if rank > 0:
-        comm.Send(np.asarray(local_mf_total), dest=0, tag=14)  # send results to process 0
-        comm.Send(np.asarray(local_orbit_time), dest=0, tag=20)
-        comm.Send(np.asarray(local_sim_time), dest=0, tag=24)
+    send_mf = np.array(local_mf_total)
+    send_orbit = np.array(local_orbit_time)
+    send_sim = np.array(local_sim_time)
+    # Collect local array sizes using the high-level mpi4py gather
+    sendcounts = np.array(comm.gather(len(send_mf), 0))
+
+    if rank == 0:
+        recv_mf = np.empty(sum(sendcounts), dtype=float)
+        recv_orbit = np.empty(sum(sendcounts), dtype=float)
+        recv_sim = np.empty(sum(sendcounts), dtype=float)
     else:
-        final_mf_tot = np.copy(local_mf_total)  # initialize final results with results from process 0
-        final_orb_t = np.copy(local_orbit_time)
-        final_sim_t = np.copy(local_sim_time)
+        recv_mf = None
+        recv_orbit = None
+        recv_sim = None
 
-        for i in range(1, size):  # determine the size of the array to be received from each process
-            if i < remainder:
-                rank_size = count + 1
-            else:
-                rank_size = count
-
-            tmp_mf = np.empty((1, final_mf_tot.shape[0]), dtype=np.float)  # create empty array to receive results
-            comm.Recv(tmp_mf, source=i, tag=14)  # receive results from the process
-            final_mf_tot = np.append(final_mf_tot,tmp_mf) # add the received results to the final results
-            #final_mf_tot = np.vstack((final_mf_tot, tmp_mf))
-
-            tmp_orb_t = np.empty((1, final_orb_t.shape[0]), dtype=np.float)
-            comm.Recv(tmp_orb_t, source=i, tag=20)
-            final_orb_t = np.append(final_orb_t,tmp_orb_t)
-            #final_orb_t = np.vstack((final_orb_t, tmp_orb_t))
-
-            #tmp_sim_t = np.empty((rank_size-1, final_sim_t.shape[0]), dtype=np.float)
-            tmp_sim_t = np.empty((1, final_sim_t.shape[0]), dtype=np.float)
-            comm.Recv(tmp_sim_t, source=i, tag=24)
-            final_sim_t = np.append(final_sim_t,tmp_sim_t)
-            #final_sim_t = np.vstack((final_sim_t, tmp_sim_t))
-
-        mf_out = final_mf_tot.flatten()
-        orb_t_out = final_orb_t.flatten()
-        sim_t_out = final_sim_t.flatten()
-
-        print("flatten mf: ", mf_out)
-        print("flatten orb t: ", orb_t_out)
-        print("flatten sim t: ", sim_t_out)
-
+    comm.Gatherv(sendbuf=send_mf, recvbuf=(recv_mf, sendcounts), root=0)
+    comm.Gatherv(sendbuf=send_orbit, recvbuf=(recv_orbit, sendcounts), root=0)
+    comm.Gatherv(sendbuf=send_sim, recvbuf=(recv_sim, sendcounts), root=0)
+    if rank == 0:
+        print("Gathered array mf: {}".format(recv_mf))
+        print("Gathered array orb: {}".format(recv_orbit))
+        print("Gathered array sim: {}".format(recv_sim))
+        mf_out = recv_mf.flatten()
+        orb_t_out = recv_orbit.flatten()
+        sim_t_out = recv_sim.flatten()
 
     if rank == 0:
         sim_t_out,orb_t_out,mf_out = (list(t) for t in zip(*sorted(zip(sim_t_out,orb_t_out,mf_out))))
