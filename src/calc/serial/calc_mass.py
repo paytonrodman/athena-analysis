@@ -55,41 +55,37 @@ def main(**kwargs):
     sim_time = []
     mf_total = []
     for t in sorted(times):
-        if int(t)%10==0:
-            print('file number: ', t)
-            str_t = str(int(t)).zfill(5)
+        str_t = str(int(t)).zfill(5)
+        data_cons = athena_read.athdf(problem + '.cons.' + str_t + '.athdf')
 
-            data_cons = athena_read.athdf(problem + '.cons.' + str_t + '.athdf')
+        #unpack data
+        x2v = data_cons['x2v'] # theta
+        x3v = data_cons['x3v'] # phi
+        x1f = data_cons['x1f'] # r
+        x2f = data_cons['x2f'] # theta
+        x3f = data_cons['x3f'] # phi
+        dens = data_cons['dens']
+        mom1 = data_cons['mom1']
+        mom2 = data_cons['mom2']
+        mom3 = data_cons['mom3']
+        # Calculations
+        dx1f,dx2f,dx3f = AAT.calculate_delta(x1f,x2f,x3f)
+        v1,v2,v3 = AAT.calculate_velocity(mom1,mom2,mom3,dens)
 
-            #unpack data
-            x2v = data_cons['x2v'] # theta
-            x3v = data_cons['x3v'] # phi
-            x1f = data_cons['x1f'] # r
-            x2f = data_cons['x2f'] # theta
-            x3f = data_cons['x3f'] # phi
-            dens = data_cons['dens']
-            mom1 = data_cons['mom1']
-            mom2 = data_cons['mom2']
-            mom3 = data_cons['mom3']
-            # Calculations
-            dx1f,dx2f,dx3f = AAT.calculate_delta(x1f,x2f,x3f)
-            v1,v2,v3 = AAT.calculate_velocity(mom1,mom2,mom3,dens)
+        mf = []
+        for j in range(len(x2v)):
+            for k in range(len(x3v)):
+                dOmega = np.sin(x2f[j]) * dx2f[j] * dx3f[k]
+                mf_i = -dens[k,j,0] * v1[k,j,0] * (x1f[0])**2. * dOmega
+                mf.append(mf_i)
 
-            mf = []
-            for j in range(len(x2v)):
-                for k in range(len(x3v)):
-                    dOmega = np.sin(x2f[j]) * dx2f[j] * dx3f[k]
-                    mf_i = -dens[k,j,0] * v1[k,j,0] * (x1f[0])**2. * dOmega
-                    mf.append(mf_i)
+        mf_total.append(np.sum(mf))
 
-            mf_total.append(np.sum(mf))
-
-            v_Kep0 = np.sqrt(mass/x1min)
-            Omega0 = v_Kep0/x1min
-            T0 = 2.*np.pi/Omega0
-            orbit_time.append(t/T0)
-
-            sim_time.append(t)
+        v_Kep0 = np.sqrt(mass/x1min)
+        Omega0 = v_Kep0/x1min
+        T0 = 2.*np.pi/Omega0
+        orbit_time.append(t/T0)
+        sim_time.append(t)
 
 
     sim_time,orbit_time,mf_total = (list(t) for t in zip(*sorted(zip(sim_time,orbit_time,mf_total))))

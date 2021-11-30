@@ -64,29 +64,26 @@ def main(**kwargs):
     sim_time = []
     beta_list = []
     for t in sorted(times):
-        if int(t)%10==0:
-            print('file number: ', t)
-            str_t = str(int(t)).zfill(5)
+        str_t = str(int(t)).zfill(5)
 
-            data_prim = athena_read.athdf(problem + ".prim." + str_t + ".athdf")
-            data_cons = athena_read.athdf(problem + ".cons." + str_t + ".athdf")
+        data_prim = athena_read.athdf(problem + ".prim." + str_t + ".athdf")
+        data_cons = athena_read.athdf(problem + ".cons." + str_t + ".athdf")
 
-            #unpack data
-            dens = data_cons['dens']
-            Bcc1 = data_cons['Bcc1']
-            Bcc2 = data_cons['Bcc2']
-            Bcc3 = data_cons['Bcc3']
-            press = data_prim['press']
+        #unpack data
+        dens = data_cons['dens']
+        Bcc1 = data_cons['Bcc1']
+        Bcc2 = data_cons['Bcc2']
+        Bcc3 = data_cons['Bcc3']
+        press = data_prim['press']
 
-            current_beta = calculate_beta(r_u,th_u,th_l,dens,press,Bcc1,Bcc2,Bcc3)
-            beta_list.append(current_beta)
+        current_beta = calculate_beta(r_u,th_u,th_l,dens,press,Bcc1,Bcc2,Bcc3)
+        beta_list.append(current_beta)
 
-            v_Kep0 = np.sqrt(mass/x1min)
-            Omega0 = v_Kep0/x1min
-            T0 = 2.*np.pi/Omega0
-            orbit_time.append(t/T0)
-
-            sim_time.append(t)
+        v_Kep0 = np.sqrt(mass/x1min)
+        Omega0 = v_Kep0/x1min
+        T0 = 2.*np.pi/Omega0
+        orbit_time.append(t/T0)
+        sim_time.append(t)
 
     sim_time,orbit_time,beta_list = (list(t) for t in zip(*sorted(zip(sim_time,orbit_time,beta_list))))
     os.chdir(prob_dir)

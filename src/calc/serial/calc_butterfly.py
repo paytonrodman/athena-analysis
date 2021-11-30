@@ -67,9 +67,7 @@ def main(**kwargs):
     Bcc3_theta = []
     Bpol = []
     for t in sorted(times):
-        print('file number: ', t)
         str_t = str(int(t)).zfill(5)
-
         data_cons = athena_read.athdf(problem + '.cons.' + str_t + '.athdf')
 
         #unpack data

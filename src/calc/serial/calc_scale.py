@@ -68,29 +68,26 @@ def main(**kwargs):
     orbit_time = []
     sim_time = []
     for t in sorted(times):
-        if int(t)%10==0:
-            print('file number: ', t)
-            str_t = str(int(t)).zfill(5)
+        str_t = str(int(t)).zfill(5)
 
-            filename_cons = problem + '.cons.' + str_t + '.athdf'
-            data_cons = athena_read.athdf(filename_cons)
+        filename_cons = problem + '.cons.' + str_t + '.athdf'
+        data_cons = athena_read.athdf(filename_cons)
 
-            #unpack data
-            dens = data_cons['dens']
-            # Calculations
-            polar_ang = np.sum(theta*dens*dOmega,axis=(0,1))/np.sum(dens*dOmega,axis=(0,1))
-            h_up = (theta-polar_ang)**2. * dens*dOmega
-            h_down = dens*dOmega
-            scale_h = np.sqrt(np.sum(h_up,axis=(0,1))/np.sum(h_down,axis=(0,1)))
-            scale_h_av = np.average(scale_h,weights=dx1f)
-            scale_height.append(scale_h_av)
+        #unpack data
+        dens = data_cons['dens']
+        # Calculations
+        polar_ang = np.sum(theta*dens*dOmega,axis=(0,1))/np.sum(dens*dOmega,axis=(0,1))
+        h_up = (theta-polar_ang)**2. * dens*dOmega
+        h_down = dens*dOmega
+        scale_h = np.sqrt(np.sum(h_up,axis=(0,1))/np.sum(h_down,axis=(0,1)))
+        scale_h_av = np.average(scale_h,weights=dx1f)
+        scale_height.append(scale_h_av)
 
-            v_Kep0 = np.sqrt(mass/x1min)
-            Omega0 = v_Kep0/x1min
-            T0 = 2.*np.pi/Omega0
-            orbit_time.append(t/T0)
-
-            sim_time.append(t)
+        v_Kep0 = np.sqrt(mass/x1min)
+        Omega0 = v_Kep0/x1min
+        T0 = 2.*np.pi/Omega0
+        orbit_time.append(t/T0)
+        sim_time.append(t)
 
     sim_time,orbit_time,scale_height = (list(t) for t in zip(*sorted(zip(sim_time,orbit_time,scale_height))))
     os.chdir(prob_dir)

@@ -61,49 +61,43 @@ def main(**kwargs):
     mag_flux_u = []
     mag_flux_l = []
     for t in sorted(times):
-        if int(t)%10==0:
-            print('file number: ', t)
-            str_t = str(int(t)).zfill(5)
+        str_t = str(int(t)).zfill(5)
+        data_cons = athena_read.athdf(problem + '.cons.' + str_t + '.athdf')
 
-            data_cons = athena_read.athdf(problem + '.cons.' + str_t + '.athdf')
+        #unpack data
+        x2v = data_cons['x2v'] # theta
+        x3v = data_cons['x3v'] # phi
+        x1f = data_cons['x1f'] # r
+        x2f = data_cons['x2f'] # theta
+        x3f = data_cons['x3f'] # phi
+        Bcc1 = data_cons['Bcc1']
 
-            #unpack data
-            x2v = data_cons['x2v'] # theta
-            x3v = data_cons['x3v'] # phi
-            x1f = data_cons['x1f'] # r
-            x2f = data_cons['x2f'] # theta
-            x3f = data_cons['x3f'] # phi
-            Bcc1 = data_cons['Bcc1']
+        # Calculations
+        dx1f,dx2f,dx3f = AAT.calculate_delta(x1f,x2f,x3f)
 
-            # Calculations
-            dx1f,dx2f,dx3f = AAT.calculate_delta(x1f,x2f,x3f)
+        mf_l = []
+        mf_u = []
 
-            mf_l = []
-            mf_u = []
+        for j in range(th_id):
+            for k in range(len(x3v)):
+                dS = (x1f[0]**2.)*np.sin(x2f[j])*dx2f[j]*dx3f[k] # r^2 * sin(theta) * dtheta * dphi
+                mf_i = Bcc1[k,j,0]*dS
+                mf_u.append(mf_i)
 
-            for j in range(th_id):
-                for k in range(len(x3v)):
-                    dS = (x1f[0]**2.)*np.sin(x2f[j])*dx2f[j]*dx3f[k] # r^2 * sin(theta) * dtheta * dphi
-                    mf_i = Bcc1[k,j,0]*dS
-                    mf_u.append(mf_i)
+        for j in range(th_id,len(x2v)):
+            for k in range(len(x3v)):
+                dS = (x1f[0]**2.)*np.sin(x2f[j])*dx2f[j]*dx3f[k] # r^2 * sin(theta) * dtheta * dphi
+                mf_i = Bcc1[k,j,0]*dS
+                mf_l.append(mf_i)
 
-            for j in range(th_id,len(x2v)):
-                for k in range(len(x3v)):
-                    dS = (x1f[0]**2.)*np.sin(x2f[j])*dx2f[j]*dx3f[k] # r^2 * sin(theta) * dtheta * dphi
-                    mf_i = Bcc1[k,j,0]*dS
-                    mf_l.append(mf_i)
+        mag_flux_u.append(np.sum(mf_u))
+        mag_flux_l.append(np.sum(mf_l))
 
-            mag_flux_u.append(np.sum(mf_u))
-            mag_flux_l.append(np.sum(mf_l))
-
-            v_Kep0 = np.sqrt(mass/x1min)
-            Omega0 = v_Kep0/x1min
-            T0 = 2.*np.pi/Omega0
-            orbit_time.append(t/T0)
-
-            sim_time.append(t)
-
-
+        v_Kep0 = np.sqrt(mass/x1min)
+        Omega0 = v_Kep0/x1min
+        T0 = 2.*np.pi/Omega0
+        orbit_time.append(t/T0)
+        sim_time.append(t)
 
     sim_time,orbit_time,mag_flux_u,mag_flux_l = (list(t) for t in zip(*sorted(zip(sim_time,orbit_time,mag_flux_u,mag_flux_l))))
     os.chdir(prob_dir)
