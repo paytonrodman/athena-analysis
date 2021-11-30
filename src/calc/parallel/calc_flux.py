@@ -132,10 +132,6 @@ def main(**kwargs):
     comm.Gatherv(sendbuf=send_orbit, recvbuf=(recv_orbit, sendcounts), root=0)
     comm.Gatherv(sendbuf=send_sim, recvbuf=(recv_sim, sendcounts), root=0)
     if rank == 0:
-        print("Gathered array mf_u: {}".format(recv_mfu))
-        print("Gathered array mf_l: {}".format(recv_mfl))
-        print("Gathered array orb: {}".format(recv_orbit))
-        print("Gathered array sim: {}".format(recv_sim))
         mfu_out = recv_mfu.flatten()
         mfl_out = recv_mfl.flatten()
         orb_t_out = recv_orbit.flatten()
