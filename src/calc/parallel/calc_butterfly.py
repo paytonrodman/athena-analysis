@@ -62,7 +62,6 @@ def main(**kwargs):
 
     data_init = athena_read.athdf(problem + '.cons.00000.athdf')
     x1v_init = data_init['x1v']
-    x2v_init = data_init['x2v']
     data_input = athena_read.athinput(runfile_dir + 'athinput.' + problem)
     mass = data_input['problem']['mass']
     x1min = data_input['mesh']['x1min']
@@ -83,7 +82,6 @@ def main(**kwargs):
         data_cons = athena_read.athdf(problem + '.cons.' + str_t + '.athdf')
 
         #unpack data
-        x2f = data_cons['x2f'] # theta
         Bcc1 = data_cons['Bcc1']
         Bcc2 = data_cons['Bcc2']
         Bcc3 = data_cons['Bcc3']
