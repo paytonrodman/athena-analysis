@@ -69,8 +69,8 @@ def main(**kwargs):
 
     local_mag_flux_u = []
     local_mag_flux_l = []
-    orbit_time = []
-    sim_time = []
+    local_orbit_time = []
+    local_sim_time = []
     for t in local_times:
         #print('file number: ', t)
         str_t = str(int(t)).zfill(5)
