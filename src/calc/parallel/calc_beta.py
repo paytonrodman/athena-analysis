@@ -113,9 +113,6 @@ def main(**kwargs):
     comm.Gatherv(sendbuf=send_orbit, recvbuf=(recv_orbit, sendcounts), root=0)
     comm.Gatherv(sendbuf=send_sim, recvbuf=(recv_sim, sendcounts), root=0)
     if rank == 0:
-        print("Gathered array beta: {}".format(recv_beta))
-        print("Gathered array orb: {}".format(recv_orbit))
-        print("Gathered array sim: {}".format(recv_sim))
         beta_out = recv_beta.flatten()
         orb_t_out = recv_orbit.flatten()
         sim_t_out = recv_sim.flatten()
@@ -134,7 +131,8 @@ def main(**kwargs):
                 writer.writerows(zip(sim_t_out,orb_t_out,beta_out))
 
 def calculate_beta(th_u,th_l,dens,press,Bcc1,Bcc2,Bcc3):
-    """Calculate the mean plasma beta within a specified region.
+    """
+    Calculate the mean plasma beta within a specified region.
 
     Args:
         th_u: the upper boundary in x2.
