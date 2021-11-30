@@ -53,7 +53,6 @@ def main(**kwargs):
 
     data_init = athena_read.athdf(problem + '.cons.00000.athdf')
     x1v_init = data_init['x1v']
-    x2v_init = data_init['x2v']
 
     if kwargs['r'] is not None:
         r_id = AAT.find_nearest(x1v_init, kwargs['r'])
@@ -71,7 +70,6 @@ def main(**kwargs):
         data_cons = athena_read.athdf(problem + '.cons.' + str_t + '.athdf')
 
         #unpack data
-        x2f = data_cons['x2f'] # theta
         Bcc1 = data_cons['Bcc1']
         Bcc2 = data_cons['Bcc2']
         Bcc3 = data_cons['Bcc3']
