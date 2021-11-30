@@ -28,6 +28,9 @@ def main(**kwargs):
     data_input = athena_read.athinput(runfile_dir + 'athinput.' + problem)
     mass = data_input['problem']['mass']
     x1min = data_input['mesh']['x1min']
+    init_data = athena_read.athdf(problem + '.cons.00000.athdf')
+    x1v_init = init_data['x1v'] # r
+    r_id = AAT.find_nearest(x1v_init, 6.) # find index of ISCO
 
     csv_time = []
     # check if data file already exists
@@ -76,7 +79,7 @@ def main(**kwargs):
         for j in range(len(x2v)):
             for k in range(len(x3v)):
                 dOmega = np.sin(x2f[j]) * dx2f[j] * dx3f[k]
-                mf_i = -dens[k,j,0] * v1[k,j,0] * (x1f[0])**2. * dOmega
+                mf_i = -dens[k,j,r_id] * v1[k,j,r_id] * (x1f[r_id])**2. * dOmega
                 mf.append(mf_i)
 
         mf_total.append(np.sum(mf))
