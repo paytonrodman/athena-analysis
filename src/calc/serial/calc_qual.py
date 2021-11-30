@@ -27,11 +27,15 @@ def main(**kwargs):
     os.chdir(data_dir)
 
     data_input = athena_read.athinput(runfile_dir + 'athinput.' + problem)
-    mass = data_input['problem']['mass']
+    mass = data_input['problem']['mass'] # bounds of simulation
     x1min = data_input['mesh']['x1min']
     x1max = data_input['mesh']['x1max']
     x2min = data_input['mesh']['x2min']
     x2max = data_input['mesh']['x2max']
+    x1_high_min = data_input['refinement3']['x1min'] #bounds of high resolution region
+    x1_high_max = data_input['refinement3']['x1max']
+    x2_high_min = data_input['refinement3']['x2min']
+    x2_high_max = data_input['refinement3']['x2max']
 
     init_data = athena_read.athdf(problem + '.cons.00000.athdf')
     x1v_init = init_data['x1v'] # r
@@ -42,25 +46,25 @@ def main(**kwargs):
             sys.exit('Error: Lower r value must be between %d and %d' % x1min,x1max)
         rl = AAT.find_nearest(x1v_init, kwargs['r_lower'])
     else:
-        rl = AAT.find_nearest(x1v_init, x1min)
+        rl = AAT.find_nearest(x1v_init, x1_high_min)
     if kwargs['r_upper'] is not None:
         if not x1min <= kwargs['r_upper'] < x1max:
             sys.exit('Error: Upper r value must be between %d and %d' % x1min,x1max)
         ru = AAT.find_nearest(x1v_init, kwargs['r_upper'])
     else:
-        ru = AAT.find_nearest(x1v_init, x1max)
+        ru = AAT.find_nearest(x1v_init, x1_high_max)
     if kwargs['theta_lower'] is not None:
         if not x2min <= kwargs['theta_lower'] < x2max:
             sys.exit('Error: Lower theta value must be between %d and %d' % x2min,x2max)
         tl = AAT.find_nearest(x2v_init, kwargs['theta_lower'])
     else:
-        tl = AAT.find_nearest(x2v_init, np.pi/2.)
+        tl = AAT.find_nearest(x2v_init, x2_high_min)
     if kwargs['theta_upper'] is not None:
         if not x2min <= kwargs['theta_upper'] < x2max:
             sys.exit('Error: Upper theta value must be between %d and %d' % x2min,x2max)
         tu = AAT.find_nearest(x2v_init, kwargs['theta_upper'])
     else:
-        tu = AAT.find_nearest(x2v_init, np.pi/2.)
+        tu = AAT.find_nearest(x2v_init, x2_high_max)
 
     if rl==ru:
         ru += 1
@@ -254,19 +258,19 @@ if __name__ == '__main__':
     parser.add_argument('-rl', '--r_lower',
                         type=float,
                         default=None,
-                        help='value of lower r bound of region being analysed, must be between x1min and x1max (default=x1min)')
+                        help='value of lower r bound of region being analysed, must be between x1min and x1max (default=5)')
     parser.add_argument('-ru', '--r_upper',
                         type=float,
                         default=None,
-                        help='value of upper r bound of region being analysed, must be between x1min and x1max (default=x1max)')
+                        help='value of upper r bound of region being analysed, must be between x1min and x1max (default=100)')
     parser.add_argument('-tl', '--theta_lower',
                         type=float,
                         default=None,
-                        help='value of lower theta bound of region being analysed, must be between x2min and x2max (default=pi/2)')
+                        help='value of lower theta bound of region being analysed, must be between x2min and x2max (default=0.982)')
     parser.add_argument('-tu', '--theta_upper',
                         type=float,
                         default=None,
-                        help='value of upper theta bound of region being analysed, must be between x2min and x2max (default=pi/2)')
+                        help='value of upper theta bound of region being analysed, must be between x2min and x2max (default=2.159)')
     args = parser.parse_args()
 
     main(**vars(args))
