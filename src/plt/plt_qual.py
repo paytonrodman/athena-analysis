@@ -24,7 +24,7 @@ def main(**kwargs):
         csv_reader = csv.reader(csv_file, delimiter='\t')
         next(csv_reader, None) # skip header
         for row in csv_reader:
-            t_i = float(row[0])
+            #t_i = float(row[0])
             t_orb = float(row[1])
             tB_i = float(row[2])
             Qt_lc_i = float(row[3])

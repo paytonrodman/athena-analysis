@@ -20,7 +20,7 @@ def main(**kwargs):
         csv_reader = csv.reader(csv_file, delimiter='\t')
         next(csv_reader, None) # skip header
         for row in csv_reader:
-            t = float(row[0])
+            #t = float(row[0])
             t_orb = float(row[1])
             b = float(row[2])
             time.append(t_orb*5.)
