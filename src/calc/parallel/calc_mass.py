@@ -80,7 +80,7 @@ def main(**kwargs):
         stop = start + count
     local_times = times[start:stop] # get the times to be analyzed by each rank
 
-    local_mf0_total,local_mf1_total,local_mf2_total,local_mf3_total,local_mf4_total = [],[],[],[]
+    local_mf0_total,local_mf1_total,local_mf2_total,local_mf3_total,local_mf4_total = [],[],[],[],[]
     local_orbit_time = []
     local_sim_time = []
     for t in local_times:
