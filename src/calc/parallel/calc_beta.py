@@ -19,6 +19,7 @@ import glob
 import re
 import csv
 import argparse
+import gc # garbage collector
 from mpi4py import MPI
 
 def main(**kwargs):
@@ -57,6 +58,8 @@ def main(**kwargs):
     if len(times)==0:
         sys.exit('No new timesteps to analyse in the given directory. Exiting.')
 
+    #times = [0,10,20,30,40]
+
     # distribute files to cores
     count = len(times) // size  # number of files for each process to analyze
     remainder = len(times) % size  # extra files if times is not a multiple of size
@@ -67,19 +70,23 @@ def main(**kwargs):
         start = rank * count + remainder
         stop = start + count
     local_times = times[start:stop] # get the times to be analyzed by each rank
+    #print("local_times are: ",local_times)
 
     data_input = athena_read.athinput(runfile_dir + 'athinput.' + problem)
-    scale_height = data_input['problem']['h_r']
-    mass = data_input['problem']['mass']
-    x1min = data_input['mesh']['x1min']
+    scale_height = np.copy(data_input['problem']['h_r'])
+    mass = np.copy(data_input['problem']['mass'])
+    x1min = np.copy(data_input['mesh']['x1min'])
     data_init = athena_read.athdf(problem + '.cons.00000.athdf')
-    x2v = data_init['x2v']
+    x2v = np.copy(data_init['x2v'])
     th_u = AAT.find_nearest(x2v, np.pi/2. + (3.*scale_height))
     th_l = AAT.find_nearest(x2v, np.pi/2. - (3.*scale_height))
 
-    local_beta = []
-    local_orbit_time = []
-    local_sim_time = []
+    del data_input
+    del data_init
+
+    local_beta = np.empty(0)
+    local_orbit_time = np.empty(0)
+    local_sim_time = np.empty(0)
     for t in local_times:
         #print('file number: ', t)
         str_t = str(int(t)).zfill(5)
@@ -87,24 +94,57 @@ def main(**kwargs):
         data_cons = athena_read.athdf(problem + ".cons." + str_t + ".athdf")
 
         #unpack data
-        dens = data_cons['dens']
-        Bcc1 = data_cons['Bcc1']
-        Bcc2 = data_cons['Bcc2']
-        Bcc3 = data_cons['Bcc3']
-        press = data_prim['press']
+        dens = np.copy(data_cons['dens'])
+        Bcc1 = np.copy(data_cons['Bcc1'])
+        Bcc2 = np.copy(data_cons['Bcc2'])
+        Bcc3 = np.copy(data_cons['Bcc3'])
+        press = np.copy(data_prim['press'])
 
-        current_beta = calculate_beta(th_u,th_l,dens,press,Bcc1,Bcc2,Bcc3)
-        local_beta.append(current_beta)
+        del data_cons
+        del data_prim
+        gc.collect()
+
+        #current_beta = calculate_beta(th_u,th_l,dens,press,Bcc1,Bcc2,Bcc3)
+        # Density-weighted mean gas pressure
+        sum_p = 0.
+        numWeight_p = 0.
+        sum_b = 0.
+        numWeight_b = 0.
+
+        pressure = press[:,th_l:th_u,:]
+        density = dens[:,th_l:th_u,:]
+        # Find volume centred total magnetic field
+        bcc_all = np.sqrt(np.square(Bcc1[:,th_l:th_u,:]) +
+                          np.square(Bcc2[:,th_l:th_u,:]) +
+                          np.square(Bcc3[:,th_l:th_u,:]))
+
+        numWeight_p = np.sum(pressure*density)
+        sum_p       = np.sum(density)
+        numWeight_b = np.sum(bcc_all*density)
+        sum_b       = np.sum(density)
+
+        pres_av = numWeight_p/sum_p
+        bcc_av = numWeight_b/sum_b
+        if bcc_av>0:
+            current_beta = 2. * pres_av / (bcc_av**2.)
+        else:
+            current_beta = np.nan
+
+            
+        #local_beta.append(current_beta)
+        local_beta = np.append(local_beta, current_beta)
 
         v_Kep0 = np.sqrt(mass/x1min)
         Omega0 = v_Kep0/x1min
         T0 = 2.*np.pi/Omega0
-        local_orbit_time.append(t/T0)
-        local_sim_time.append(float(t))
+        #local_orbit_time.append(t/T0)
+        #local_sim_time.append(float(t))
+        local_orbit_time = np.append(local_orbit_time, t/T0)
+        local_sim_time = np.append(local_sim_time, float(t))
 
-    send_beta = np.array(local_beta)
-    send_orbit = np.array(local_orbit_time)
-    send_sim = np.array(local_sim_time)
+    send_beta = local_beta
+    send_orbit = local_orbit_time
+    send_sim = local_sim_time
     # Collect local array sizes using the high-level mpi4py gather
     sendcounts = np.array(comm.gather(len(send_beta), 0))
 
