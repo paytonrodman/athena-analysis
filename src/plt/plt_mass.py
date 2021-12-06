@@ -32,7 +32,7 @@ def main(**kwargs):
     y_var_name = 'mass_flux'
     fig = plt.figure()
     ax = fig.add_subplot(111)
-    ax.plot(time,mass_flux)
+    ax.plot(time,mass_flux,linewidth=1)
     ax.set_xlabel(r'time ($T_{5r_g}$)')
     ax.set_ylabel('surface averaged mass flux')
     ax.set_xlim(left=0)

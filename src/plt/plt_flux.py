@@ -33,8 +33,8 @@ def main(**kwargs):
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
-    ax.plot(time,mag_flux_u,label='upper hem.')
-    ax.plot(time,mag_flux_l,label='lower hem.')
+    ax.plot(time,mag_flux_u,label='upper hem.',linewidth=1)
+    ax.plot(time,mag_flux_l,label='lower hem.',linewidth=1)
     plt.legend(loc='best')
     ax.set_xlabel(r'time ($T_{5r_g}$)')
     ax.set_ylabel(r'average $\Phi_{B}$')
