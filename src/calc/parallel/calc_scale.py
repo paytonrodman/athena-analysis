@@ -19,6 +19,7 @@ import glob
 import re
 import csv
 import argparse
+import gc # garbage collector
 from mpi4py import MPI
 
 def main(**kwargs):
@@ -112,8 +113,8 @@ def main(**kwargs):
         v_Kep0 = np.sqrt(mass/x1min)
         Omega0 = v_Kep0/x1min
         T0 = 2.*np.pi/Omega0
-        orbit_time = t/T0
-        sim_time = t
+        orbit_t = t/T0
+        sim_t = t
 
         with open(prob_dir + 'scale_with_time.csv', 'a', newline='') as f:
             writer = csv.writer(f, delimiter='\t')
