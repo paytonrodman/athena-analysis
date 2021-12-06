@@ -12,8 +12,8 @@
 import numpy as np
 import os
 import sys
-#sys.path.insert(0, '/home/per29/rds/rds-accretion-zyNhkonJSR8/athena-analysis/dependencies')
-sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies')
+sys.path.insert(0, '/home/per29/rds/rds-accretion-zyNhkonJSR8/athena-analysis/dependencies')
+#sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies')
 import athena_read
 import AAT
 import glob
@@ -29,8 +29,8 @@ def main(**kwargs):
     rank = comm.Get_rank()
 
     problem  = args.prob_id
-    root_dir = "/Users/paytonrodman/athena-sim/"
-    #root_dir = '/home/per29/rds/rds-accretion-zyNhkonJSR8/'
+    #root_dir = "/Users/paytonrodman/athena-sim/"
+    root_dir = '/home/per29/rds/rds-accretion-zyNhkonJSR8/'
     prob_dir = root_dir + problem + '/'
     data_dir = prob_dir + 'data/'
     runfile_dir = prob_dir + 'runfiles/'
@@ -58,7 +58,7 @@ def main(**kwargs):
     if len(times)==0:
         sys.exit('No new timesteps to analyse in the given directory. Exiting.')
 
-    times = [0,10,20,30,40]
+    #times = [0,10,20,30,40]
 
     # distribute files to cores
     count = len(times) // size  # number of files for each process to analyze
@@ -88,7 +88,7 @@ def main(**kwargs):
     #local_orbit_time = []
     #local_sim_time = []
     if rank==0:
-        with open('butterfly_with_time.csv', 'w', newline='') as f:
+        with open(prob_dir + 'butterfly_with_time.csv', 'w', newline='') as f:
             writer = csv.writer(f, delimiter='\t')
             writer.writerow(["sim_time", "orbit_time", "Bcc1", "Bcc2", "Bcc3"])
     for t in local_times:
@@ -111,7 +111,7 @@ def main(**kwargs):
         local_orbit_time = t/T0
         local_sim_time = float(t)
 
-        with open('butterfly_with_time.csv', 'a', newline='') as f:
+        with open(prob_dir + 'butterfly_with_time.csv', 'a', newline='') as f:
             writer = csv.writer(f, delimiter='\t')
             row = [local_sim_time,local_orbit_time,local_Bcc1_theta,local_Bcc2_theta,local_Bcc3_theta]
             writer.writerow(row)
