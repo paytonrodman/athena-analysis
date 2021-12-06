@@ -58,8 +58,6 @@ def main(**kwargs):
     if len(times)==0:
         sys.exit('No new timesteps to analyse in the given directory. Exiting.')
 
-    #times = [0,10,20,30,40]
-
     # distribute files to cores
     count = len(times) // size  # number of files for each process to analyze
     remainder = len(times) % size  # extra files if times is not a multiple of size
@@ -82,11 +80,6 @@ def main(**kwargs):
     else:
         r_id = AAT.find_nearest(x1v_init, 25.) # approx. middle of high res region
 
-    #local_Bcc1_theta = []
-    #local_Bcc2_theta = []
-    #local_Bcc3_theta = []
-    #local_orbit_time = []
-    #local_sim_time = []
     if rank==0:
         with open(prob_dir + 'butterfly_with_time.csv', 'w', newline='') as f:
             writer = csv.writer(f, delimiter='\t')
@@ -103,7 +96,6 @@ def main(**kwargs):
         local_Bcc1_theta = np.average(Bcc1[r_id,:,:],axis=1).tolist()
         local_Bcc2_theta = np.average(Bcc2[r_id,:,:],axis=1).tolist()
         local_Bcc3_theta = np.average(Bcc3[r_id,:,:],axis=1).tolist()
-        #print(local_Bcc1_theta)
 
         v_Kep0 = np.sqrt(mass/x1min)
         Omega0 = v_Kep0/x1min
@@ -116,59 +108,6 @@ def main(**kwargs):
             row = [local_sim_time,local_orbit_time,local_Bcc1_theta,local_Bcc2_theta,local_Bcc3_theta]
             writer.writerow(row)
 
-
-
-    #send_b1 = np.array(local_Bcc1_theta)
-    #send_b2 = np.array(local_Bcc2_theta)
-    #send_b3 = np.array(local_Bcc3_theta)
-    #send_orbit = np.array(local_orbit_time)
-    #send_sim = np.array(local_sim_time)
-    # Collect local array sizes using the high-level mpi4py gather
-    #sendcounts = np.array(comm.gather(np.size(send_b1), 0))
-    #print("sendcounts: ", sendcounts)
-    #print("shape send_b1: ", np.shape(send_b1))
-    #print("send_b1: ", send_b1)
-
-    # if rank == 0:
-    #     recv_b1 = np.empty(sendcounts, dtype=float)
-    #     print("shape recv_b1: ", np.shape(recv_b1))
-    #     recv_b2 = np.empty(sum(sendcounts), dtype=float)
-    #     recv_b3 = np.empty(sum(sendcounts), dtype=float)
-    #     recv_orbit = np.empty(sum(sendcounts), dtype=float)
-    #     recv_sim = np.empty(sum(sendcounts), dtype=float)
-    # else:
-    #     recv_b1 = None
-    #     recv_b2 = None
-    #     recv_b3 = None
-    #     recv_orbit = None
-    #     recv_sim = None
-    #
-    # comm.Gatherv(sendbuf=send_b1, recvbuf=(recv_b1, sendcounts), root=0)
-    # print(recv_b1)
-    # quit()
-    # comm.Gatherv(sendbuf=send_b2, recvbuf=(recv_b2, sendcounts), root=0)
-    # comm.Gatherv(sendbuf=send_b3, recvbuf=(recv_b3, sendcounts), root=0)
-    # comm.Gatherv(sendbuf=send_orbit, recvbuf=(recv_orbit, sendcounts), root=0)
-    # comm.Gatherv(sendbuf=send_sim, recvbuf=(recv_sim, sendcounts), root=0)
-    # if rank == 0:
-    #     b1_out = recv_b1.flatten()
-    #     b2_out = recv_b2.flatten()
-    #     b3_out = recv_b3.flatten()
-    #     orb_t_out = recv_orbit.flatten()
-    #     sim_t_out = recv_sim.flatten()
-    #
-    # if rank == 0:
-    #     sim_t_out,orb_t_out,b1_out,b2_out,b3_out = (list(t) for t in zip(*sorted(zip(sim_t_out,orb_t_out,b1_out,b2_out,b3_out))))
-    #     os.chdir(prob_dir)
-    #     if args.update:
-    #         with open('butterfly_with_time.csv', 'a', newline='') as f:
-    #             writer = csv.writer(f, delimiter='\t')
-    #             writer.writerows(zip(sim_t_out,orb_t_out,b1_out,b2_out,b3_out))
-    #     else:
-    #         with open('butterfly_with_time.csv', 'w', newline='') as f:
-    #             writer = csv.writer(f, delimiter='\t')
-    #             writer.writerow(["sim_time", "orbit_time", "Bcc1", "Bcc2", "Bcc3"])
-    #             writer.writerows(zip(sim_t_out,orb_t_out,b1_out,b2_out,b3_out))
 
 # Execute main function
 if __name__ == '__main__':
