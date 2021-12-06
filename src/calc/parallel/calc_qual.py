@@ -19,7 +19,7 @@ import AAT
 import glob
 import re
 import csv
-import scipy.stats
+import scipy.stats as st
 import argparse
 import gc # garbage collector
 from mpi4py import MPI
@@ -43,10 +43,26 @@ def main(**kwargs):
     x1max = data_input['mesh']['x1max']
     x2min = data_input['mesh']['x2min']
     x2max = data_input['mesh']['x2max']
-    x1_high_min = data_input['refinement3']['x1min'] # bounds of high resolution region
-    x1_high_max = data_input['refinement3']['x1max']
-    x2_high_min = data_input['refinement3']['x2min']
-    x2_high_max = data_input['refinement3']['x2max']
+    if 'refinement3' in data_input:
+        x1_high_min = data_input['refinement3']['x1min'] # bounds of high resolution region
+        x1_high_max = data_input['refinement3']['x1max']
+        x2_high_min = data_input['refinement3']['x2min']
+        x2_high_max = data_input['refinement3']['x2max']
+    elif 'refinement2' in data_input:
+        x1_high_min = data_input['refinement2']['x1min'] # bounds of high resolution region
+        x1_high_max = data_input['refinement2']['x1max']
+        x2_high_min = data_input['refinement2']['x2min']
+        x2_high_max = data_input['refinement2']['x2max']
+    elif 'refinement1' in data_input:
+        x1_high_min = data_input['refinement1']['x1min'] # bounds of high resolution region
+        x1_high_max = data_input['refinement1']['x1max']
+        x2_high_min = data_input['refinement1']['x2min']
+        x2_high_max = data_input['refinement1']['x2max']
+    else:
+        x1_high_min = x1min
+        x1_high_max = x1max
+        x2_high_min = x2min
+        x2_high_max = x2max
     mass = data_input['problem']['mass']
 
     data_init = athena_read.athdf(problem + '.cons.00000.athdf')
@@ -118,15 +134,10 @@ def main(**kwargs):
         stop = start + count
     local_times = times[start:stop] # get the times to be analyzed by each rank
 
-    local_theta_B = np.empty(0)
-    local_Q_theta_low = np.empty(0)
-    local_Q_theta_av = np.empty(0)
-    local_Q_theta_high = np.empty(0)
-    local_Q_phi_low = np.empty(0)
-    local_Q_phi_av = np.empty(0)
-    local_Q_phi_high = np.empty(0)
-    local_orbit_time = np.empty(0)
-    local_sim_time = np.empty(0)
+    if rank==0:
+        with open(prob_dir + filename_output, 'w', newline='') as f:
+            writer = csv.writer(f, delimiter='\t')
+            writer.writerow(["sim_time", "orbit_time", "theta_B", "Q_theta", "Q_phi"])
     for t in local_times:
         str_t = str(int(t)).zfill(5)
         data_prim = athena_read.athdf(problem + '.prim.' + str_t + '.athdf')
@@ -155,16 +166,28 @@ def main(**kwargs):
         del data_prim
         gc.collect()
 
+        Omega_kep = np.empty_like(dens)
+
         # Calculations
         dx1f,dx2f,dx3f = AAT.calculate_delta(x1f,x2f,x3f)
         v1,v2,v3 = AAT.calculate_velocity(mom1,mom2,mom3,dens)
-        Omega_kep = np.sqrt(GM/(x1v**3.)) #Keplerian angular velocity in midplane
 
-        #tB = magnetic_angle(Bcc1,Bcc2)
+        for ii in range(0,len(x1v)):
+            Omega_kep[ii,:,:] = np.sqrt(GM/(x1v**3.)) #Keplerian angular velocity in midplane
+
+        Bcc1 = Bcc1[rl:ru,tl:tu,:]
+        Bcc2 = Bcc2[rl:ru,tl:tu,:]
+        Bcc3 = Bcc3[rl:ru,tl:tu,:]
+        dens = dens[rl:ru,tl:tu,:]
+        mom1 = mom1[rl:ru,tl:tu,:]
+        mom2 = mom2[rl:ru,tl:tu,:]
+        mom3 = mom3[rl:ru,tl:tu,:]
+        press = press[rl:ru,tl:tu,:]
+        Omega_kep = Omega_kep[rl:ru,tl:tu,:]
+
         tB = (-np.arctan(Bcc1/Bcc2)) * (180./np.pi)
-        tB_av = np.average(tB[rl:ru,tl:tu,:])
+        tB_av = np.average(tB)
 
-        #Qt,Qp = quality_factors(x1v,x2v,x3v,dx1f,dx2f,dx3f,dens,press,v2,Bcc1,Bcc2,Bcc3,Omega_kep,gamma)
         w = dens + (gamma/(gamma - 1.))*press
         B2 = Bcc1**2. + Bcc2**2. + Bcc3**2.
         vA_theta = Bcc2/(np.sqrt(w+B2)) #Alfven velocity of theta component of B
@@ -175,187 +198,34 @@ def main(**kwargs):
         phi,theta,r = np.meshgrid(x3v,x2v,x1v, sparse=False, indexing='ij')
         dphi,dtheta,dr = np.meshgrid(dx3f,dx2f,dx1f, sparse=False, indexing='ij')
 
+        r = r[rl:ru,tl:tu,:]
+        phi = phi[rl:ru,tl:tu,:]
+        dphi = dphi[rl:ru,tl:tu,:]
+        dtheta = dtheta[rl:ru,tl:tu,:]
+
         Q_theta = lambda_MRI_theta/np.sqrt(r*dphi)
         Q_phi = lambda_MRI_phi/np.sqrt(r*np.abs(np.sin(phi))*dtheta)
-        Qt = Q_theta[rl:ru,tl:tu,:]
-        Qp = Q_phi[rl:ru,tl:tu,:]
-        Qt_av,Qt_lc,Qt_uc = mean_confidence_interval(Qt.flatten(), confidence=0.95)
-        Qp_av,Qp_lc,Qp_uc = mean_confidence_interval(Qp.flatten(), confidence=0.95)
+        Q_theta = np.array(Q_theta.flatten())
+        Q_phi = np.array(Q_phi.flatten())
 
-        #local_theta_B.append(tB_av)
-        local_theta_B = np.append(local_theta_B, tB_av)
-
-        #local_Q_theta_low.append(Qt_lc)
-        #local_Q_theta_av.append(Qt_av)
-        #local_Q_theta_high.append(Qt_uc)
-        local_Q_theta_low = np.append(local_Q_theta_low, Qt_lc)
-        local_Q_theta_av = np.append(local_Q_theta_av, Qt_av)
-        local_Q_theta_high = np.append(local_Q_theta_high, Qt_uc)
-
-        #local_Q_phi_low.append(Qp_lc)
-        #local_Q_phi_av.append(Qp_av)
-        #local_Q_phi_high.append(Qp_uc)
-        local_Q_phi_low = np.append(local_Q_phi_low, Qp_lc)
-        local_Q_phi_av = np.append(local_Q_phi_av, Qp_av)
-        local_Q_phi_high = np.append(local_Q_phi_high, Qp_uc)
+        Qt_l,Qt_h = st.t.interval(0.95, len(Q_theta)-1, loc=np.mean(Q_theta), scale=st.sem(Q_theta))
+        Qt_av = np.mean(Q_theta)
+        Qp_l,Qp_h = st.t.interval(0.95, len(Q_phi)-1, loc=np.mean(Q_phi), scale=st.sem(Q_phi))
+        Qp_av = np.mean(Q_phi)
 
         v_Kep0 = np.sqrt(mass/x1min)
         Omega0 = v_Kep0/x1min
         T0 = 2.*np.pi/Omega0
-        #local_orbit_time.append(t/T0)
-        #local_sim_time.append(float(t))
-        local_orbit_time = np.append(local_orbit_time, t/T0)
-        local_sim_time = np.append(local_sim_time, float(t))
+        orbit_t = t/T0
+        sim_t = float(t)
 
-    send_thB = local_theta_B
-    send_Qtl = local_Q_theta_low
-    send_Qta = local_Q_theta_av
-    send_Qth = local_Q_theta_high
-    send_Qpl = local_Q_phi_low
-    send_Qpa = local_Q_phi_av
-    send_Qph = local_Q_phi_high
-    send_orbit = local_orbit_time
-    send_sim = local_sim_time
-    # Collect local array sizes using the high-level mpi4py gather
-    sendcounts = np.array(comm.gather(len(send_thB), 0))
+        Qt_all = [Qt_l,Qt_av,Qt_h]
+        Qp_all = [Qp_l,Qp_av,Qp_h]
 
-    if rank == 0:
-        recv_thB = np.empty(sum(sendcounts), dtype=float)
-        recv_Qtl = np.empty(sum(sendcounts), dtype=float)
-        recv_Qta = np.empty(sum(sendcounts), dtype=float)
-        recv_Qth = np.empty(sum(sendcounts), dtype=float)
-        recv_Qpl = np.empty(sum(sendcounts), dtype=float)
-        recv_Qpa = np.empty(sum(sendcounts), dtype=float)
-        recv_Qph = np.empty(sum(sendcounts), dtype=float)
-        recv_orbit = np.empty(sum(sendcounts), dtype=float)
-        recv_sim = np.empty(sum(sendcounts), dtype=float)
-    else:
-        recv_thB = None
-        recv_Qtl = None
-        recv_Qta = None
-        recv_Qth = None
-        recv_Qpl = None
-        recv_Qpa = None
-        recv_Qph = None
-        recv_orbit = None
-        recv_sim = None
-
-    comm.Gatherv(sendbuf=send_thB, recvbuf=(recv_thB, sendcounts), root=0)
-    comm.Gatherv(sendbuf=send_Qtl, recvbuf=(recv_Qtl, sendcounts), root=0)
-    comm.Gatherv(sendbuf=send_Qta, recvbuf=(recv_Qta, sendcounts), root=0)
-    comm.Gatherv(sendbuf=send_Qth, recvbuf=(recv_Qth, sendcounts), root=0)
-    comm.Gatherv(sendbuf=send_Qpl, recvbuf=(recv_Qpl, sendcounts), root=0)
-    comm.Gatherv(sendbuf=send_Qpa, recvbuf=(recv_Qpa, sendcounts), root=0)
-    comm.Gatherv(sendbuf=send_Qph, recvbuf=(recv_Qph, sendcounts), root=0)
-    comm.Gatherv(sendbuf=send_orbit, recvbuf=(recv_orbit, sendcounts), root=0)
-    comm.Gatherv(sendbuf=send_sim, recvbuf=(recv_sim, sendcounts), root=0)
-    if rank == 0:
-        thB_out = recv_thB.flatten()
-        Qtl_out = recv_Qtl.flatten()
-        Qta_out = recv_Qta.flatten()
-        Qth_out = recv_Qth.flatten()
-        Qpl_out = recv_Qpl.flatten()
-        Qpa_out = recv_Qpa.flatten()
-        Qph_out = recv_Qph.flatten()
-        orb_t_out = recv_orbit.flatten()
-        sim_t_out = recv_sim.flatten()
-
-
-    if rank == 0:
-        sim_t_out,orb_t_out,thB_out,Qtl_out,Qta_out,Qth_out,Qpl_out,Qpa_out,Qph_out = (list(t) for t in zip(*sorted(zip(sim_t_out,orb_t_out,thB_out,Qtl_out,Qta_out,Qth_out,Qpl_out,Qpa_out,Qph_out))))
-        os.chdir(prob_dir)
-        if args.update:
-            with open(filename_output, 'a', newline='') as f:
-                writer = csv.writer(f, delimiter='\t')
-                writer.writerows(zip(sim_t_out,orb_t_out,thB_out,Qtl_out,Qta_out,Qth_out,Qpl_out,Qpa_out,Qph_out))
-        else:
-            with open(filename_output, 'w', newline='') as f:
-                writer = csv.writer(f, delimiter='\t')
-                writer.writerow(["sim_time", "orbit_time", "theta_B", "Q_theta_low", "Q_theta_av", "Q_theta_high", "Q_phi_low", "Q_phi_av", "Q_phi_high"])
-                writer.writerows(zip(sim_t_out,orb_t_out,thB_out,Qtl_out,Qta_out,Qth_out,Qpl_out,Qpa_out,Qph_out))
-
-
-def mean_confidence_interval(data, confidence=0.95):
-    """
-    Calculate the 95% confidence interval.
-
-    Args:
-        data: the data to perfom calculations on.
-        confidence: the desired confidence interval (default:0.95).
-    Returns:
-        the 95% confidence interval.
-
-    """
-    a = 1.0 * np.array(data)
-    n = len(a)
-    m, se = np.mean(a), scipy.stats.sem(a)
-    h = se * scipy.stats.t.ppf((1 + confidence) / 2., n-1)
-    return m, m-h, m+h
-
-def magnetic_angle(Bcc1,Bcc2):
-    """
-    Calculate the magnetic angle, as per Hogg & Reynolds (2018) and others.
-
-    Args:
-        Bcc1: the cell-centred magnetic field in the x1 direction.
-        Bcc2: the cell-centred magnetic field in the x2 direction.
-    Returns:
-        the magnetic angle.
-
-    """
-    theta_B = (-np.arctan(Bcc1/Bcc2)) * (180./np.pi)
-    return theta_B
-
-def quality_factors(x1v,x2v,x3v,dx1f,dx2f,dx3f,dens,press,v2,Bcc1,Bcc2,Bcc3,Omega_kep,gamma):
-    """
-    Calculate the quality factors in x2 and x3.
-
-    Args:
-        x1v,x2v,x3v: the volume-centred coordinates for x1, x2, and x3 directions.
-        dx1f,dx2f,dx3f: the length of each cell in the x1, x2, and x3 directions.
-        dens: the number density.
-        press: the gas pressure.
-        v2: the gas velocity in the x2 direction.
-        Bcc1: the cell-centred magnetic field in the x1 direction.
-        Bcc2: the cell-centred magnetic field in the x2 direction.
-        Bcc3: the cell-centred magnetic field in the x3 direction.
-        Omega_kep: the equatorial Keplerian angular velocity.
-        gamma: the ratio of specific heats.
-    Returns:
-        the quality factors in x2 and x3.
-
-    """
-    vA_theta,vA_phi = Alfven_vel(dens,press,Bcc1,Bcc2,Bcc3,gamma)
-    lambda_MRI_theta = 2.*np.pi*np.sqrt(16./15.)*np.abs(vA_theta)/Omega_kep
-    lambda_MRI_phi = 2.*np.pi*np.sqrt(16./15.)*np.abs(vA_phi)/Omega_kep
-
-    phi,theta,r = np.meshgrid(x3v,x2v,x1v, sparse=False, indexing='ij')
-    dphi,dtheta,dr = np.meshgrid(dx3f,dx2f,dx1f, sparse=False, indexing='ij')
-
-    Q_theta = lambda_MRI_theta/np.sqrt(r*dphi)
-    Q_phi = lambda_MRI_phi/np.sqrt(r*np.abs(np.sin(phi))*dtheta)
-    return Q_theta,Q_phi
-
-def Alfven_vel(dens,press,Bcc1,Bcc2,Bcc3,gamma):
-    """
-    Calculate the Alfven velocity.
-
-    Args:
-        dens: the number density.
-        press: the gas pressure.
-        Bcc1: the cell-centred magnetic field in the x1 direction.
-        Bcc2: the cell-centred magnetic field in the x2 direction.
-        Bcc3: the cell-centred magnetic field in the x3 direction.
-        gamma: the ratio of specific heats.
-    Returns:
-        the Alfven velocity.
-
-    """
-    w = dens + (gamma/(gamma - 1.))*press
-    B2 = Bcc1**2. + Bcc2**2. + Bcc3**2.
-    vA_theta = Bcc2/(np.sqrt(w+B2)) #Alfven velocity of theta component of B
-    vA_phi = Bcc3/(np.sqrt(w+B2)) #Alfven velocity of phi component of B
-    return vA_theta,vA_phi
+        with open(prob_dir + filename_output, 'a', newline='') as f:
+            writer = csv.writer(f, delimiter='\t')
+            row = [sim_t,orbit_t,tB_av,Qt_all,Qp_all]
+            writer.writerow(row)
 
 
 # Execute main function
