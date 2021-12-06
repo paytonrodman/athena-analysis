@@ -37,7 +37,7 @@ def main(**kwargs):
     csv_time = np.empty(0)
     # check if data file already exists
     if args.update:
-        with open(prob_dir + 'mass_with_time.csv', 'r', newline='') as f:
+        with open(prob_dir + 'scale_with_time.csv', 'r', newline='') as f:
             csv_reader = csv.reader(f, delimiter='\t')
             next(csv_reader, None) # skip header
             for row in csv_reader:
@@ -68,80 +68,57 @@ def main(**kwargs):
     local_times = times[start:stop] # get the times to be analyzed by each rank
 
     data_input = athena_read.athinput(runfile_dir + 'athinput.' + problem)
-    mass = data_input['problem']['mass']
-    x1min = data_input['mesh']['x1min']
+    mass = np.copy(data_input['problem']['mass'])
+    x1min = np.copy(data_input['mesh']['x1min'])
+    del data_input
     # get mesh data for all files (static)
     data_init = athena_read.athdf(problem + '.cons.00000.athdf')
-    x1v = data_init['x1v'] # r
-    x2v = data_init['x2v'] # theta
-    x3v = data_init['x3v'] # phi
-    x1f = data_init['x1f'] # r
-    x2f = data_init['x2f'] # theta
-    x3f = data_init['x3f'] # phi
+    x1v = np.copy(data_init['x1v']) # r
+    x2v = np.copy(data_init['x2v']) # theta
+    x3v = np.copy(data_init['x3v']) # phi
+    x1f = np.copy(data_init['x1f']) # r
+    x2f = np.copy(data_init['x2f']) # theta
+    x3f = np.copy(data_init['x3f']) # phi
+    del data_init
+    gc.collect()
+
     dx1f,dx2f,dx3f = AAT.calculate_delta(x1f,x2f,x3f)
     phi,theta,r = np.meshgrid(x3v,x2v,x1v, sparse=False, indexing='ij')
     dphi,dtheta,dr = np.meshgrid(dx3f,dx2f,dx1f, sparse=False, indexing='ij')
     dOmega = np.sin(theta)*dtheta*dphi
 
-    local_scale_h = []
-    local_orbit_time = []
-    local_sim_time = []
+    if not args.update:
+        if rank==0:
+            with open(prob_dir + 'scale_with_time.csv', 'w', newline='') as f:
+                writer = csv.writer(f, delimiter='\t')
+                writer.writerow(["sim_time", "orbit_time", "scale_height"])
     for t in local_times:
         str_t = str(int(t)).zfill(5)
         filename_cons = problem + '.cons.' + str_t + '.athdf'
         data_cons = athena_read.athdf(filename_cons)
 
         #unpack data
-        dens = data_cons['dens']
+        dens = np.copy(data_cons['dens'])
+        del data_cons
+        gc.collect()
+
         # Calculations
         polar_ang = np.sum(theta*dens*dOmega,axis=(0,1))/np.sum(dens*dOmega,axis=(0,1))
         h_up = (theta-polar_ang)**2. * dens*dOmega
         h_down = dens*dOmega
         scale_h = np.sqrt(np.sum(h_up,axis=(0,1))/np.sum(h_down,axis=(0,1)))
         scale_h_av = np.average(scale_h,weights=dx1f)
-        local_scale_h.append(scale_h_av)
 
         v_Kep0 = np.sqrt(mass/x1min)
         Omega0 = v_Kep0/x1min
         T0 = 2.*np.pi/Omega0
-        local_orbit_time.append(t/T0)
-        local_sim_time.append(t)
+        orbit_time = t/T0
+        sim_time = t
 
-    send_scale = np.array(local_scale_h)
-    send_orbit = np.array(local_orbit_time)
-    send_sim = np.array(local_sim_time)
-    # Collect local array sizes using the high-level mpi4py gather
-    sendcounts = np.array(comm.gather(len(send_scale), 0))
-
-    if rank == 0:
-        recv_scale = np.empty(sum(sendcounts), dtype=float)
-        recv_orbit = np.empty(sum(sendcounts), dtype=float)
-        recv_sim = np.empty(sum(sendcounts), dtype=float)
-    else:
-        recv_scale = None
-        recv_orbit = None
-        recv_sim = None
-
-    comm.Gatherv(sendbuf=send_scale, recvbuf=(recv_scale, sendcounts), root=0)
-    comm.Gatherv(sendbuf=send_orbit, recvbuf=(recv_orbit, sendcounts), root=0)
-    comm.Gatherv(sendbuf=send_sim, recvbuf=(recv_sim, sendcounts), root=0)
-    if rank == 0:
-        scale_out = recv_scale.flatten()
-        orb_t_out = recv_orbit.flatten()
-        sim_t_out = recv_sim.flatten()
-
-    if rank == 0:
-        sim_t_out,orb_t_out,scale_out = (list(t) for t in zip(*sorted(zip(sim_t_out,orb_t_out,scale_out))))
-        os.chdir(prob_dir)
-        if args.update:
-            with open('scale_with_time.csv', 'a', newline='') as f:
-                writer = csv.writer(f, delimiter='\t')
-                writer.writerows(zip(sim_t_out,orb_t_out,scale_out))
-        else:
-            with open('scale_with_time.csv', 'w', newline='') as f:
-                writer = csv.writer(f, delimiter='\t')
-                writer.writerow(["sim_time", "orbit_time", "scale_height"])
-                writer.writerows(zip(sim_t_out,orb_t_out,scale_out))
+        with open(prob_dir + 'scale_with_time.csv', 'a', newline='') as f:
+            writer = csv.writer(f, delimiter='\t')
+            row = [sim_t,orbit_t,scale_h_av]
+            writer.writerow(row)
 
 
 # Execute main function
