@@ -19,7 +19,6 @@ import glob
 import re
 import csv
 import argparse
-import gc # garbage collector
 from mpi4py import MPI
 
 def main(**kwargs):

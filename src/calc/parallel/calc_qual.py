@@ -21,7 +21,6 @@ import re
 import csv
 import scipy.stats as st
 import argparse
-import gc # garbage collector
 from mpi4py import MPI
 
 def main(**kwargs):
