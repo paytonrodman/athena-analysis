@@ -12,8 +12,8 @@ for FILE in ./${PROBLEM}.cons.*.athdf; do
     NOZERO=0
   fi
 
-  REMAINDER=$(( $NOZERO % 10 ))
-  if (($REMAINDER==0)); then
+  REMAINDER=$(( NOZERO % 10 ))
+  if ((REMAINDER==0)); then
     python $ROOTDIR/athena-analysis/dependencies/plot_spherical.py \
     "$FILE" \
     dens \
