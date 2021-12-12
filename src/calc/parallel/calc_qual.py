@@ -65,7 +65,7 @@ def main(**kwargs):
         x2_high_max = x2max
     mass = data_input['problem']['mass']
 
-    data_init = athena_read.athdf(problem + '.cons.00000.athdf')
+    data_init = athena_read.athdf(problem + '.cons.00000.athdf', quantities=['x1v','x2v'])
     x1v_init = np.copy(data_init['x1v']) # r
     x2v_init = np.copy(data_init['x2v']) # theta
     del data_init
@@ -135,44 +135,42 @@ def main(**kwargs):
     local_times = times[start:stop] # get the times to be analyzed by each rank
 
     if rank==0:
-        with open(prob_dir + filename_output, 'w', newline='') as f:
-            writer = csv.writer(f, delimiter='\t')
-            writer.writerow(["sim_time", "orbit_time", "theta_B", "Q_theta", "Q_phi"])
+        if not args.update:
+            with open(prob_dir + filename_output, 'w', newline='') as f:
+                writer = csv.writer(f, delimiter='\t')
+                writer.writerow(["sim_time", "orbit_time", "theta_B", "Q_theta", "Q_phi"])
     for t in local_times:
         str_t = str(int(t)).zfill(5)
-        data_prim = athena_read.athdf(problem + '.prim.' + str_t + '.athdf')
-        data_cons = athena_read.athdf(problem + '.cons.' + str_t + '.athdf')
-
         #constants
         gamma = 5./3.
         GM = 1.
 
         #unpack data
-        x1v = np.copy(data_cons['x1v']) # r
-        x2v = np.copy(data_cons['x2v']) # theta
-        x3v = np.copy(data_cons['x3v']) # phi
-        x1f = np.copy(data_cons['x1f']) # r
-        x2f = np.copy(data_cons['x2f']) # theta
-        x3f = np.copy(data_cons['x3f']) # phi
-        dens = np.copy(data_cons['dens'])
-        mom1 = np.copy(data_cons['mom1'])
-        mom2 = np.copy(data_cons['mom2'])
-        mom3 = np.copy(data_cons['mom3'])
-        Bcc1 = np.copy(data_cons['Bcc1'])
-        Bcc2 = np.copy(data_cons['Bcc2'])
-        Bcc3 = np.copy(data_cons['Bcc3'])
-        press = np.copy(data_prim['press'])
-        del data_cons
-        del data_prim
-        gc.collect()
+        data_prim = athena_read.athdf(problem + '.prim.' + str_t + '.athdf', quantities=['press'])
+        press = data_prim['press']
+
+        data_cons = athena_read.athdf(problem + '.cons.' + str_t + '.athdf', quantities=['x1v','x2v','x3v','x1f','x2f','x3f','dens','mom1','mom2','mom3','Bcc1','Bcc2','Bcc3'])
+        x1v = data_cons['x1v'] # r
+        x2v = data_cons['x2v'] # theta
+        x3v = data_cons['x3v'] # phi
+        x1f = data_cons['x1f'] # r
+        x2f = data_cons['x2f'] # theta
+        x3f = data_cons['x3f'] # phi
+        dens = data_cons['dens']
+        mom1 = data_cons['mom1']
+        mom2 = data_cons['mom2']
+        mom3 = data_cons['mom3']
+        Bcc1 = data_cons['Bcc1']
+        Bcc2 = data_cons['Bcc2']
+        Bcc3 = data_cons['Bcc3']
 
         Omega_kep = np.empty_like(dens)
 
         # Calculations
         dx1f,dx2f,dx3f = AAT.calculate_delta(x1f,x2f,x3f)
-        v1,v2,v3 = AAT.calculate_velocity(mom1,mom2,mom3,dens)
+        del x1f,x2f,x3f
 
-        for ii in range(0,len(x1v)):
+        for ii in range(0,256):
             Omega_kep[ii,:,:] = np.sqrt(GM/(x1v**3.)) #Keplerian angular velocity in midplane
 
         Bcc1 = Bcc1[rl:ru,tl:tu,:]

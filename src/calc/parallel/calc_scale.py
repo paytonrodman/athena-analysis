@@ -69,39 +69,35 @@ def main(**kwargs):
     local_times = times[start:stop] # get the times to be analyzed by each rank
 
     data_input = athena_read.athinput(runfile_dir + 'athinput.' + problem)
-    mass = np.copy(data_input['problem']['mass'])
-    x1min = np.copy(data_input['mesh']['x1min'])
-    del data_input
+    mass = data_input['problem']['mass']
+    x1min = data_input['mesh']['x1min']
+
     # get mesh data for all files (static)
-    data_init = athena_read.athdf(problem + '.cons.00000.athdf')
-    x1v = np.copy(data_init['x1v']) # r
-    x2v = np.copy(data_init['x2v']) # theta
-    x3v = np.copy(data_init['x3v']) # phi
-    x1f = np.copy(data_init['x1f']) # r
-    x2f = np.copy(data_init['x2f']) # theta
-    x3f = np.copy(data_init['x3f']) # phi
-    del data_init
-    gc.collect()
+    data_init = athena_read.athdf(problem + '.cons.00000.athdf', quantities=['x1v','x2v','x3v','x1f','x2f','x3f'])
+    x1v = data_init['x1v'] # r
+    x2v = data_init['x2v'] # theta
+    x3v = data_init['x3v'] # phi
+    x1f = data_init['x1f'] # r
+    x2f = data_init['x2f'] # theta
+    x3f = data_init['x3f'] # phi
 
     dx1f,dx2f,dx3f = AAT.calculate_delta(x1f,x2f,x3f)
     phi,theta,r = np.meshgrid(x3v,x2v,x1v, sparse=False, indexing='ij')
     dphi,dtheta,dr = np.meshgrid(dx3f,dx2f,dx1f, sparse=False, indexing='ij')
     dOmega = np.sin(theta)*dtheta*dphi
 
-    if not args.update:
-        if rank==0:
+
+    if rank==0:
+        if not args.update:
             with open(prob_dir + 'scale_with_time.csv', 'w', newline='') as f:
                 writer = csv.writer(f, delimiter='\t')
                 writer.writerow(["sim_time", "orbit_time", "scale_height"])
     for t in local_times:
         str_t = str(int(t)).zfill(5)
         filename_cons = problem + '.cons.' + str_t + '.athdf'
-        data_cons = athena_read.athdf(filename_cons)
-
+        data_cons = athena_read.athdf(filename_cons, quantities=['dens'])
         #unpack data
-        dens = np.copy(data_cons['dens'])
-        del data_cons
-        gc.collect()
+        dens = data_cons['dens']
 
         # Calculations
         polar_ang = np.sum(theta*dens*dOmega,axis=(0,1))/np.sum(dens*dOmega,axis=(0,1))

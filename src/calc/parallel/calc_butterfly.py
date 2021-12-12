@@ -69,7 +69,7 @@ def main(**kwargs):
         stop = start + count
     local_times = times[start:stop] # get the times to be analyzed by each rank
 
-    data_init = athena_read.athdf(problem + '.cons.00000.athdf')
+    data_init = athena_read.athdf(problem + '.cons.00000.athdf', quantities=['x1v'])
     x1v_init = data_init['x1v']
     data_input = athena_read.athinput(runfile_dir + 'athinput.' + problem)
     mass = data_input['problem']['mass']
@@ -81,32 +81,32 @@ def main(**kwargs):
         r_id = AAT.find_nearest(x1v_init, 25.) # approx. middle of high res region
 
     if rank==0:
-        with open(prob_dir + 'butterfly_with_time.csv', 'w', newline='') as f:
-            writer = csv.writer(f, delimiter='\t')
-            writer.writerow(["sim_time", "orbit_time", "Bcc1", "Bcc2", "Bcc3"])
+        if not args.update:
+            with open(prob_dir + 'butterfly_with_time.csv', 'w', newline='') as f:
+                writer = csv.writer(f, delimiter='\t')
+                writer.writerow(["sim_time", "orbit_time", "Bcc1", "Bcc2", "Bcc3"])
     for t in local_times:
         str_t = str(int(t)).zfill(5)
-        data_cons = athena_read.athdf(problem + '.cons.' + str_t + '.athdf')
+        data_cons = athena_read.athdf(problem + '.cons.' + str_t + '.athdf', quantities=['Bcc1','Bcc2','Bcc3'])
 
         #unpack data
         Bcc1 = data_cons['Bcc1']
         Bcc2 = data_cons['Bcc2']
         Bcc3 = data_cons['Bcc3']
 
-        local_Bcc1_theta = np.average(Bcc1[r_id,:,:],axis=1).tolist()
-        local_Bcc2_theta = np.average(Bcc2[r_id,:,:],axis=1).tolist()
-        local_Bcc3_theta = np.average(Bcc3[r_id,:,:],axis=1).tolist()
+        Bcc1_theta = np.average(Bcc1[r_id,:,:],axis=1).tolist()
+        Bcc2_theta = np.average(Bcc2[r_id,:,:],axis=1).tolist()
+        Bcc3_theta = np.average(Bcc3[r_id,:,:],axis=1).tolist()
 
         v_Kep0 = np.sqrt(mass/x1min)
         Omega0 = v_Kep0/x1min
         T0 = 2.*np.pi/Omega0
-        local_orbit_time = t/T0
-        local_sim_time = float(t)
+        orbit_t = t/T0
+        sim_t = float(t)
 
         with open(prob_dir + 'butterfly_with_time.csv', 'a', newline='') as f:
             writer = csv.writer(f, delimiter='\t')
-            row = [local_sim_time,local_orbit_time,local_Bcc1_theta,local_Bcc2_theta,local_Bcc3_theta]
-            writer.writerow(row)
+            writer.writerow([sim_t,orbit_t,Bcc1_theta,Bcc2_theta,cc3_theta])
 
 
 # Execute main function

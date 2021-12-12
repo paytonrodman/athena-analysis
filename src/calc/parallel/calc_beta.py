@@ -58,8 +58,6 @@ def main(**kwargs):
     if len(times)==0:
         sys.exit('No new timesteps to analyse in the given directory. Exiting.')
 
-    #times = [0,10,20,30,40]
-
     # distribute files to cores
     count = len(times) // size  # number of files for each process to analyze
     remainder = len(times) % size  # extra files if times is not a multiple of size
@@ -70,58 +68,71 @@ def main(**kwargs):
         start = rank * count + remainder
         stop = start + count
     local_times = times[start:stop] # get the times to be analyzed by each rank
-    #print("local_times are: ",local_times)
 
     data_input = athena_read.athinput(runfile_dir + 'athinput.' + problem)
-    scale_height = np.copy(data_input['problem']['h_r'])
-    mass = np.copy(data_input['problem']['mass'])
-    x1min = np.copy(data_input['mesh']['x1min'])
-    data_init = athena_read.athdf(problem + '.cons.00000.athdf')
-    x2v = np.copy(data_init['x2v'])
+    scale_height = data_input['problem']['h_r']
+    mass = data_input['problem']['mass']
+    x1min = data_input['mesh']['x1min']
+    if 'refinement3' in data_input:
+        x1_high_max = data_input['refinement3']['x1max'] # bounds of high resolution region
+    elif 'refinement2' in data_input:
+        x1_high_max = data_input['refinement2']['x1max'] # bounds of high resolution region
+    elif 'refinement1' in data_input:
+        x1_high_max = data_input['refinement1']['x1max'] # bounds of high resolution region
+    else:
+        x1_high_max = data_input['mesh']['x1max']
+
+    data_init = athena_read.athdf(problem + '.cons.00000.athdf', quantities=['x1v','x2v'])
+    x1v = data_init['x1v']
+    x2v = data_init['x2v']
+    r_u = AAT.find_nearest(x1v, x1_high_max)
     th_u = AAT.find_nearest(x2v, np.pi/2. + (3.*scale_height))
     th_l = AAT.find_nearest(x2v, np.pi/2. - (3.*scale_height))
 
     del data_input
     del data_init
 
-    local_beta = np.empty(0)
-    local_orbit_time = np.empty(0)
-    local_sim_time = np.empty(0)
+    if rank==0:
+        if not args.update:
+            with open(prob_dir + 'beta_with_time.csv', 'w', newline='') as f:
+                writer = csv.writer(f, delimiter='\t')
+                writer.writerow(["sim_time", "orbit_time", "plasma_beta"])
     for t in local_times:
-        #print('file number: ', t)
         str_t = str(int(t)).zfill(5)
-        data_prim = athena_read.athdf(problem + ".prim." + str_t + ".athdf")
-        data_cons = athena_read.athdf(problem + ".cons." + str_t + ".athdf")
+        data_prim = athena_read.athdf(problem + ".prim." + str_t + ".athdf", quantities=['press'])
+        data_cons = athena_read.athdf(problem + ".cons." + str_t + ".athdf", quantities=['x1f','x2f','x3f','dens','Bcc1','Bcc2','Bcc3'])
 
         #unpack data
-        dens = np.copy(data_cons['dens'])
-        Bcc1 = np.copy(data_cons['Bcc1'])
-        Bcc2 = np.copy(data_cons['Bcc2'])
-        Bcc3 = np.copy(data_cons['Bcc3'])
-        press = np.copy(data_prim['press'])
+        x1f = data_cons['x1f'] # r
+        x2f = data_cons['x2f'] # theta
+        x3f = data_cons['x3f'] # phi
+        dens = data_cons['dens']
+        Bcc1 = data_cons['Bcc1']
+        Bcc2 = data_cons['Bcc2']
+        Bcc3 = data_cons['Bcc3']
+        press = data_prim['press']
 
-        del data_cons
-        del data_prim
-        gc.collect()
+        dx1f,dx2f,dx3f = AAT.calculate_delta(x1f,x2f,x3f)
+        dphi,dtheta,dr = np.meshgrid(dx3f,dx2f,dx1f, sparse=False, indexing='ij')
 
-        #current_beta = calculate_beta(th_u,th_l,dens,press,Bcc1,Bcc2,Bcc3)
         # Density-weighted mean gas pressure
         sum_p = 0.
         numWeight_p = 0.
         sum_b = 0.
         numWeight_b = 0.
 
-        pressure = press[:,th_l:th_u,:]
-        density = dens[:,th_l:th_u,:]
+        pressure = press[:r_u,th_l:th_u,:]
+        density = dens[:r_u,th_l:th_u,:]
+        volume = dr[:r_u,th_l:th_u,:]*dtheta[:r_u,th_l:th_u,:]*dphi[:r_u,th_l:th_u,:]
         # Find volume centred total magnetic field
-        bcc_all = np.sqrt(np.square(Bcc1[:,th_l:th_u,:]) +
-                          np.square(Bcc2[:,th_l:th_u,:]) +
-                          np.square(Bcc3[:,th_l:th_u,:]))
+        bcc_all = np.sqrt(np.square(Bcc1[:r_u,th_l:th_u,:]) +
+                          np.square(Bcc2[:r_u,th_l:th_u,:]) +
+                          np.square(Bcc3[:r_u,th_l:th_u,:]))
 
-        numWeight_p = np.sum(pressure*density)
-        sum_p       = np.sum(density)
-        numWeight_b = np.sum(bcc_all*density)
-        sum_b       = np.sum(density)
+        numWeight_p = np.sum(pressure*density*volume)
+        sum_p       = np.sum(density*volume)
+        numWeight_b = np.sum(bcc_all*density*volume)
+        sum_b       = np.sum(density*volume)
 
         pres_av = numWeight_p/sum_p
         bcc_av = numWeight_b/sum_b
@@ -130,96 +141,16 @@ def main(**kwargs):
         else:
             current_beta = np.nan
 
-            
-        #local_beta.append(current_beta)
-        local_beta = np.append(local_beta, current_beta)
-
         v_Kep0 = np.sqrt(mass/x1min)
         Omega0 = v_Kep0/x1min
         T0 = 2.*np.pi/Omega0
-        #local_orbit_time.append(t/T0)
-        #local_sim_time.append(float(t))
-        local_orbit_time = np.append(local_orbit_time, t/T0)
-        local_sim_time = np.append(local_sim_time, float(t))
+        orbit_t = t/T0
+        sim_t = float(t)
 
-    send_beta = local_beta
-    send_orbit = local_orbit_time
-    send_sim = local_sim_time
-    # Collect local array sizes using the high-level mpi4py gather
-    sendcounts = np.array(comm.gather(len(send_beta), 0))
-
-    if rank == 0:
-        recv_beta = np.empty(sum(sendcounts), dtype=float)
-        recv_orbit = np.empty(sum(sendcounts), dtype=float)
-        recv_sim = np.empty(sum(sendcounts), dtype=float)
-    else:
-        recv_beta = None
-        recv_orbit = None
-        recv_sim = None
-
-    comm.Gatherv(sendbuf=send_beta, recvbuf=(recv_beta, sendcounts), root=0)
-    comm.Gatherv(sendbuf=send_orbit, recvbuf=(recv_orbit, sendcounts), root=0)
-    comm.Gatherv(sendbuf=send_sim, recvbuf=(recv_sim, sendcounts), root=0)
-    if rank == 0:
-        beta_out = recv_beta.flatten()
-        orb_t_out = recv_orbit.flatten()
-        sim_t_out = recv_sim.flatten()
-
-    if rank == 0:
-        sim_t_out,orb_t_out,beta_out = (list(t) for t in zip(*sorted(zip(sim_t_out,orb_t_out,beta_out))))
-        os.chdir(prob_dir)
-        if args.update:
-            with open('beta_with_time.csv', 'a', newline='') as f:
-                writer = csv.writer(f, delimiter='\t')
-                writer.writerows(zip(sim_t_out,orb_t_out,beta_out))
-        else:
-            with open('beta_with_time.csv', 'w', newline='') as f:
-                writer = csv.writer(f, delimiter='\t')
-                writer.writerow(["sim_time", "orbit_time", "plasma_beta"])
-                writer.writerows(zip(sim_t_out,orb_t_out,beta_out))
-
-def calculate_beta(th_u,th_l,dens,press,Bcc1,Bcc2,Bcc3):
-    """
-    Calculate the mean plasma beta within a specified region.
-
-    Args:
-        th_u: the upper boundary in x2.
-        th_l: the lower boundary in x2.
-        dens: the number density.
-        press: the gas pressure.
-        Bcc1: the cell-centred magnetic field in the x1 direction.
-        Bcc2: the cell-centred magnetic field in the x2 direction.
-        Bcc3: the cell-centred magnetic field in the x3 direction.
-    Returns:
-        the mean plasma beta.
-
-    """
-    # Density-weighted mean gas pressure
-    sum_p = 0.
-    numWeight_p = 0.
-    sum_b = 0.
-    numWeight_b = 0.
-
-    pressure = press[:,th_l:th_u,:]
-    density = dens[:,th_l:th_u,:]
-    # Find volume centred total magnetic field
-    bcc_all = np.sqrt(np.square(Bcc1[:,th_l:th_u,:]) +
-                      np.square(Bcc2[:,th_l:th_u,:]) +
-                      np.square(Bcc3[:,th_l:th_u,:]))
-
-    numWeight_p = np.sum(pressure*density)
-    sum_p       = np.sum(density)
-    numWeight_b = np.sum(bcc_all*density)
-    sum_b       = np.sum(density)
-
-    pres_av = numWeight_p/sum_p
-    bcc_av = numWeight_b/sum_b
-    if bcc_av>0:
-        current_beta = 2. * pres_av / (bcc_av**2.)
-    else:
-        current_beta = np.nan
-
-    return current_beta
+        with open(prob_dir + 'beta_with_time.csv', 'a', newline='') as f:
+            writer = csv.writer(f, delimiter='\t')
+            row = [sim_t,orbit_t,current_beta]
+            writer.writerow(row)
 
 # Execute main function
 if __name__ == '__main__':
