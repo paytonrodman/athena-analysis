@@ -106,7 +106,7 @@ def main(**kwargs):
 
         with open(prob_dir + 'butterfly_with_time.csv', 'a', newline='') as f:
             writer = csv.writer(f, delimiter='\t')
-            writer.writerow([sim_t,orbit_t,Bcc1_theta,Bcc2_theta,cc3_theta])
+            writer.writerow([sim_t,orbit_t,Bcc1_theta,Bcc2_theta,Bcc3_theta])
 
 
 # Execute main function
