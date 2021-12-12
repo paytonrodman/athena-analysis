@@ -5,8 +5,8 @@ PROBLEM=high_res
 
 cd ${ROOTDIR}/${PROBLEM}/data/
 for FILE in ./${PROBLEM}.cons.*.athdf; do
-  NUMBER=$(echo $FILE | sed 's/[^0-9]*//g')
-  NOZERO=$(echo $NUMBER | sed 's/^0*//')
+  NUMBER=$(echo "$FILE" | sed 's/[^0-9]*//g')
+  NOZERO=$(echo "$NUMBER" | sed 's/^0*//')
 
   if ((${#NOZERO}==0)); then
     NOZERO=0
@@ -15,9 +15,9 @@ for FILE in ./${PROBLEM}.cons.*.athdf; do
   REMAINDER=$(( $NOZERO % 10 ))
   if (($REMAINDER==0)); then
     python $ROOTDIR/athena-analysis/dependencies/plot_spherical.py \
-    $FILE \
+    "$FILE" \
     dens \
-    ../img/${FILE//[^0-9]/}.png \
+    ../img/"${FILE//[^0-9]/}".png \
     --midplane \
     --colormap viridis \
     --vmin 0.01 \
