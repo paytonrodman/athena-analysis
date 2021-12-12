@@ -35,30 +35,31 @@ def main(**kwargs):
             Bcc2.append(literal_eval(Bcc2_av))
             Bcc3.append(literal_eval(Bcc3_av))
 
+    time, Bcc1, Bcc2, Bcc3 = zip(*sorted(zip(time, Bcc1, Bcc2, Bcc3)))
+
     theta_min = -np.pi/2.
     theta_max = np.pi/2.
     t_min = 0
     t_max = time[-1]
 
-    time, Bcc1, Bcc2, Bcc3 = zip(*sorted(zip(time, Bcc1, Bcc2, Bcc3)))
-
-    make_plots(Bcc1,data_dir,r'$B_r$','butterfly_Bcc1',t_min,t_max,theta_min,theta_max)
-    make_plots(Bcc2,data_dir,r'$B_\theta$','butterfly_Bcc2',t_min,t_max,theta_min,theta_max)
-    make_plots(Bcc3,data_dir,r'$B_\phi$','butterfly_Bcc3',t_min,t_max,theta_min,theta_max)
+    make_plots(Bcc1,data_dir,r'$B_r$','butterfly_Bcc1',t_min,t_max,theta_min,theta_max,0.0002)
+    make_plots(Bcc2,data_dir,r'$B_\theta$','butterfly_Bcc2',t_min,t_max,theta_min,theta_max,0.0001)
+    make_plots(Bcc3,data_dir,r'$B_\phi$','butterfly_Bcc3',t_min,t_max,theta_min,theta_max,0.0005)
 
 
-def make_plots(data,data_dir,xlabel,save_name,x_min,x_max,y_min,y_max):
-    fig = plt.figure()
+def make_plots(data,data_dir,xlabel,save_name,x_min,x_max,y_min,y_max,max_extent):
+    fig = plt.figure(figsize=(12, 6))
     ax = fig.add_subplot(111)
-    max_extent = np.max(np.abs(np.asarray(data).T))
-    pos = ax.imshow(np.asarray(data).T, extent=[x_min,x_max,y_min,y_max], cmap='seismic', norm=matplotlib.colors.Normalize(vmin=-max_extent, vmax=max_extent),interpolation='none')
+    if max_extent is None:
+        max_extent = np.max(np.abs(np.asarray(data).T))
+    pos = ax.imshow(np.asarray(data).T, extent=[x_min,x_max,y_min,y_max], cmap='RdBu', norm=matplotlib.colors.Normalize(vmin=-max_extent, vmax=max_extent),interpolation='none')
     ax.axis('auto')
     ax.set_xlabel(r'time ($T_{5r_g}$)',fontsize=14)
     ax.set_ylabel(r'$\theta - \pi/2$',fontsize=14)
     cbar1 = plt.colorbar(pos,extend='both')
     cbar1.ax.set_ylabel(xlabel,fontsize=14)
     plt.tick_params(axis='both', which='major', labelsize=14)
-    plt.tight_layout()
+    #plt.tight_layout()
     plt.savefig(data_dir + save_name + '.png',dpi=1200)
     plt.close()
 
