@@ -111,8 +111,17 @@ def main(**kwargs):
         Bcc3 = data_cons['Bcc3']
         press = data_prim['press']
 
+        r,theta,phi = np.meshgrid(x3f,x2f,x1f, sparse=False, indexing='ij')
         dx1f,dx2f,dx3f = AAT.calculate_delta(x1f,x2f,x3f)
         dphi,dtheta,dr = np.meshgrid(dx3f,dx2f,dx1f, sparse=False, indexing='ij')
+
+        dphi = dphi[:r_u,th_l:th_u,:]
+        dtheta = dtheta[:r_u,th_l:th_u,:]
+        dr = dr[:r_u,th_l:th_u,:]
+        r = r[:r_u,th_l:th_u,:-1] # one extra face cell
+        theta = theta[:r_u,th_l:th_u,:-1]
+        pressure = press[:r_u,th_l:th_u,:]
+        density = dens[:r_u,th_l:th_u,:]
 
         # Density-weighted mean gas pressure
         sum_p = 0.
@@ -120,9 +129,7 @@ def main(**kwargs):
         sum_b = 0.
         numWeight_b = 0.
 
-        pressure = press[:r_u,th_l:th_u,:]
-        density = dens[:r_u,th_l:th_u,:]
-        volume = dr[:r_u,th_l:th_u,:]*dtheta[:r_u,th_l:th_u,:]*dphi[:r_u,th_l:th_u,:]
+        volume = (r**2.)*np.sin(theta)*dr*dtheta*dphi
         # Find volume centred total magnetic field
         bcc_all = np.sqrt(np.square(Bcc1[:r_u,th_l:th_u,:]) +
                           np.square(Bcc2[:r_u,th_l:th_u,:]) +

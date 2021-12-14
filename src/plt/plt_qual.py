@@ -5,6 +5,7 @@ import os
 import sys
 sys.path.insert(0, '/Users/paytonrodman/athena/vis/python')
 import csv
+from ast import literal_eval
 import argparse
 
 def main(**kwargs):
@@ -27,21 +28,19 @@ def main(**kwargs):
             #t_i = float(row[0])
             t_orb = float(row[1])
             tB_i = float(row[2])
-            Qt_lc_i = float(row[3])
-            Qt_av_i = float(row[4])
-            Qt_uc_i = float(row[5])
-            Qp_lc_i = float(row[6])
-            Qp_av_i = float(row[7])
-            Qp_uc_i = float(row[8])
+            Qt_all = np.fromstring(row[3].strip("[]"), sep=',')
+            Qp_all = np.fromstring(row[4].strip("[]"), sep=',')
+
+            Qt_lc.append(Qt_all[0])
+            Qt_av.append(Qt_all[1])
+            Qt_uc.append(Qt_all[2])
+
+            Qp_lc.append(Qp_all[0])
+            Qp_av.append(Qp_all[1])
+            Qp_uc.append(Qp_all[2])
 
             time.append(t_orb*5.)
             theta_B.append(tB_i)
-            Qt_lc.append(Qt_lc_i)
-            Qt_av.append(Qt_av_i)
-            Qt_uc.append(Qt_uc_i)
-            Qp_lc.append(Qp_lc_i)
-            Qp_av.append(Qp_av_i)
-            Qp_uc.append(Qp_uc_i)
 
 
             # Allow wrapping over 0,pi/2,pi etc to track evolution of theta_B more smoothly
