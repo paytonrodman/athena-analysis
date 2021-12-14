@@ -15,7 +15,6 @@ import sys
 #sys.path.insert(0, '/home/per29/rds/rds-accretion-zyNhkonJSR8/athena-analysis/dependencies')
 sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies')
 import athena_read
-import AAT
 import glob
 import re
 import csv
@@ -71,12 +70,6 @@ def main(**kwargs):
         start = rank * count + remainder
         stop = start + count
     local_times = times[start:stop] # get the times to be analyzed by each rank
-
-    data_init = athena_read.athdf(problem + '.cons.00000.athdf', quantities=['x1v'])
-    x1v_init = data_init['x1v']
-    data_input = athena_read.athinput(runfile_dir + 'athinput.' + problem)
-    mass = data_input['problem']['mass']
-    x1min = data_input['mesh']['x1min']
 
     for t in local_times:
         str_t = str(int(t)).zfill(5)
