@@ -65,9 +65,8 @@ def main(**kwargs):
     mass = data_input['problem']['mass']
 
     data_init = athena_read.athdf(problem + '.cons.00000.athdf', quantities=['x1v','x2v'])
-    x1v_init = np.copy(data_init['x1v']) # r
-    x2v_init = np.copy(data_init['x2v']) # theta
-    del data_init
+    x1v_init = data_init['x1v'] # r
+    x2v_init = data_init['x2v'] # theta
 
     if kwargs['r_lower'] is not None:
         if not x1min <= kwargs['r_lower'] < x1max:
@@ -182,7 +181,7 @@ def main(**kwargs):
         press = press[rl:ru,tl:tu,:]
         Omega_kep = Omega_kep[rl:ru,tl:tu,:]
 
-        tB = (-np.arctan(Bcc1/Bcc2)) * (180./np.pi)
+        tB = (-np.arctan(Bcc1/Bcc3)) * (180./np.pi) #degrees
         tB_av = np.average(tB)
 
         w = dens + (gamma/(gamma - 1.))*press
