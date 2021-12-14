@@ -12,18 +12,20 @@ for FILE in ./${PROBLEM}.cons.*.athdf; do
     NOZERO=0
   fi
 
-  REMAINDER=$(( NOZERO % 10 ))
-  if ((REMAINDER==0)); then
-    python $ROOTDIR/athena-analysis/dependencies/plot_spherical.py \
-    "$FILE" \
-    dens \
-    ../img/"${FILE//[^0-9]/}".png \
-    --midplane \
-    --colormap viridis \
-    --vmin 0.01 \
-    --vmax 0.1 \
-    --logc \
-    --stream Bcc \
-    --dpi 1200
-   fi
+  REMAINDER=$(( $NOZERO % 10 ))
+  if (($REMAINDER==0)); then
+    if [[ ! -f ${ROOTDIR}/${PROBLEM}/img/${FILE//[^0-9]/}.png ]]; then
+      python $ROOTDIR/athena-analysis/dependencies/plot_spherical.py \
+      $FILE \
+      dens \
+      ../img/${FILE//[^0-9]/}.png \
+      --midplane \
+      --colormap viridis \
+      --vmin 0.01 \
+      --vmax 0.1 \
+      --logc \
+      --stream Bcc \
+      --dpi 1200
+    fi
+  fi
 done
