@@ -129,7 +129,7 @@ def main(**kwargs):
         v1,v2,v3 = AAT.calculate_velocity(mom1,mom2,mom3,dens)
         Omega_kep = np.sqrt(GM/(x1v**3.)) #Keplerian angular velocity in midplane
 
-        tB = magnetic_angle(Bcc1,Bcc2)
+        tB = magnetic_angle(Bcc1,Bcc3)
         tB_av = np.average(tB[rl:ru,tl:tu,:])
 
         Qt,Qp = quality_factors(x1v,x2v,x3v,dx1f,dx2f,dx3f,dens,press,v2,Bcc1,Bcc2,Bcc3,Omega_kep,gamma)
@@ -184,7 +184,7 @@ def mean_confidence_interval(data, confidence=0.95):
     h = se * scipy.stats.t.ppf((1 + confidence) / 2., n-1)
     return m, m-h, m+h
 
-def magnetic_angle(Bcc1,Bcc2):
+def magnetic_angle(Bcc1,Bcc3):
     """Calculate the magnetic angle, as per Hogg & Reynolds (2018) and others.
 
     Args:
