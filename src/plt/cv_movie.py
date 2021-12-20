@@ -7,9 +7,7 @@
 # To run:
 # python movie.py [options]
 #
-import numpy as np
 import os
-import matplotlib.pyplot as plt
 import glob
 import cv2
 import argparse
