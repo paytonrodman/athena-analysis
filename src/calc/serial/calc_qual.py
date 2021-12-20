@@ -194,7 +194,7 @@ def magnetic_angle(Bcc1,Bcc2):
         the magnetic angle.
 
     """
-    theta_B = (-np.arctan(Bcc1/Bcc2)) * (180./np.pi)
+    theta_B = (-np.arctan(Bcc1/Bcc3)) * (180./np.pi)
     return theta_B
 
 def quality_factors(x1v,x2v,x3v,dx1f,dx2f,dx3f,dens,press,v2,Bcc1,Bcc2,Bcc3,Omega_kep,gamma):
@@ -222,8 +222,8 @@ def quality_factors(x1v,x2v,x3v,dx1f,dx2f,dx3f,dens,press,v2,Bcc1,Bcc2,Bcc3,Omeg
     phi,theta,r = np.meshgrid(x3v,x2v,x1v, sparse=False, indexing='ij')
     dphi,dtheta,dr = np.meshgrid(dx3f,dx2f,dx1f, sparse=False, indexing='ij')
 
-    Q_theta = lambda_MRI_theta/np.sqrt(r*dphi)
-    Q_phi = lambda_MRI_phi/np.sqrt(r*np.abs(np.sin(phi))*dtheta)
+    Q_theta = lambda_MRI_theta/np.sqrt(r*dtheta)
+    Q_phi = lambda_MRI_phi/np.sqrt(r*np.abs(np.sin(phi))*dphi)
     return Q_theta,Q_phi
 
 def Alfven_vel(dens,press,Bcc1,Bcc2,Bcc3,gamma):

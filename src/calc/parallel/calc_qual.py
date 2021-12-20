@@ -199,8 +199,8 @@ def main(**kwargs):
         dphi = dphi[rl:ru,tl:tu,:]
         dtheta = dtheta[rl:ru,tl:tu,:]
 
-        Q_theta = lambda_MRI_theta/np.sqrt(r*dphi)
-        Q_phi = lambda_MRI_phi/np.sqrt(r*np.abs(np.sin(phi))*dtheta)
+        Q_theta = lambda_MRI_theta/np.sqrt(r*dtheta)
+        Q_phi = lambda_MRI_phi/np.sqrt(r*np.abs(np.sin(phi))*dphi)
         Q_theta = np.array(Q_theta.flatten())
         Q_phi = np.array(Q_phi.flatten())
 
