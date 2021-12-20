@@ -131,9 +131,9 @@ def main(**kwargs):
 
         volume = (r**2.)*np.sin(theta)*dr*dtheta*dphi
         # Find volume centred total magnetic field
-        bcc_all = np.sqrt(np.square(Bcc1[:r_u,th_l:th_u,:]) +
-                          np.square(Bcc2[:r_u,th_l:th_u,:]) +
-                          np.square(Bcc3[:r_u,th_l:th_u,:]))
+        bcc_all = np.square(Bcc1[:r_u,th_l:th_u,:]) +
+                  np.square(Bcc2[:r_u,th_l:th_u,:]) +
+                  np.square(Bcc3[:r_u,th_l:th_u,:])
 
         numWeight_p = np.sum(pressure*density*volume)
         sum_p       = np.sum(density*volume)
@@ -143,7 +143,7 @@ def main(**kwargs):
         pres_av = numWeight_p/sum_p
         bcc_av = numWeight_b/sum_b
         if bcc_av>0:
-            current_beta = 2. * pres_av / (bcc_av**2.)
+            current_beta = 2. * pres_av / bcc_av
         else:
             current_beta = np.nan
 
