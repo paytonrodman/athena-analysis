@@ -33,7 +33,6 @@ def main(**kwargs):
     #root_dir = '/home/per29/rds/rds-accretion-zyNhkonJSR8/'
     prob_dir = root_dir + problem + '/'
     data_dir = prob_dir + 'data/'
-    runfile_dir = prob_dir + 'runfiles/'
     os.chdir(data_dir)
 
     # check if data file already exists
@@ -86,7 +85,7 @@ def main(**kwargs):
         stress = np.average((Bcc1*Bcc3),axis=2)
         alpha = stress/np.average(press,axis=2)
 
-        imgplot = plt.imshow(alpha.T, extent=[np.min(x1v),np.max(x1v),np.min(x2v),np.max(x2v)],aspect='auto',cmap='viridis')
+        plt.imshow(alpha.T, extent=[np.min(x1v),np.max(x1v),np.min(x2v),np.max(x2v)],aspect='auto',cmap='viridis')
         plt.colorbar()
 
         plt.savefig(prob_dir + problem + '.' + str_t +'.png', bbox_inches='tight')
