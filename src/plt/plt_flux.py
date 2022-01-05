@@ -20,12 +20,12 @@ def main(**kwargs):
         csv_reader = csv.reader(csv_file, delimiter='\t')
         next(csv_reader, None) # skip header
         for row in csv_reader:
-            #t = float(row[0])
-            t_orb = float(row[1])
+            t = float(row[0])
+            #t_orb = float(row[1])
             mf_u = float(row[2])
             mf_l = float(row[3])
 
-            time.append(t_orb*5.)
+            time.append(t*5.)
             mag_flux_u.append(mf_u)
             mag_flux_l.append(mf_l)
 
@@ -36,8 +36,9 @@ def main(**kwargs):
     ax.plot(time,mag_flux_u,label='upper hem.',linewidth=1)
     ax.plot(time,mag_flux_l,label='lower hem.',linewidth=1)
     plt.legend(loc='best')
-    ax.set_xlabel(r'time ($T_{5r_g}$)')
-    ax.set_ylabel(r'average $\Phi_{B}$')
+    plt.ticklabel_format(axis="x", style="sci", scilimits=(0,0))
+    ax.set_xlabel(r'time ($GM/c^3$)')
+    ax.set_ylabel(r'average $\Phi_{B}$ at $5r_g$')
     ax.set_xlim(left=0)
     plt.grid(b=True, which='major', color='#666666', linestyle='-', alpha=0.5)
     plt.minorticks_on()

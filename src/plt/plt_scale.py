@@ -19,11 +19,11 @@ def main(**kwargs):
         csv_reader = csv.reader(csv_file, delimiter='\t')
         next(csv_reader, None) # skip header
         for row in csv_reader:
-            #t = float(row[0])
-            t_orb = float(row[1])
+            t = float(row[0])
+            #t_orb = float(row[1])
             sh = float(row[2])
 
-            time.append(t_orb*5.)
+            time.append(t*5.)
             scale_height.append(sh)
 
     time, scale_height = zip(*sorted(zip(time, scale_height)))
@@ -32,11 +32,11 @@ def main(**kwargs):
     fig = plt.figure()
     ax = fig.add_subplot(111)
     ax.plot(time,scale_height)
-    ax.set_xlabel(r'time ($T_{5r_g}$)')
+    ax.set_xlabel(r'time ($GM/c^3$)')
     ax.set_ylabel(r'$h/r$')
     ax.set_xlim(left=0)
     ax.set_ylim(0,0.5)
-    #plt.ticklabel_format(axis='y', style='sci', scilimits=(0,0))
+    plt.ticklabel_format(axis='y', style='sci', scilimits=(0,0))
     plt.grid(b=True, which='major', color='#666666', linestyle='-', alpha=0.5)
     plt.minorticks_on()
     plt.grid(b=True, which='minor', color='#999999', linestyle='-', alpha=0.2)

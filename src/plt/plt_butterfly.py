@@ -24,13 +24,13 @@ def main(**kwargs):
         csv_reader = csv.reader(csv_file, delimiter='\t')
         next(csv_reader, None) # skip header
         for row in csv_reader:
-            #t = float(row[0])
-            t_orb = float(row[1])
+            t = float(row[0])
+            #t_orb = float(row[1])
             Bcc1_av = row[2]
             Bcc2_av = row[3]
             Bcc3_av = row[4]
 
-            time.append(float(t_orb)*5.)
+            time.append(t*5.)
             Bcc1.append(literal_eval(Bcc1_av))
             Bcc2.append(literal_eval(Bcc2_av))
             Bcc3.append(literal_eval(Bcc3_av))
@@ -54,7 +54,8 @@ def make_plots(data,data_dir,xlabel,save_name,x_min,x_max,y_min,y_max,max_extent
         max_extent = np.max(np.abs(np.asarray(data).T))
     pos = ax.imshow(np.asarray(data).T, extent=[x_min,x_max,y_min,y_max], cmap='RdBu', norm=matplotlib.colors.Normalize(vmin=-max_extent, vmax=max_extent),interpolation='none')
     ax.axis('auto')
-    ax.set_xlabel(r'time ($T_{5r_g}$)',fontsize=14)
+    plt.ticklabel_format(axis="x", style="sci", scilimits=(0,0))
+    ax.set_xlabel(r'time ($GM/c^3$)',fontsize=14)
     ax.set_ylabel(r'$\theta - \pi/2$',fontsize=14)
     cbar1 = plt.colorbar(pos,extend='both')
     cbar1.ax.set_ylabel(xlabel,fontsize=14)

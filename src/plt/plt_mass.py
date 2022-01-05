@@ -4,6 +4,7 @@ import os
 import sys
 sys.path.insert(0, '/Users/paytonrodman/athena/vis/python')
 import csv
+from ast import literal_eval
 import argparse
 
 def main(**kwargs):
@@ -14,29 +15,46 @@ def main(**kwargs):
     os.chdir(data_dir)
 
     time = []
-    mass_flux = []
+    mass_flux_6rg = []
+    mass_flux_25rg = []
+    mass_flux_50rg = []
+    mass_flux_75rg = []
+    mass_flux_100rg = []
     with open('mass_with_time.csv', newline='\n') as csv_file:
         csv_reader = csv.reader(csv_file, delimiter='\t')
         next(csv_reader, None) # skip header
         for row in csv_reader:
-            #t = float(row[0])
-            t_orb = float(row[1])
-            mf = float(row[2])
+            t = float(row[0])
+            #t_orb = float(row[1])
+            mf_all = literal_eval(row[2])
 
-            time.append(t_orb*5.)
-            mass_flux.append(mf)
+            time.append(t*5.)
+            mass_flux_6rg.append(mf_all[0])
+            mass_flux_25rg.append(mf_all[1])
+            mass_flux_50rg.append(mf_all[2])
+            mass_flux_75rg.append(mf_all[3])
+            mass_flux_100rg.append(mf_all[4])
 
-    time, mass_flux = zip(*sorted(zip(time, mass_flux)))
+    time,mass_flux_6rg,mass_flux_25rg,mass_flux_50rg,mass_flux_75rg,mass_flux_100rg = zip(*sorted(zip(time, mass_flux_6rg,mass_flux_25rg,mass_flux_50rg,mass_flux_75rg,mass_flux_100rg)))
 
 
     y_var_name = 'mass_flux'
     fig = plt.figure()
     ax = fig.add_subplot(111)
-    ax.plot(time,mass_flux,linewidth=1)
-    ax.set_xlabel(r'time ($T_{5r_g}$)')
+
+    ax.plot(time,mass_flux_6rg,linewidth=1,label='6rg',alpha=0.8)
+    #ax.plot(time,mass_flux_25rg,linewidth=1,label='25rg',alpha=0.8)
+    #ax.plot(time,mass_flux_50rg,linewidth=1,label='50rg',alpha=0.8)
+    #ax.plot(time,mass_flux_75rg,linewidth=1,label='75rg',alpha=0.8)
+    #ax.plot(time,mass_flux_100rg,linewidth=1,label='100rg',alpha=0.8)
+
+    ax.legend()
+    ax.set_xlabel(r'time ($GM/c^3$)')
     ax.set_ylabel('surface averaged mass flux')
     ax.set_xlim(left=0)
-    plt.ticklabel_format(axis='y', style='sci', scilimits=(0,0))
+    plt.ticklabel_format(axis="x", style="sci", scilimits=(0,0))
+    #ax.set_ylim(bottom=-10,top=10)
+
     plt.grid(b=True, which='major', color='#666666', linestyle='-', alpha=0.5)
     plt.minorticks_on()
     plt.grid(b=True, which='minor', color='#999999', linestyle='-', alpha=0.2)

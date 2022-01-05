@@ -24,8 +24,8 @@ def main(**kwargs):
         csv_reader = csv.reader(csv_file, delimiter='\t')
         next(csv_reader, None) # skip header
         for row in csv_reader:
-            #t_i = float(row[0])
-            t_orb = float(row[1])
+            t = float(row[0])
+            #t_orb = float(row[1])
             tB_i = float(row[2])
             Qt_all = np.fromstring(row[3].strip("[]"), sep=',')
             Qp_all = np.fromstring(row[4].strip("[]"), sep=',')
@@ -38,7 +38,7 @@ def main(**kwargs):
             Qp_av.append(Qp_all[1])
             Qp_uc.append(Qp_all[2])
 
-            time.append(t_orb*5.)
+            time.append(t*5.)
             theta_B.append(tB_i)
 
 
@@ -65,9 +65,10 @@ def make_plot(x,y,ylabel,yname,data_dir):
     fig = plt.figure()
     ax = fig.add_subplot(111)
     ax.plot(x,y)
-    ax.set_xlabel(r'time ($T_{5r_g}$)')
+    ax.set_xlabel(r'time ($GM/c^3$)')
     ax.set_ylabel(ylabel)
     ax.set_xlim(left=0)
+    plt.ticklabel_format(axis="x", style="sci", scilimits=(0,0))
     plt.grid(b=True, which='major', color='#666666', linestyle='-', alpha=0.5)
     plt.minorticks_on()
     plt.grid(b=True, which='minor', color='#999999', linestyle='-', alpha=0.2)
@@ -79,9 +80,10 @@ def make_plot_CI(x,y,y_CI_low,y_CI_high,ylabel,yname,data_dir):
     ax = fig.add_subplot(111)
     ax.plot(x,y)
     plt.fill_between(x,y_CI_low,y_CI_high,alpha=0.2)
-    ax.set_xlabel(r'time ($T_{5r_g}$)')
+    ax.set_xlabel(r'time ($GM/c^3$)')
     ax.set_ylabel(ylabel)
     ax.set_xlim(left=0)
+    plt.ticklabel_format(axis="x", style="sci", scilimits=(0,0))
     plt.grid(b=True, which='major', color='#666666', linestyle='-', alpha=0.5)
     plt.minorticks_on()
     plt.grid(b=True, which='minor', color='#999999', linestyle='-', alpha=0.2)
