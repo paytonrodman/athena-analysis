@@ -105,21 +105,24 @@ def main(**kwargs):
         x1f = data_cons['x1f'] # r
         x2f = data_cons['x2f'] # theta
         x3f = data_cons['x3f'] # phi
+        x1v = data_cons['x1v'] # r
+        x2v = data_cons['x2v'] # theta
+        x3v = data_cons['x3v'] # phi
         dens = data_cons['dens']
         Bcc1 = data_cons['Bcc1']
         Bcc2 = data_cons['Bcc2']
         Bcc3 = data_cons['Bcc3']
         press = data_prim['press']
 
-        r,theta,phi = np.meshgrid(x3f,x2f,x1f, sparse=False, indexing='ij')
+        r,theta,phi = np.meshgrid(x3v,x2v,x1v, sparse=False, indexing='ij')
         dx1f,dx2f,dx3f = AAT.calculate_delta(x1f,x2f,x3f)
         dphi,dtheta,dr = np.meshgrid(dx3f,dx2f,dx1f, sparse=False, indexing='ij')
 
         dphi = dphi[:r_u,th_l:th_u,:]
         dtheta = dtheta[:r_u,th_l:th_u,:]
         dr = dr[:r_u,th_l:th_u,:]
-        r = r[:r_u,th_l:th_u,:-1] # one extra face cell
-        theta = theta[:r_u,th_l:th_u,:-1]
+        r = r[:r_u,th_l:th_u,:]
+        theta = theta[:r_u,th_l:th_u,:]
         pressure = press[:r_u,th_l:th_u,:]
         density = dens[:r_u,th_l:th_u,:]
 
@@ -130,10 +133,9 @@ def main(**kwargs):
         numWeight_b = 0.
 
         volume = (r**2.)*np.sin(theta)*dr*dtheta*dphi
+
         # Find volume centred total magnetic field
-        bcc_all = np.square(Bcc1[:r_u,th_l:th_u,:]) +
-                  np.square(Bcc2[:r_u,th_l:th_u,:]) +
-                  np.square(Bcc3[:r_u,th_l:th_u,:])
+        bcc_all = np.square(Bcc1[:r_u,th_l:th_u,:]) + np.square(Bcc2[:r_u,th_l:th_u,:]) + np.square(Bcc3[:r_u,th_l:th_u,:])
 
         numWeight_p = np.sum(pressure*density*volume)
         sum_p       = np.sum(density*volume)
