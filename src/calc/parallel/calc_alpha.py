@@ -20,6 +20,8 @@ import re
 import csv
 import argparse
 from mpi4py import MPI
+import matplotlib
+from matplotlib.colors import ListedColormap
 import matplotlib.pyplot as plt
 
 def main(**kwargs):
@@ -57,7 +59,8 @@ def main(**kwargs):
     if len(times)==0:
         sys.exit('No new timesteps to analyse in the given directory. Exiting.')
 
-    times = [19767]
+    times = [0,5000,10000,15000,20000,25000,30000]
+    #times = [25000]
 
     # distribute files to cores
     count = len(times) // size  # number of files for each process to analyze
@@ -85,10 +88,32 @@ def main(**kwargs):
         stress = np.average((Bcc1*Bcc3),axis=2)
         alpha = stress/np.average(press,axis=2)
 
-        plt.imshow(alpha.T, extent=[np.min(x1v),np.max(x1v),np.min(x2v),np.max(x2v)],aspect='auto',cmap='viridis')
-        plt.colorbar()
+        # create listedColormap
+        #bottom = plt.cm.get_cmap('Blues', 256)
+        #top = plt.cm.get_cmap('Reds_r', 256)
+        #newcolors = np.vstack((top(np.linspace(0, 1, 256)),
+        #                       bottom(np.linspace(0, 1, 256))))
+        #newcmp = ListedColormap(newcolors, name='RedBlue')
 
-        plt.savefig(prob_dir + problem + '.' + str_t +'.png', bbox_inches='tight')
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        max_extent = np.max(np.abs(np.asarray(alpha).T))
+        if max_extent==0:
+            max_extent = 1e-5
+        #max_extent = 0.4
+        #norm = matplotlib.colors.SymLogNorm(linthresh=0.03, linscale=0.03, vmin=-max_extent, vmax=max_extent)
+        #norm = matplotlib.colors.Normalize(vmin=-max_extent, vmax=max_extent)
+        pos = ax.imshow(alpha.T,
+                        extent = [np.min(x1v),np.max(x1v),np.min(x2v),np.max(x2v)],
+                        aspect = 'auto',
+                        cmap = 'RdBu',
+                        norm = matplotlib.colors.SymLogNorm(linthresh=0.01, linscale=0.01, vmin=-max_extent, vmax=max_extent, base=10))
+        ax.set_xlabel(r'$r$',fontsize=14)
+        ax.set_ylabel(r'$\theta$',fontsize=14)
+        cbar1 = plt.colorbar(pos,extend='both')
+        cbar1.ax.set_ylabel(r'$\alpha_{\rm eff}$',fontsize=14)
+
+        plt.savefig(prob_dir + problem + '.' + str_t +'.png', bbox_inches='tight',dpi=1200)
         plt.close()
 
 
