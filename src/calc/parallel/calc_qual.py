@@ -209,10 +209,9 @@ def main(**kwargs):
         Qp_l,Qp_h = st.t.interval(0.95, len(Q_phi)-1, loc=np.mean(Q_phi), scale=st.sem(Q_phi))
         Qp_av = np.mean(Q_phi)
 
-        v_Kep0 = np.sqrt(mass/x1min)
-        Omega0 = v_Kep0/x1min
-        T0 = 2.*np.pi/Omega0
-        orbit_t = t/T0
+        r_ISCO = 6 # location of ISCO in PW potential
+        T_period = 2.*np.pi*sqrt(r_ISCO)*(r_ISCO - 2.)
+        orbit_t = t/T_period
         sim_t = float(t)
 
         Qt_all = [Qt_l,Qt_av,Qt_h]

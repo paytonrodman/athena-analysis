@@ -149,10 +149,9 @@ def main(**kwargs):
         else:
             current_beta = np.nan
 
-        v_Kep0 = np.sqrt(mass/x1min)
-        Omega0 = v_Kep0/x1min
-        T0 = 2.*np.pi/Omega0
-        orbit_t = t/T0
+        r_ISCO = 6. # location of ISCO in PW potential
+        T_period = 2.*np.pi*sqrt(r_ISCO)*(r_ISCO - 2.)
+        orbit_t = t/T_period
         sim_t = float(t)
 
         with open(prob_dir + 'beta_with_time.csv', 'a', newline='') as f:

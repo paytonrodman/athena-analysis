@@ -110,10 +110,9 @@ def main(**kwargs):
                     mf_i.append(-dens[k,j,r_id_i] * v1[k,j,r_id_i] * (x1f[r_id_i])**2. * dOmega)
             mf_local.append(np.sum(mf_i))
 
-        v_Kep0 = np.sqrt(mass/x1min)
-        Omega0 = v_Kep0/x1min
-        T0 = 2.*np.pi/Omega0
-        orbit_t = t/T0
+        r_ISCO = 6 # location of ISCO in PW potential
+        T_period = 2.*np.pi*sqrt(r_ISCO)*(r_ISCO - 2.)
+        orbit_t = t/T_period
         sim_t = float(t)
 
         with open(prob_dir + 'mass_with_time.csv', 'a', newline='') as f:
