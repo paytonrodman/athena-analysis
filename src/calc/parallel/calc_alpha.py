@@ -21,7 +21,6 @@ import csv
 import argparse
 from mpi4py import MPI
 import matplotlib
-from matplotlib.colors import ListedColormap
 import matplotlib.pyplot as plt
 
 def main(**kwargs):
@@ -87,13 +86,6 @@ def main(**kwargs):
 
         stress = np.average((Bcc1*Bcc3),axis=2)
         alpha = stress/np.average(press,axis=2)
-
-        # create listedColormap
-        #bottom = plt.cm.get_cmap('Blues', 256)
-        #top = plt.cm.get_cmap('Reds_r', 256)
-        #newcolors = np.vstack((top(np.linspace(0, 1, 256)),
-        #                       bottom(np.linspace(0, 1, 256))))
-        #newcmp = ListedColormap(newcolors, name='RedBlue')
 
         fig = plt.figure()
         ax = fig.add_subplot(111)
