@@ -15,6 +15,7 @@ import glob
 import re
 import csv
 import argparse
+from math import sqrt
 
 def main(**kwargs):
     problem  = args.prob_id

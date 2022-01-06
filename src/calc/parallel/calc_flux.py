@@ -19,6 +19,7 @@ import glob
 import re
 import csv
 import argparse
+from math import sqrt
 from mpi4py import MPI
 
 def main(**kwargs):

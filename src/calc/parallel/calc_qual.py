@@ -21,6 +21,7 @@ import re
 import csv
 import scipy.stats as st
 import argparse
+from math import sqrt
 from mpi4py import MPI
 
 def main(**kwargs):

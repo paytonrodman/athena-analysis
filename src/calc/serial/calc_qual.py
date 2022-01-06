@@ -15,6 +15,7 @@ import glob
 import re
 import csv
 import scipy.stats
+from math import sqrt
 import argparse
 
 def main(**kwargs):
