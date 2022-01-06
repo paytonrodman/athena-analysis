@@ -97,7 +97,7 @@ def main(**kwargs):
             writer.writerow(["sim_time", "orbit_time", "plasma_beta"])
             writer.writerows(zip(sim_time,orbit_time,beta_list))
 
-def calculate_beta(r_u,th_u,th_l,dens,press,Bcc1,Bcc2,Bcc3):
+def calculate_beta(r_u,th_u,th_l,x1v,x2v,x3v,x1f,x2f,x3f,dens,press,Bcc1,Bcc2,Bcc3):
     """Calculate the mean plasma beta within a specified region.
 
     Args:
@@ -112,23 +112,34 @@ def calculate_beta(r_u,th_u,th_l,dens,press,Bcc1,Bcc2,Bcc3):
         the mean plasma beta.
 
     """
+    r,theta,_ = np.meshgrid(x3v,x2v,x1v, sparse=False, indexing='ij')
+    dx1f,dx2f,dx3f = AAT.calculate_delta(x1f,x2f,x3f)
+    dphi,dtheta,dr = np.meshgrid(dx3f,dx2f,dx1f, sparse=False, indexing='ij')
+
     # Density-weighted mean gas pressure
     sum_p = 0.
     numWeight_p = 0.
     sum_b = 0.
     numWeight_b = 0.
 
+    dphi = dphi[:r_u,th_l:th_u,:]
+    dtheta = dtheta[:r_u,th_l:th_u,:]
+    dr = dr[:r_u,th_l:th_u,:]
+    r = r[:r_u,th_l:th_u,:]
+    theta = theta[:r_u,th_l:th_u,:]
     pressure = press[:r_u,th_l:th_u,:]
     density = dens[:r_u,th_l:th_u,:]
+
+    volume = (r**2.)*np.sin(theta)*dr*dtheta*dphi
     # Find volume centred total magnetic field
     bcc_all = np.square(Bcc1[:r_u,th_l:th_u,:]) +
               np.square(Bcc2[:r_u,th_l:th_u,:]) +
               np.square(Bcc3[:r_u,th_l:th_u,:])
 
-    numWeight_p = np.sum(pressure*density)
-    sum_p       = np.sum(density)
-    numWeight_b = np.sum(bcc_all*density)
-    sum_b       = np.sum(density)
+    numWeight_p = np.sum(pressure*density*volume)
+    sum_p       = np.sum(density*volume)
+    numWeight_b = np.sum(bcc_all*density*volume)
+    sum_b       = np.sum(density*volume)
 
     pres_av = numWeight_p/sum_p
     bcc_av = numWeight_b/sum_b
