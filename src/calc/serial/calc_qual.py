@@ -126,7 +126,7 @@ def main(**kwargs):
 
         # Calculations
         dx1f,dx2f,dx3f = AAT.calculate_delta(x1f,x2f,x3f)
-        v1,v2,v3 = AAT.calculate_velocity(mom1,mom2,mom3,dens)
+        _,v2,v3 = AAT.calculate_velocity(mom1,mom2,mom3,dens)
         Omega_kep = np.sqrt(GM/(x1v**3.)) #Keplerian angular velocity in midplane
 
         tB = magnetic_angle(Bcc1,Bcc3)
@@ -219,8 +219,8 @@ def quality_factors(x1v,x2v,x3v,dx1f,dx2f,dx3f,dens,press,v2,Bcc1,Bcc2,Bcc3,Omeg
     lambda_MRI_theta = 2.*np.pi*np.sqrt(16./15.)*np.abs(vA_theta)/Omega_kep
     lambda_MRI_phi = 2.*np.pi*np.sqrt(16./15.)*np.abs(vA_phi)/Omega_kep
 
-    phi,theta,r = np.meshgrid(x3v,x2v,x1v, sparse=False, indexing='ij')
-    dphi,dtheta,dr = np.meshgrid(dx3f,dx2f,dx1f, sparse=False, indexing='ij')
+    phi,_,r = np.meshgrid(x3v,x2v,x1v, sparse=False, indexing='ij')
+    dphi,dtheta,_ = np.meshgrid(dx3f,dx2f,dx1f, sparse=False, indexing='ij')
 
     Q_theta = lambda_MRI_theta/np.sqrt(r*dtheta)
     Q_phi = lambda_MRI_phi/np.sqrt(r*np.abs(np.sin(phi))*dphi)

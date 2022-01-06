@@ -76,8 +76,8 @@ def main(**kwargs):
         mom2 = data_cons['mom2']
         mom3 = data_cons['mom3']
         # Calculations
-        dx1f,dx2f,dx3f = AAT.calculate_delta(x1f,x2f,x3f)
-        v1,v2,v3 = AAT.calculate_velocity(mom1,mom2,mom3,dens)
+        _,dx2f,dx3f = AAT.calculate_delta(x1f,x2f,x3f)
+        v1,_,v3 = AAT.calculate_velocity(mom1,mom2,mom3,dens)
 
         mf0,mf1,mf2,mf3,mf4 = [],[],[],[],[]
         for j in range(len(x2v)):
