@@ -20,7 +20,7 @@ def main(**kwargs):
     img_array = []
     for filename in sorted(glob.glob('*.png')):
         img = cv2.imread(filename)
-        height, width, layers = img.shape
+        height,width,_ = img.shape
         size = (width,height)
         img_array.append(img)
 

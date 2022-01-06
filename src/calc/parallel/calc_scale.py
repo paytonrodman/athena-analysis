@@ -77,8 +77,8 @@ def main(**kwargs):
     x3f = data_init['x3f'] # phi
 
     dx1f,dx2f,dx3f = AAT.calculate_delta(x1f,x2f,x3f)
-    _,theta,r = np.meshgrid(x3v,x2v,x1v, sparse=False, indexing='ij')
-    dphi,dtheta,dr = np.meshgrid(dx3f,dx2f,dx1f, sparse=False, indexing='ij')
+    _,theta,_ = np.meshgrid(x3v,x2v,x1v, sparse=False, indexing='ij')
+    dphi,dtheta,_ = np.meshgrid(dx3f,dx2f,dx1f, sparse=False, indexing='ij')
     dOmega = np.sin(theta)*dtheta*dphi
 
     if rank==0:

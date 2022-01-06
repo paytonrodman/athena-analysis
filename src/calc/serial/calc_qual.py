@@ -126,7 +126,7 @@ def main(**kwargs):
 
         # Calculations
         dx1f,dx2f,dx3f = AAT.calculate_delta(x1f,x2f,x3f)
-        _,v2,v3 = AAT.calculate_velocity(mom1,mom2,mom3,dens)
+        _,v2,_ = AAT.calculate_velocity(mom1,mom2,mom3,dens)
         Omega_kep = np.sqrt(GM/(x1v**3.)) #Keplerian angular velocity in midplane
 
         tB = magnetic_angle(Bcc1,Bcc3)
