@@ -70,13 +70,19 @@ def main(**kwargs):
         data_cons = athena_read.athdf(problem + ".cons." + str_t + ".athdf")
 
         #unpack data
+        x1v = data_cons['x1v']
+        x2v = data_cons['x2v']
+        x3v = data_cons['x3v']
+        x1f = data_cons['x1f']
+        x2f = data_cons['x2f']
+        x3f = data_cons['x3f']
         dens = data_cons['dens']
         Bcc1 = data_cons['Bcc1']
         Bcc2 = data_cons['Bcc2']
         Bcc3 = data_cons['Bcc3']
         press = data_prim['press']
 
-        current_beta = calculate_beta(r_u,th_u,th_l,dens,press,Bcc1,Bcc2,Bcc3)
+        current_beta = calculate_beta(r_u,th_u,th_l,x1v,x2v,x3v,x1f,x2f,x3f,dens,press,Bcc1,Bcc2,Bcc3)
         beta_list.append(current_beta)
 
         v_Kep0 = np.sqrt(mass/x1min)
