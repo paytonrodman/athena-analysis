@@ -112,7 +112,7 @@ def main(**kwargs):
         Bcc3 = data_cons['Bcc3']
         press = data_prim['press']
 
-        r,theta,phi = np.meshgrid(x3v,x2v,x1v, sparse=False, indexing='ij')
+        r,theta,_ = np.meshgrid(x3v,x2v,x1v, sparse=False, indexing='ij')
         dx1f,dx2f,dx3f = AAT.calculate_delta(x1f,x2f,x3f)
         dphi,dtheta,dr = np.meshgrid(dx3f,dx2f,dx1f, sparse=False, indexing='ij')
 
