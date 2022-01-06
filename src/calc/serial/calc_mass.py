@@ -28,7 +28,7 @@ def main(**kwargs):
     data_input = athena_read.athinput(runfile_dir + 'athinput.' + problem)
     mass = data_input['problem']['mass']
     x1min = data_input['mesh']['x1min']
-    init_data = athena_read.athdf(problem + '.cons.00000.athdf')
+    init_data = athena_read.athdf(problem + '.cons.00000.athdf', quantities=['x1v'])
     x1v_init = init_data['x1v'] # r
     r_id_0 = AAT.find_nearest(x1v_init, 6.) # find index of ISCO
     r_id_1 = AAT.find_nearest(x1v_init, 25.)
@@ -63,7 +63,7 @@ def main(**kwargs):
     mf0_total,mf1_total,mf2_total,mf3_total,mf4_total = [],[],[],[],[]
     for t in sorted(times):
         str_t = str(int(t)).zfill(5)
-        data_cons = athena_read.athdf(problem + '.cons.' + str_t + '.athdf')
+        data_cons = athena_read.athdf(problem + '.cons.' + str_t + '.athdf', quantities=['x2v','x3v','x1f','x2f','x3f','dens','mom1','mom2','mom3'])
 
         #unpack data
         x2v = data_cons['x2v'] # theta

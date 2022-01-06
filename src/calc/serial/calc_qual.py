@@ -37,7 +37,7 @@ def main(**kwargs):
     x2_high_min = data_input['refinement3']['x2min']
     x2_high_max = data_input['refinement3']['x2max']
 
-    init_data = athena_read.athdf(problem + '.cons.00000.athdf')
+    init_data = athena_read.athdf(problem + '.cons.00000.athdf', quantities=['x1v','x2v'])
     x1v_init = init_data['x1v'] # r
     x2v_init = init_data['x2v'] # theta
 
@@ -101,8 +101,8 @@ def main(**kwargs):
     Q_phi_low, Q_phi_av, Q_phi_high = [], [], []
     for t in sorted(times):
         str_t = str(int(t)).zfill(5)
-        data_prim = athena_read.athdf(problem + '.prim.' + str_t + '.athdf')
-        data_cons = athena_read.athdf(problem + '.cons.' + str_t + '.athdf')
+        data_prim = athena_read.athdf(problem + '.prim.' + str_t + '.athdf', quantities=['press'])
+        data_cons = athena_read.athdf(problem + '.cons.' + str_t + '.athdf', quantities=['x1v','x2v','x3v','x1f','x2f','x3f','dens','mom1','mom2','mom3','Bcc1','Bcc2','Bcc3'])
 
         #constants
         gamma = 5./3.

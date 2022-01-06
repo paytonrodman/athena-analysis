@@ -53,7 +53,7 @@ def main(**kwargs):
 
     data_input = athena_read.athinput(runfile_dir + 'athinput.' + problem)
     scale_height = data_input['problem']['h_r']
-    data_init = athena_read.athdf(problem + '.cons.00000.athdf')
+    data_init = athena_read.athdf(problem + '.cons.00000.athdf', quantities=['x1v','x2v'])
     x1v = data_init['x1v']
     x2v = data_init['x2v']
     th_u = AAT.find_nearest(x2v, np.pi/2. + (2.*scale_height))
@@ -66,8 +66,8 @@ def main(**kwargs):
     for t in sorted(times):
         str_t = str(int(t)).zfill(5)
 
-        data_prim = athena_read.athdf(problem + ".prim." + str_t + ".athdf")
-        data_cons = athena_read.athdf(problem + ".cons." + str_t + ".athdf")
+        data_prim = athena_read.athdf(problem + ".prim." + str_t + ".athdf", quantities=['press'])
+        data_cons = athena_read.athdf(problem + ".cons." + str_t + ".athdf", quantities=['x1v','x2v','x3v','x1f','x2f','x3f','dens','Bcc1','Bcc2','Bcc3'])
 
         #unpack data
         x1v = data_cons['x1v']

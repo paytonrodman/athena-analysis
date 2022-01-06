@@ -52,7 +52,7 @@ def main(**kwargs):
         sys.exit('No new timesteps to analyse in the given directory. Exiting.')
 
 
-    data_init = athena_read.athdf(problem + '.cons.00000.athdf')
+    data_init = athena_read.athdf(problem + '.cons.00000.athdf', quantities=['x2v'])
     x2v_init = data_init['x2v']
     th_id = AAT.find_nearest(x2v_init, np.pi/2.)
 
@@ -62,7 +62,7 @@ def main(**kwargs):
     mag_flux_l = []
     for t in sorted(times):
         str_t = str(int(t)).zfill(5)
-        data_cons = athena_read.athdf(problem + '.cons.' + str_t + '.athdf')
+        data_cons = athena_read.athdf(problem + '.cons.' + str_t + '.athdf', quantities=['x2v','x3v','x1f','x2f','x3f','Bcc1'])
 
         #unpack data
         x2v = data_cons['x2v'] # theta

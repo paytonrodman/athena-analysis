@@ -51,7 +51,7 @@ def main(**kwargs):
     if len(times)==0:
         sys.exit('No new timesteps to analyse in the given directory. Exiting.')
 
-    data_init = athena_read.athdf(problem + '.cons.00000.athdf')
+    data_init = athena_read.athdf(problem + '.cons.00000.athdf', quantities=['x1v'])
     x1v_init = data_init['x1v']
 
     if kwargs['r'] is not None:
@@ -67,7 +67,7 @@ def main(**kwargs):
     Bpol = []
     for t in sorted(times):
         str_t = str(int(t)).zfill(5)
-        data_cons = athena_read.athdf(problem + '.cons.' + str_t + '.athdf')
+        data_cons = athena_read.athdf(problem + '.cons.' + str_t + '.athdf', quantities=['Bcc1','Bcc2','Bcc3'])
 
         #unpack data
         Bcc1 = data_cons['Bcc1']

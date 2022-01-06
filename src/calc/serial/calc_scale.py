@@ -52,7 +52,7 @@ def main(**kwargs):
         sys.exit('No new timesteps to analyse in the given directory. Exiting.')
 
     # get mesh data for all files (static)
-    data_init = athena_read.athdf(problem + '.cons.00000.athdf')
+    data_init = athena_read.athdf(problem + '.cons.00000.athdf', quantities=['x1v','x2v','x3v','x1f','x2f','x3f'])
     x1v = data_init['x1v'] # r
     x2v = data_init['x2v'] # theta
     x3v = data_init['x3v'] # phi
@@ -71,7 +71,7 @@ def main(**kwargs):
         str_t = str(int(t)).zfill(5)
 
         filename_cons = problem + '.cons.' + str_t + '.athdf'
-        data_cons = athena_read.athdf(filename_cons)
+        data_cons = athena_read.athdf(filename_cons, quantities=['dens'])
 
         #unpack data
         dens = data_cons['dens']
