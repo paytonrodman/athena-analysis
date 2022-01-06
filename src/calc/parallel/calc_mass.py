@@ -56,9 +56,6 @@ def main(**kwargs):
     if len(times)==0:
         sys.exit('No new timesteps to analyse in the given directory. Exiting.')
 
-    data_input = athena_read.athinput(runfile_dir + 'athinput.' + problem)
-    mass = data_input['problem']['mass']
-    x1min = data_input['mesh']['x1min']
     init_data = athena_read.athdf(problem + '.cons.00000.athdf', quantities=['x1v'])
     x1v_init = init_data['x1v'] # r
     r_val = [6.,25.,50.,75.,100.]

@@ -62,7 +62,6 @@ def main(**kwargs):
         x1_high_max = x1max
         x2_high_min = x2min
         x2_high_max = x2max
-    mass = data_input['problem']['mass']
 
     data_init = athena_read.athdf(problem + '.cons.00000.athdf', quantities=['x1v','x2v'])
     x1v_init = data_init['x1v'] # r

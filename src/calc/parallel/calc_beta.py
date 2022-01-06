@@ -70,8 +70,6 @@ def main(**kwargs):
 
     data_input = athena_read.athinput(runfile_dir + 'athinput.' + problem)
     scale_height = data_input['problem']['h_r']
-    mass = data_input['problem']['mass']
-    x1min = data_input['mesh']['x1min']
     if 'refinement3' in data_input:
         x1_high_max = data_input['refinement3']['x1max'] # bounds of high resolution region
     elif 'refinement2' in data_input:

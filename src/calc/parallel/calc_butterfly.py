@@ -71,9 +71,6 @@ def main(**kwargs):
 
     data_init = athena_read.athdf(problem + '.cons.00000.athdf', quantities=['x1v'])
     x1v_init = data_init['x1v']
-    data_input = athena_read.athinput(runfile_dir + 'athinput.' + problem)
-    mass = data_input['problem']['mass']
-    x1min = data_input['mesh']['x1min']
 
     if kwargs['r'] is not None:
         r_id = AAT.find_nearest(x1v_init, kwargs['r'])

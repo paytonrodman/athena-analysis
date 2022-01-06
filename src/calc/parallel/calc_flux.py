@@ -71,9 +71,6 @@ def main(**kwargs):
     data_init = athena_read.athdf(problem + '.cons.00000.athdf', quantities=['x2v'])
     x2v_init = data_init['x2v']
     th_id = AAT.find_nearest(x2v_init, np.pi/2.)
-    data_input = athena_read.athinput(runfile_dir + 'athinput.' + problem)
-    mass = data_input['problem']['mass']
-    x1min = data_input['mesh']['x1min']
 
     if rank==0:
         if not args.update:

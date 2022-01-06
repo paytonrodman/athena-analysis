@@ -67,10 +67,6 @@ def main(**kwargs):
         stop = start + count
     local_times = times[start:stop] # get the times to be analyzed by each rank
 
-    data_input = athena_read.athinput(runfile_dir + 'athinput.' + problem)
-    mass = data_input['problem']['mass']
-    x1min = data_input['mesh']['x1min']
-
     # get mesh data for all files (static)
     data_init = athena_read.athdf(problem + '.cons.00000.athdf', quantities=['x1v','x2v','x3v','x1f','x2f','x3f'])
     x1v = data_init['x1v'] # r
