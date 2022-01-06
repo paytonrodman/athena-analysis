@@ -22,12 +22,7 @@ def main(**kwargs):
     #root_dir = '/home/per29/rds/rds-accretion-zyNhkonJSR8/'
     prob_dir = root_dir + problem + '/'
     data_dir = prob_dir + 'data/'
-    runfile_dir = prob_dir + 'runfiles/'
     os.chdir(data_dir)
-
-    data_input = athena_read.athinput(runfile_dir + 'athinput.' + problem)
-    mass = data_input['problem']['mass']
-    x1min = data_input['mesh']['x1min']
 
     csv_time = []
     # check if data file already exists
@@ -80,11 +75,9 @@ def main(**kwargs):
         Bcc3_theta.append(np.average(Bcc3[r_id,:,:],axis=1).tolist())
         Bpol.append(np.average(Bpol_i[r_id,:,:],axis=1).tolist())
 
-        v_Kep0 = np.sqrt(mass/x1min)
-        Omega0 = v_Kep0/x1min
-        T0 = 2.*np.pi/Omega0
-        orbit_time.append(t/T0)
-
+        r_ISCO = 6. # location of ISCO in PW potential
+        T_period = 2.*np.pi*sqrt(r_ISCO)*(r_ISCO - 2.)
+        orbit_time.append(t/T_period)
         sim_time.append(t)
 
     sim_time,orbit_time,Bcc1_theta,Bcc2_theta,Bcc3_theta,Bpol = (list(t) for t in zip(*sorted(zip(sim_time,orbit_time,Bcc1_theta,Bcc2_theta,Bcc3_theta,Bpol))))

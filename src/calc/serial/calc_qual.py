@@ -27,7 +27,6 @@ def main(**kwargs):
     os.chdir(data_dir)
 
     data_input = athena_read.athinput(runfile_dir + 'athinput.' + problem)
-    mass = data_input['problem']['mass'] # bounds of simulation
     x1min = data_input['mesh']['x1min']
     x1max = data_input['mesh']['x1max']
     x2min = data_input['mesh']['x2min']
@@ -148,10 +147,9 @@ def main(**kwargs):
         Q_phi_av.append(Qp_av)
         Q_phi_high.append(Qp_uc)
 
-        v_Kep0 = np.sqrt(mass/x1min)
-        Omega0 = v_Kep0/x1min
-        T0 = 2.*np.pi/Omega0
-        orbit_time.append(t/T0)
+        r_ISCO = 6. # location of ISCO in PW potential
+        T_period = 2.*np.pi*sqrt(r_ISCO)*(r_ISCO - 2.)
+        orbit_time.append(t/T_period)
         sim_time.append(t)
 
 

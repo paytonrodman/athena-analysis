@@ -22,12 +22,8 @@ def main(**kwargs):
     #root_dir = '/home/per29/rds/rds-accretion-zyNhkonJSR8/'
     prob_dir = root_dir + problem + '/'
     data_dir = prob_dir + 'data/'
-    runfile_dir = prob_dir + 'runfiles/'
     os.chdir(data_dir)
 
-    data_input = athena_read.athinput(runfile_dir + 'athinput.' + problem)
-    mass = data_input['problem']['mass']
-    x1min = data_input['mesh']['x1min']
     init_data = athena_read.athdf(problem + '.cons.00000.athdf', quantities=['x1v'])
     x1v_init = init_data['x1v'] # r
     r_id_0 = AAT.find_nearest(x1v_init, 6.) # find index of ISCO
@@ -100,12 +96,10 @@ def main(**kwargs):
         mf3_total.append(np.sum(mf3))
         mf4_total.append(np.sum(mf4))
 
-        v_Kep0 = np.sqrt(mass/x1min)
-        Omega0 = v_Kep0/x1min
-        T0 = 2.*np.pi/Omega0
-        orbit_time.append(t/T0)
+        r_ISCO = 6. # location of ISCO in PW potential
+        T_period = 2.*np.pi*sqrt(r_ISCO)*(r_ISCO - 2.)
+        orbit_time.append(t/T_period)
         sim_time.append(t)
-
 
     sim_time,orbit_time,mf0_total,mf1_total,mf2_total,mf3_total,mf4_total = (list(t) for t in zip(*sorted(zip(sim_time,orbit_time,mf0_total,mf1_total,mf2_total,mf3_total,mf4_total))))
     os.chdir(prob_dir)

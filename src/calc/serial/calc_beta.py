@@ -25,10 +25,6 @@ def main(**kwargs):
     runfile_dir = prob_dir + 'runfiles/'
     os.chdir(data_dir)
 
-    data_input = athena_read.athinput(runfile_dir + 'athinput.' + problem)
-    mass = data_input['problem']['mass']
-    x1min = data_input['mesh']['x1min']
-
     csv_time = []
     # check if data file already exists
     if args.update:
@@ -85,10 +81,9 @@ def main(**kwargs):
         current_beta = calculate_beta(r_u,th_u,th_l,x1v,x2v,x3v,x1f,x2f,x3f,dens,press,Bcc1,Bcc2,Bcc3)
         beta_list.append(current_beta)
 
-        v_Kep0 = np.sqrt(mass/x1min)
-        Omega0 = v_Kep0/x1min
-        T0 = 2.*np.pi/Omega0
-        orbit_time.append(t/T0)
+        r_ISCO = 6. # location of ISCO in PW potential
+        T_period = 2.*np.pi*sqrt(r_ISCO)*(r_ISCO - 2.)
+        orbit_time.append(t/T_period)
         sim_time.append(t)
 
     sim_time,orbit_time,beta_list = (list(t) for t in zip(*sorted(zip(sim_time,orbit_time,beta_list))))
