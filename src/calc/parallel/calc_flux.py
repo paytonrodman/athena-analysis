@@ -89,7 +89,7 @@ def main(**kwargs):
         Bcc1 = data_cons['Bcc1']
 
         # Calculations
-        dx1f,dx2f,dx3f = AAT.calculate_delta(x1f,x2f,x3f)
+        _,dx2f,dx3f = AAT.calculate_delta(x1f,x2f,x3f)
 
         mf_l = []
         mf_u = []

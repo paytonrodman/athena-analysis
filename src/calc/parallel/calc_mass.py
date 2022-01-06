@@ -94,8 +94,8 @@ def main(**kwargs):
         mom2 = data_cons['mom2']
         mom3 = data_cons['mom3']
         # Calculations
-        dx1f,dx2f,dx3f = AAT.calculate_delta(x1f,x2f,x3f)
-        v1,v2,v3 = AAT.calculate_velocity(mom1,mom2,mom3,dens)
+        _,dx2f,dx3f = AAT.calculate_delta(x1f,x2f,x3f)
+        v1,_,v3 = AAT.calculate_velocity(mom1,mom2,mom3,dens)
 
         mf_local = []
         for r_id_i in r_id:

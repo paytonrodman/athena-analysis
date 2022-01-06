@@ -190,8 +190,8 @@ def main(**kwargs):
         lambda_MRI_theta = 2.*np.pi*np.sqrt(16./15.)*np.abs(vA_theta)/Omega_kep
         lambda_MRI_phi = 2.*np.pi*np.sqrt(16./15.)*np.abs(vA_phi)/Omega_kep
 
-        phi,theta,r = np.meshgrid(x3v,x2v,x1v, sparse=False, indexing='ij')
-        dphi,dtheta,dr = np.meshgrid(dx3f,dx2f,dx1f, sparse=False, indexing='ij')
+        phi,_,r = np.meshgrid(x3v,x2v,x1v, sparse=False, indexing='ij')
+        dphi,dtheta,_ = np.meshgrid(dx3f,dx2f,dx1f, sparse=False, indexing='ij')
 
         r = r[rl:ru,tl:tu,:]
         phi = phi[rl:ru,tl:tu,:]
