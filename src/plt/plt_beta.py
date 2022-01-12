@@ -28,14 +28,6 @@ def main(**kwargs):
 
     time, beta = zip(*sorted(zip(time, beta)))
 
-    #beta_msk = [True if b<(100) else False for b in beta ]
-    #beta = np.array(beta)
-    #time = np.array(time)
-    #beta = beta[beta_msk]
-    #time = time[beta_msk]
-    #beta.tolist()
-    #time.tolist()
-
     fig = plt.figure()
     ax = fig.add_subplot(111)
     ax.plot(time,beta)
