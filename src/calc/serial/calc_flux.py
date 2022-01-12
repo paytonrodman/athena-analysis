@@ -91,8 +91,8 @@ def main(**kwargs):
 
         r_ISCO = 6. # location of ISCO in PW potential
         T_period = 2.*np.pi*sqrt(r_ISCO)*(r_ISCO - 2.)
-        orbit_time.append(t/T_period)
-        sim_time.append(t)
+        sim_t.append(data_cons['Time'])
+        orbit_time.append(sim_t/T_period)
 
     sim_time,orbit_time,mag_flux_u,mag_flux_l = (list(t) for t in zip(*sorted(zip(sim_time,orbit_time,mag_flux_u,mag_flux_l))))
     os.chdir(prob_dir)

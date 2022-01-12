@@ -211,8 +211,8 @@ def main(**kwargs):
 
         r_ISCO = 6 # location of ISCO in PW potential
         T_period = 2.*np.pi*sqrt(r_ISCO)*(r_ISCO - 2.)
-        orbit_t = t/T_period
-        sim_t = float(t)
+        sim_t = data_cons['Time']
+        orbit_t = sim_t/T_period
 
         Qt_all = [Qt_l,Qt_av,Qt_h]
         Qp_all = [Qp_l,Qp_av,Qp_h]
