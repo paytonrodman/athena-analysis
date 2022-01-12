@@ -38,7 +38,7 @@ def main(**kwargs):
             Qp_av.append(Qp_all[1])
             Qp_uc.append(Qp_all[2])
 
-            time.append(t*5.)
+            time.append(t)
             theta_B.append(tB_i)
 
 
@@ -57,7 +57,7 @@ def main(**kwargs):
             #    theta_B.append(tB_i)
     time,theta_B,Qt_lc,Qt_av,Qt_uc,Qp_lc,Qp_av,Qp_uc = zip(*sorted(zip(time,theta_B,Qt_lc,Qt_av,Qt_uc,Qp_lc,Qp_av,Qp_uc)))
 
-    make_plot(time,theta_B,r'$\theta_B$','theta_B',data_dir)
+    make_plot(time,theta_B,r'$\theta_B$ (degrees)','theta_B',data_dir)
     make_plot_CI(time,Qt_av,Qt_lc,Qt_uc,r'average $Q_{\theta}$','Q_theta',data_dir)
     make_plot_CI(time,Qp_av,Qp_lc,Qp_uc,r'average $Q_{\phi}$','Q_phi',data_dir)
 

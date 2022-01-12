@@ -23,7 +23,7 @@ def main(**kwargs):
             #t_orb = float(row[1])
             sh = float(row[2])
 
-            time.append(t*5.)
+            time.append(t)
             scale_height.append(sh)
 
     time, scale_height = zip(*sorted(zip(time, scale_height)))
@@ -36,7 +36,7 @@ def main(**kwargs):
     ax.set_ylabel(r'$h/r$')
     ax.set_xlim(left=0)
     ax.set_ylim(0,0.5)
-    plt.ticklabel_format(axis='y', style='sci', scilimits=(0,0))
+    plt.ticklabel_format(axis='x', style='sci', scilimits=(0,0))
     plt.grid(b=True, which='major', color='#666666', linestyle='-', alpha=0.5)
     plt.minorticks_on()
     plt.grid(b=True, which='minor', color='#999999', linestyle='-', alpha=0.2)

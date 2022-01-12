@@ -30,7 +30,7 @@ def main(**kwargs):
             Bcc2_av = row[3]
             Bcc3_av = row[4]
 
-            time.append(t*5.)
+            time.append(t)
             Bcc1.append(literal_eval(Bcc1_av))
             Bcc2.append(literal_eval(Bcc2_av))
             Bcc3.append(literal_eval(Bcc3_av))

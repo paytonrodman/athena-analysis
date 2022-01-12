@@ -28,7 +28,7 @@ def main(**kwargs):
             #t_orb = float(row[1])
             mf_all = literal_eval(row[2])
 
-            time.append(t*5.)
+            time.append(t)
             mass_flux_6rg.append(mf_all[0])
             mass_flux_25rg.append(mf_all[1])
             mass_flux_50rg.append(mf_all[2])
@@ -53,7 +53,7 @@ def main(**kwargs):
     ax.set_ylabel('surface averaged mass flux')
     ax.set_xlim(left=0)
     plt.ticklabel_format(axis="x", style="sci", scilimits=(0,0))
-    #ax.set_ylim(bottom=-10,top=10)
+    ax.set_ylim(bottom=-1,top=1)
 
     plt.grid(b=True, which='major', color='#666666', linestyle='-', alpha=0.5)
     plt.minorticks_on()
