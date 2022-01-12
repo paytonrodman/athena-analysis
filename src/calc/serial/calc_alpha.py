@@ -15,7 +15,6 @@ sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies'
 import athena_read
 import glob
 import re
-import csv
 import AAT
 import argparse
 import matplotlib
@@ -55,8 +54,6 @@ def main(**kwargs):
     th_u_id = AAT.find_nearest(x2v, np.pi/2. + scale_height)
     th_l_id = AAT.find_nearest(x2v, np.pi/2. - scale_height)
 
-    av_stress = []
-    labels = []
     for t in sorted(times):
         print(t)
         str_t = str(int(t)).zfill(5)
@@ -97,9 +94,6 @@ def main(**kwargs):
 
         if args.plot_1D:
             alpha_sh = np.average(alpha[th_l_id:th_u_id,:],axis=0)
-            #av_stress.append(alpha_sh)
-            #labels.append(int(t))
-
             fig = plt.figure()
             ax = fig.add_subplot(111)
             ax.plot(x1v,alpha_sh)

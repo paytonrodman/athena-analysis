@@ -18,8 +18,6 @@ import glob
 import re
 import csv
 import argparse
-import matplotlib
-import matplotlib.pyplot as plt
 
 def main(**kwargs):
     problem  = args.prob_id
@@ -76,13 +74,11 @@ def main(**kwargs):
     Bcc1_av_3 = []
     sim_time = []
     for t in times:
-        print(t)
         str_t = str(int(t)).zfill(5)
         data_cons = athena_read.athdf(problem + '.cons.' + str_t + '.athdf', quantities=['Bcc1','Bcc2','Bcc3'])
-        #data_prim = athena_read.athdf(problem + '.prim.' + str_t + '.athdf', quantities=['press'])
 
-        for index,item in enumerate(csv_array):
-            if (item[0] == t):
+        for item in csv_array:
+            if (item[0] == data_cons['Time']):
                 mf_u = item[1]
                 mf_l = item[2]
                 continue
