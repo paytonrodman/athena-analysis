@@ -42,7 +42,7 @@ def main(**kwargs):
     fig = plt.figure()
     ax = fig.add_subplot(111)
 
-    ax.plot(time,mass_flux_6rg,linewidth=1,label='6rg',alpha=0.8)
+    ax.plot(time,mass_flux_6rg,linewidth=1,label='6rg',alpha=1)
     #ax.plot(time,mass_flux_25rg,linewidth=1,label='25rg',alpha=0.8)
     #ax.plot(time,mass_flux_50rg,linewidth=1,label='50rg',alpha=0.8)
     #ax.plot(time,mass_flux_75rg,linewidth=1,label='75rg',alpha=0.8)
@@ -50,10 +50,11 @@ def main(**kwargs):
 
     ax.legend()
     ax.set_xlabel(r'time ($GM/c^3$)')
-    ax.set_ylabel('surface averaged mass flux')
+    ax.set_ylabel(r'$\dot{M}$')
     ax.set_xlim(left=0)
     plt.ticklabel_format(axis="x", style="sci", scilimits=(0,0))
-    ax.set_ylim(bottom=-1,top=1)
+    plt.ticklabel_format(axis="y", style="sci", scilimits=(0,0))
+    ax.set_ylim(bottom=1e-2,top=0.6)
 
     plt.grid(b=True, which='major', color='#666666', linestyle='-', alpha=0.5)
     plt.minorticks_on()
