@@ -76,7 +76,7 @@ def main(**kwargs):
         if not args.update:
             with open(prob_dir + 'flux_with_time.csv', 'w', newline='') as f:
                 writer = csv.writer(f, delimiter='\t')
-                writer.writerow(["sim_time", "orbit_time", "mag_flux_u", "mag_flux_l"])
+                writer.writerow(["sim_time", "orbit_time", "mag_flux_u", "mag_flux_l", "mag_flux_u_abs", "mag_flux_l_abs"])
     for t in local_times:
         str_t = str(int(t)).zfill(5)
         data_cons = athena_read.athdf(problem + '.cons.' + str_t + '.athdf', quantities=['x2v','x3v','x1f','x2f','x3f','Bcc1'])
@@ -93,20 +93,24 @@ def main(**kwargs):
         _,dx2f,dx3f = AAT.calculate_delta(x1f,x2f,x3f)
 
         mf_l = []
+        mf_l_abs = []
         mf_u = []
+        mf_u_abs = []
         for j in range(th_id):
             for k in range(len(x3v)):
                 dS = (x1f[0]**2.)*np.sin(x2f[j])*dx2f[j]*dx3f[k] # r^2 * sin(theta) * dtheta * dphi
-                mf_i = Bcc1[k,j,0]*dS
-                mf_u.append(mf_i)
+                mf_u.append(Bcc1[k,j,0]*dS)
+                mf_u_abs.append(np.abs(Bcc1[k,j,0])*dS)
         for j in range(th_id,len(x2v)):
             for k in range(len(x3v)):
                 dS = (x1f[0]**2.)*np.sin(x2f[j])*dx2f[j]*dx3f[k] # r^2 * sin(theta) * dtheta * dphi
-                mf_i = Bcc1[k,j,0]*dS
-                mf_l.append(mf_i)
+                mf_l.append(Bcc1[k,j,0]*dS)
+                mf_l_abs.append(np.abs(Bcc1[k,j,0])*dS)
 
         mag_flux_u = np.sum(mf_u)
+        mag_flux_u_abs = np.sum(mf_u_abs)
         mag_flux_l = np.sum(mf_l)
+        mag_flux_l_abs = np.sum(mf_l_abs)
 
         r_ISCO = 6. # location of ISCO in PW potential
         T_period = 2.*np.pi*sqrt(r_ISCO)*(r_ISCO - 2.)
@@ -115,7 +119,7 @@ def main(**kwargs):
 
         with open(prob_dir + 'flux_with_time.csv', 'a', newline='') as f:
             writer = csv.writer(f, delimiter='\t')
-            row = [sim_t,orbit_t,mag_flux_u,mag_flux_l]
+            row = [sim_t,orbit_t,mag_flux_u,mag_flux_l,mag_flux_u_abs,mag_flux_l_abs]
             writer.writerow(row)
 
 # Execute main function
