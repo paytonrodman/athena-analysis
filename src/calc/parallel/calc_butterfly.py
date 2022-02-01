@@ -91,9 +91,9 @@ def main(**kwargs):
         Bcc2 = data_cons['Bcc2']
         Bcc3 = data_cons['Bcc3']
 
-        Bcc1_theta = np.average(Bcc1[r_id,:,:],axis=1).tolist()
-        Bcc2_theta = np.average(Bcc2[r_id,:,:],axis=1).tolist()
-        Bcc3_theta = np.average(Bcc3[r_id,:,:],axis=1).tolist()
+        Bcc1_theta = np.average(Bcc1[:,:,r_id],axis=1).tolist()
+        Bcc2_theta = np.average(Bcc2[:,:,r_id],axis=1).tolist()
+        Bcc3_theta = np.average(Bcc3[:,:,r_id],axis=1).tolist()
 
         r_ISCO = 6. # location of ISCO in PW potential
         T_period = 2.*np.pi*sqrt(r_ISCO)*(r_ISCO - 2.)

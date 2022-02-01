@@ -169,17 +169,17 @@ def main(**kwargs):
         del x1f,x2f,x3f
 
         for ii in range(0,256):
-            Omega_kep[ii,:,:] = np.sqrt(GM/(x1v**3.)) #Keplerian angular velocity in midplane
+            Omega_kep[ii, :, :] = np.sqrt(GM/(x1v**3.)) #Keplerian angular velocity in midplane
 
-        Bcc1 = Bcc1[rl:ru,tl:tu,:]
-        Bcc2 = Bcc2[rl:ru,tl:tu,:]
-        Bcc3 = Bcc3[rl:ru,tl:tu,:]
-        dens = dens[rl:ru,tl:tu,:]
-        mom1 = mom1[rl:ru,tl:tu,:]
-        mom2 = mom2[rl:ru,tl:tu,:]
-        mom3 = mom3[rl:ru,tl:tu,:]
-        press = press[rl:ru,tl:tu,:]
-        Omega_kep = Omega_kep[rl:ru,tl:tu,:]
+        Bcc1 = Bcc1[:, tl:tu, rl:ru]
+        Bcc2 = Bcc2[:, tl:tu, rl:ru]
+        Bcc3 = Bcc3[:, tl:tu, rl:ru]
+        dens = dens[:, tl:tu, rl:ru]
+        mom1 = mom1[:, tl:tu, rl:ru]
+        mom2 = mom2[:, tl:tu, rl:ru]
+        mom3 = mom3[:, tl:tu, rl:ru]
+        press = press[:, tl:tu, rl:ru]
+        Omega_kep = Omega_kep[:, tl:tu, rl:ru]
 
         tB = (-np.arctan(Bcc1/Bcc3)) * (180./np.pi) #degrees
         tB_av = np.average(tB)
@@ -194,10 +194,10 @@ def main(**kwargs):
         phi,_,r = np.meshgrid(x3v,x2v,x1v, sparse=False, indexing='ij')
         dphi,dtheta,_ = np.meshgrid(dx3f,dx2f,dx1f, sparse=False, indexing='ij')
 
-        r = r[rl:ru,tl:tu,:]
-        phi = phi[rl:ru,tl:tu,:]
-        dphi = dphi[rl:ru,tl:tu,:]
-        dtheta = dtheta[rl:ru,tl:tu,:]
+        r = r[:, tl:tu, rl:ru]
+        phi = phi[:, tl:tu, rl:ru]
+        dphi = dphi[:, tl:tu, rl:ru]
+        dtheta = dtheta[:, tl:tu, rl:ru]
 
         Q_theta = lambda_MRI_theta/np.sqrt(r*dtheta)
         Q_phi = lambda_MRI_phi/np.sqrt(r*np.abs(np.sin(phi))*dphi)

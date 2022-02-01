@@ -45,7 +45,7 @@ def main(**kwargs):
             for row in csv_reader:
                 csv_time = np.append(csv_time, float(row[0]))
 
-    files = glob.glob('./high_res.cons.*.athdf')
+    files = glob.glob('./' + problem + '.cons.*.athdf')
     times = np.empty(0)
     for f in files:
         time_sec = re.findall(r'\b\d+\b', f)
@@ -116,14 +116,13 @@ def main(**kwargs):
         r,theta,_ = np.meshgrid(x3v,x2v,x1v, sparse=False, indexing='ij')
         dx1f,dx2f,dx3f = AAT.calculate_delta(x1f,x2f,x3f)
         dphi,dtheta,dr = np.meshgrid(dx3f,dx2f,dx1f, sparse=False, indexing='ij')
-
-        dphi = dphi[:r_u,th_l:th_u,:]
-        dtheta = dtheta[:r_u,th_l:th_u,:]
-        dr = dr[:r_u,th_l:th_u,:]
-        r = r[:r_u,th_l:th_u,:]
-        theta = theta[:r_u,th_l:th_u,:]
-        pressure = press[:r_u,th_l:th_u,:]
-        density = dens[:r_u,th_l:th_u,:]
+        dphi = dphi[:, th_l:th_u, :r_u]
+        dtheta = dtheta[:, th_l:th_u, :r_u]
+        dr = dr[:, th_l:th_u, :r_u]
+        r = r[:, th_l:th_u, :r_u]
+        theta = theta[:, th_l:th_u, :r_u]
+        pressure = press[:, th_l:th_u, :r_u]
+        density = dens[:, th_l:th_u, :r_u]
 
         # Density-weighted mean gas pressure
         sum_p = 0.
@@ -134,7 +133,7 @@ def main(**kwargs):
         volume = (r**2.)*np.sin(theta)*dr*dtheta*dphi
 
         # Find volume centred total magnetic field
-        bcc_all = np.square(Bcc1[:r_u,th_l:th_u,:]) + np.square(Bcc2[:r_u,th_l:th_u,:]) + np.square(Bcc3[:r_u,th_l:th_u,:])
+        bcc_all = np.square(Bcc1[:, th_l:th_u, :r_u]) + np.square(Bcc2[:, th_l:th_u, :r_u]) + np.square(Bcc3[:, th_l:th_u, :r_u])
 
         numWeight_p = np.sum(pressure*density*volume)
         sum_p       = np.sum(density*volume)
