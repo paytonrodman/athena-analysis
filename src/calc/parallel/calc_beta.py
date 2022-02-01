@@ -134,9 +134,9 @@ def main(**kwargs):
 
         # Find volume centred total magnetic field
         bcc_all = np.square(Bcc1[:, th_l:th_u, :r_u]) + np.square(Bcc2[:, th_l:th_u, :r_u]) + np.square(Bcc3[:, th_l:th_u, :r_u])
-
-        numWeight_p = np.sum(pressure*density*volume)
-        sum_p       = np.sum(density*volume)
+        # Density- and volume weighted pressure/magnetic field
+        numWeight_p = np.sum(pressure*density*volume) #value * weight
+        sum_p       = np.sum(density*volume) # weight
         numWeight_b = np.sum(bcc_all*density*volume)
         sum_b       = np.sum(density*volume)
 
