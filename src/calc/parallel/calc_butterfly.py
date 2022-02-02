@@ -12,8 +12,8 @@
 import numpy as np
 import os
 import sys
-sys.path.insert(0, '/home/per29/rds/rds-accretion-zyNhkonJSR8/athena-analysis/dependencies')
-#sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies')
+#sys.path.insert(0, '/home/per29/rds/rds-accretion-zyNhkonJSR8/athena-analysis/dependencies')
+sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies')
 import athena_read
 import AAT
 import glob
@@ -30,8 +30,8 @@ def main(**kwargs):
     rank = comm.Get_rank()
 
     problem  = args.prob_id
-    #root_dir = "/Users/paytonrodman/athena-sim/"
-    root_dir = '/home/per29/rds/rds-accretion-zyNhkonJSR8/'
+    root_dir = "/Users/paytonrodman/athena-sim/"
+    #root_dir = '/home/per29/rds/rds-accretion-zyNhkonJSR8/'
     prob_dir = root_dir + problem + '/'
     data_dir = prob_dir + 'data/'
     os.chdir(data_dir)
@@ -69,9 +69,10 @@ def main(**kwargs):
         stop = start + count
     local_times = times[start:stop] # get the times to be analyzed by each rank
 
+    local_times=[10000]
+
     data_init = athena_read.athdf(problem + '.cons.00000.athdf', quantities=['x1v'])
     x1v_init = data_init['x1v']
-
     if kwargs['r'] is not None:
         r_id = AAT.find_nearest(x1v_init, kwargs['r'])
     else:
@@ -91,9 +92,9 @@ def main(**kwargs):
         Bcc2 = data_cons['Bcc2']
         Bcc3 = data_cons['Bcc3']
 
-        Bcc1_theta = np.average(Bcc1[:,:,r_id],axis=1).tolist()
-        Bcc2_theta = np.average(Bcc2[:,:,r_id],axis=1).tolist()
-        Bcc3_theta = np.average(Bcc3[:,:,r_id],axis=1).tolist()
+        Bcc1_theta = np.average(Bcc1[:,:,r_id],axis=0).tolist()
+        Bcc2_theta = np.average(Bcc2[:,:,r_id],axis=0).tolist()
+        Bcc3_theta = np.average(Bcc3[:,:,r_id],axis=0).tolist()
 
         r_ISCO = 6. # location of ISCO in PW potential
         T_period = 2.*np.pi*sqrt(r_ISCO)*(r_ISCO - 2.)
