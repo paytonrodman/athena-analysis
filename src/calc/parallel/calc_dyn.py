@@ -9,10 +9,11 @@
 # for [n] cores.
 #
 import numpy as np
+from numpy.polynomial import Polynomial
 import os
 import sys
-#sys.path.insert(0, '/home/per29/rds/rds-accretion-zyNhkonJSR8/athena-analysis/dependencies')
-sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies')
+sys.path.insert(0, '/home/per29/rds/rds-accretion-zyNhkonJSR8/athena-analysis/dependencies')
+#sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies')
 import athena_read
 import AAT
 import glob
@@ -30,8 +31,8 @@ def main(**kwargs):
     rank = comm.Get_rank()
 
     problem  = args.prob_id
-    root_dir = "/Users/paytonrodman/athena-sim/"
-    #root_dir = '/home/per29/rds/rds-accretion-zyNhkonJSR8/'
+    #root_dir = "/Users/paytonrodman/athena-sim/"
+    root_dir = '/home/per29/rds/rds-accretion-zyNhkonJSR8/'
     prob_dir = root_dir + problem + '/'
     data_dir = prob_dir + 'data/'
     runfile_dir = prob_dir + 'runfiles/'
@@ -165,9 +166,9 @@ def main(**kwargs):
             emf2_av = np.repeat(emf2_av[np.newaxis, :, :], np.shape(emf2)[0], axis=0)
             emf3_av = np.repeat(emf3_av[np.newaxis, :, :], np.shape(emf3)[0], axis=0)
 
-        alpha1_i, C1_i = np.polyfit(emf1_av.flatten(), Bcc1_av.flatten(), 1)
-        alpha2_i, C2_i = np.polyfit(emf2_av.flatten(), Bcc2_av.flatten(), 1)
-        alpha3_i, C3_i = np.polyfit(emf3_av.flatten(), Bcc3_av.flatten(), 1)
+        alpha1_i, C1_i = Polynomial.fit(x=Bcc1_av.flatten(), y=emf1_av.flatten(), deg=1)
+        alpha2_i, C2_i = Polynomial.fit(x=Bcc2_av.flatten(), y=emf2_av.flatten(), deg=1)
+        alpha3_i, C3_i = Polynomial.fit(x=Bcc3_av.flatten(), y=emf3_av.flatten(), deg=1)
         alpha = [alpha1_i,alpha2_i,alpha3_i]
         C = [C1_i,C2_i,C3_i]
 
