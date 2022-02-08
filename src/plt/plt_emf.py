@@ -207,7 +207,7 @@ def main(**kwargs):
             sns.despine()
             ax = sns.kdeplot(x=df.Bcc, y=df.emf, cmap="Reds", thresh=0.1, shade=True, bw_adjust=.5)
             ax.set(xlabel=xlab1, ylabel=ylab1)
-            title_str = "t=" + str(sim_t)
+            title_str = "t=" + str(sim_t) + ", (" + str(orbit_t) + " orbits)"
             ax.set_title(title_str)
             plt.tight_layout()
             plt.savefig(prob_dir+'/'+f1+f2+f3+'.png',dpi=300)
