@@ -21,12 +21,7 @@ import csv
 import argparse
 from math import sqrt
 from scipy.ndimage import gaussian_filter
-import matplotlib.pyplot as plt
 from mpi4py import MPI
-from random import randint
-#from scipy.stats import kde
-import seaborn as sns
-import pandas as pd
 
 def main(**kwargs):
     # get number of processors and processor rank
@@ -100,14 +95,10 @@ def main(**kwargs):
     if args.hemisphere=='upper':
         th_l = AAT.find_nearest(x2v, np.pi/2. - (2.*scale_height))
         th_u = AAT.find_nearest(x2v, np.pi/2. - (1.*scale_height))
-        f2 = 'upper_atmos'
     elif args.hemisphere=="lower":
         th_l = AAT.find_nearest(x2v, np.pi/2. + (1.*scale_height))
         th_u = AAT.find_nearest(x2v, np.pi/2. + (2.*scale_height))
-        f2 = 'lower_atmos'
 
-    #alpha1,alpha2,alpha3 = [],[],[]
-    #C1,C2,C3 = [],[],[]
     if rank==0:
         if not args.update:
             with open(prob_dir + 'dyn_with_time.csv', 'w', newline='') as f:
@@ -133,7 +124,6 @@ def main(**kwargs):
             Bcc1_av = gaussian_filter(Bcc1, sigma=s)
             Bcc2_av = gaussian_filter(Bcc2, sigma=s)
             Bcc3_av = gaussian_filter(Bcc3, sigma=s)
-            f1 = 'gau_'
 
         if args.average=='azimuthal':
             mom1_av = np.average(mom1, axis=0)
@@ -148,7 +138,6 @@ def main(**kwargs):
             Bcc1_av = np.repeat(Bcc1_av[np.newaxis, :, :], np.shape(Bcc1)[0], axis=0)
             Bcc2_av = np.repeat(Bcc2_av[np.newaxis, :, :], np.shape(Bcc2)[0], axis=0)
             Bcc3_av = np.repeat(Bcc3_av[np.newaxis, :, :], np.shape(Bcc3)[0], axis=0)
-            f1 = 'azi_'
 
         # fluctuating components of momentum and magnetic field
         mom1_fluc = mom1 - mom1_av
@@ -175,22 +164,12 @@ def main(**kwargs):
             emf1_av = np.repeat(emf1_av[np.newaxis, :, :], np.shape(emf1)[0], axis=0)
             emf2_av = np.repeat(emf2_av[np.newaxis, :, :], np.shape(emf2)[0], axis=0)
             emf3_av = np.repeat(emf3_av[np.newaxis, :, :], np.shape(emf3)[0], axis=0)
-            f1 = 'azi_'
 
         alpha1_i, C1_i = np.polyfit(emf1_av.flatten(), Bcc1_av.flatten(), 1)
         alpha2_i, C2_i = np.polyfit(emf2_av.flatten(), Bcc2_av.flatten(), 1)
         alpha3_i, C3_i = np.polyfit(emf3_av.flatten(), Bcc3_av.flatten(), 1)
         alpha = [alpha1_i,alpha2_i,alpha3_i]
         C = [C1_i,C2_i,C3_i]
-        #alpha1.append(alpha1_i)
-        #alpha2.append(alpha2_i)
-        #alpha3.append(alpha3_i)
-        #C1.append(C1_i)
-        #C2.append(C2_i)
-        #C3.append(C3_i)
-
-        #emf_all = [emf1,emf2,emf3]
-        #Bcc_all = [Bcc1_av,Bcc2_av,Bcc3_av]
 
         r_ISCO = 6. # location of ISCO in PW potential
         T_period = 2.*np.pi*sqrt(r_ISCO)*(r_ISCO - 2.)
@@ -200,47 +179,6 @@ def main(**kwargs):
         with open(prob_dir + 'dyn_with_time.csv', 'a', newline='') as f:
             writer = csv.writer(f, delimiter='\t')
             writer.writerow([sim_t,orbit_t,alpha,C])
-
-
-    #alpha_all = [alpha1,alpha2,alpha3]
-    #C_all = [C1,C2,C3]
-
-    # for num in range(0,len(emf_all)):
-    #     alpha = alpha_all[num]
-    #     C = C_all[num]
-    #     if num==0:
-    #         xlab2 = r'Offset ($C$)'
-    #         ylab2 = r'$\alpha_d$'
-    #         f3 = '_r'
-    #     elif num==1:
-    #         xlab2 = r'Offset ($C$)'
-    #         ylab2 = r'$\alpha_d$'
-    #         f3 = '_th'
-    #     elif num==2:
-    #         xlab2 = r'Offset ($C$)'
-    #         ylab2 = r'$\alpha_d$'
-    #         f3 = '_ph'
-    #
-    #     fig, ax = plt.subplots()
-    #     x = C
-    #     y = alpha
-    #     #idx = [randint(0, np.size(x)-1) for p in range(0, 1000)]
-    #     #x = x[idx]
-    #     #y = y[idx]
-    #     plt.plot(x,y,'k.', markersize=1)
-    #     ax.set(xlabel=xlab2, ylabel=ylab2)
-    #     title_str = "t=" + str(sim_t)
-    #     ax.set_title(title_str)
-    #     plt.ticklabel_format(axis="both", style="sci", scilimits=(0,0))
-    #     plt.tight_layout()
-    #     plt.savefig(prob_dir+'/'+f1+f2+f3+'_fit.png',dpi=300)
-    #     plt.close()
-    #     #plt.show()
-
-
-
-
-
 
 
 # Execute main function
