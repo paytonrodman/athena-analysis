@@ -54,7 +54,7 @@ def main(**kwargs):
     ax.set_xlim(left=0)
     plt.ticklabel_format(axis="x", style="sci", scilimits=(0,0))
     plt.ticklabel_format(axis="y", style="sci", scilimits=(0,0))
-    ax.set_ylim(bottom=1e-2,top=0.6)
+    #ax.set_ylim(bottom=1e-2,top=0.6)
 
     plt.grid(b=True, which='major', color='#666666', linestyle='-', alpha=0.5)
     plt.minorticks_on()
