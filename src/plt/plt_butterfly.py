@@ -42,9 +42,9 @@ def main(**kwargs):
     t_min = 0
     t_max = time[-1]
 
-    make_plots(Bcc1,data_dir,r'$B_r$','butterfly_Bcc1',t_min,t_max,theta_min,theta_max,0.001)
-    make_plots(Bcc2,data_dir,r'$B_\theta$','butterfly_Bcc2',t_min,t_max,theta_min,theta_max,0.00025)
-    make_plots(Bcc3,data_dir,r'$B_\phi$','butterfly_Bcc3',t_min,t_max,theta_min,theta_max,0.001)
+    make_plots(Bcc1,data_dir,r'$B_r$','butterfly_Bcc1',t_min,t_max,theta_min,theta_max,None)
+    make_plots(Bcc2,data_dir,r'$B_\theta$','butterfly_Bcc2',t_min,t_max,theta_min,theta_max,None)
+    make_plots(Bcc3,data_dir,r'$B_\phi$','butterfly_Bcc3',t_min,t_max,theta_min,theta_max,None)
 
 
 def make_plots(data,data_dir,xlabel,save_name,x_min,x_max,y_min,y_max,max_extent):
