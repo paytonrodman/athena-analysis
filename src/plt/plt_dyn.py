@@ -5,7 +5,6 @@ import sys
 sys.path.insert(0, '/Users/paytonrodman/athena/vis/python')
 import csv
 import numpy as np
-import scipy.stats
 from ast import literal_eval
 import argparse
 
@@ -38,31 +37,31 @@ def main(**kwargs):
         x = alpha[:,num]
         C = C_all[num]
         if num==0:
-            xlab2 = r'Offset ($C$)'
-            ylab2 = r'$\alpha_d$'
-            f3 = '_r'
+            xlab = r'Offset ($C$)'
+            ylab = r'$\alpha_d$'
+            f = 'r'
         elif num==1:
-            xlab2 = r'Offset ($C$)'
-            ylab2 = r'$\alpha_d$'
-            f3 = '_th'
+            xlab = r'Offset ($C$)'
+            ylab = r'$\alpha_d$'
+            f = 'th'
         elif num==2:
-            xlab2 = r'Offset ($C$)'
-            ylab2 = r'$\alpha_d$'
-            f3 = '_ph'
+            xlab = r'Offset ($C$)'
+            ylab = r'$\alpha_d$'
+            f = 'ph'
 
-        fig, ax = plt.subplots()
         x = C
         y = alpha
         #idx = [randint(0, np.size(x)-1) for p in range(0, 1000)]
         #x = x[idx]
         #y = y[idx]
         plt.plot(x,y,'k.', markersize=1)
-        ax.set(xlabel=xlab2, ylabel=ylab2)
+        plt.ylabel(ylab)
+        plt.xlabel(xlab)
         title_str = "t=" + str(sim_t)
-        ax.set_title(title_str)
+        plt.title(title_str)
         plt.ticklabel_format(axis="both", style="sci", scilimits=(0,0))
         plt.tight_layout()
-        plt.savefig(prob_dir+'/'+f1+f2+f3+'_fit.png',dpi=300)
+        plt.savefig(prob_dir+'/'+f+'_fit.png',dpi=300)
         plt.close()
         #plt.show()
 
