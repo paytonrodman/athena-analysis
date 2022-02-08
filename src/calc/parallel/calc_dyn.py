@@ -166,9 +166,9 @@ def main(**kwargs):
             emf2_av = np.repeat(emf2_av[np.newaxis, :, :], np.shape(emf2)[0], axis=0)
             emf3_av = np.repeat(emf3_av[np.newaxis, :, :], np.shape(emf3)[0], axis=0)
 
-        alpha1_i, C1_i = Polynomial.fit(x=Bcc1_av.flatten(), y=emf1_av.flatten(), deg=1)
-        alpha2_i, C2_i = Polynomial.fit(x=Bcc2_av.flatten(), y=emf2_av.flatten(), deg=1)
-        alpha3_i, C3_i = Polynomial.fit(x=Bcc3_av.flatten(), y=emf3_av.flatten(), deg=1)
+        C1_i, alpha1_i = Polynomial.fit(x=Bcc1_av.flatten(), y=emf1_av.flatten(), deg=1)
+        C2_i, alpha2_i = Polynomial.fit(x=Bcc2_av.flatten(), y=emf2_av.flatten(), deg=1)
+        C3_i, alpha3_i = Polynomial.fit(x=Bcc3_av.flatten(), y=emf3_av.flatten(), deg=1)
         alpha = [alpha1_i,alpha2_i,alpha3_i]
         C = [C1_i,C2_i,C3_i]
 
