@@ -48,7 +48,7 @@ def main(**kwargs):
 
 
 def make_plots(data,data_dir,xlabel,save_name,x_min,x_max,y_min,y_max,max_extent):
-    fig = plt.figure(figsize=(12, 6))
+    fig = plt.figure(figsize=(18, 6))
     ax = fig.add_subplot(111)
     if max_extent is None:
         max_extent = np.max(np.abs(np.asarray(data).T))
