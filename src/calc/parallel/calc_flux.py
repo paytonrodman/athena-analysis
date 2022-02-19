@@ -44,7 +44,7 @@ def main(**kwargs):
             for row in csv_reader:
                 csv_time = np.append(csv_time, float(row[0]))
 
-    files = glob.glob('./high_res.cons.*.athdf')
+    files = glob.glob('./'+prob_id+'.cons.*.athdf')
     times = np.empty(0)
     for f in files:
         time_sec = re.findall(r'\b\d+\b', f)
