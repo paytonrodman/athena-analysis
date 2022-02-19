@@ -9,7 +9,6 @@
 # for [n] cores.
 #
 import numpy as np
-from numpy.polynomial import Polynomial
 import os
 import sys
 sys.path.insert(0, '/home/per29/rds/rds-accretion-zyNhkonJSR8/athena-analysis/dependencies')
@@ -23,6 +22,7 @@ import argparse
 from math import sqrt
 from scipy.ndimage import gaussian_filter
 from mpi4py import MPI
+from sklearn.linear_model import HuberRegressor
 
 def main(**kwargs):
     # get number of processors and processor rank
@@ -37,6 +37,8 @@ def main(**kwargs):
     data_dir = prob_dir + 'data/'
     runfile_dir = prob_dir + 'runfiles/'
     os.chdir(data_dir)
+    av = args.average
+    hem = args.hemisphere
 
     if args.average not in ['azimuthal','gaussian']:
         sys.exit('Must select averaging method (azimuthal, gaussian)')
@@ -47,7 +49,7 @@ def main(**kwargs):
     # check if data file already exists
     csv_time = np.empty(0)
     if args.update:
-        with open(prob_dir + 'dyn_with_time.csv', 'r', newline='') as f:
+        with open(prob_dir+'dyn/huber/'+ av[:3]+'_'+hem+'_dyn_with_time.csv', 'r', newline='') as f:
             csv_reader = csv.reader(f, delimiter='\t')
             next(csv_reader, None) # skip header
             for row in csv_reader:
@@ -77,32 +79,27 @@ def main(**kwargs):
         stop = start + count
     local_times = times[start:stop] # get the times to be analyzed by each rank
 
-    #local_times = [1500,3580] #43159 51273
+    #local_times = [43159] #43159 51273
 
     data_input = athena_read.athinput(runfile_dir + 'athinput.' + problem)
     scale_height = data_input['problem']['h_r']
-    if 'refinement3' in data_input:
-        x1_high_max = data_input['refinement3']['x1max'] # bounds of high resolution region
-    elif 'refinement2' in data_input:
-        x1_high_max = data_input['refinement2']['x1max'] # bounds of high resolution region
-    elif 'refinement1' in data_input:
-        x1_high_max = data_input['refinement1']['x1max'] # bounds of high resolution region
-    else:
-        x1_high_max = data_input['mesh']['x1max']
     data_init = athena_read.athdf(problem + '.cons.00000.athdf', quantities=['x1v','x2v'])
     x1v = data_init['x1v']
     x2v = data_init['x2v']
-    r_u = AAT.find_nearest(x1v, x1_high_max)
+    r_l = AAT.find_nearest(x1v, 15.)
+    r_u = AAT.find_nearest(x1v, 15. + 15.*scale_height)
+    r_mid = np.int(r_l + (r_u - r_l)/2.)
+    dist = scale_height*x1v[r_mid]
     if args.hemisphere=='upper':
-        th_l = AAT.find_nearest(x2v, np.pi/2. - (2.*scale_height))
-        th_u = AAT.find_nearest(x2v, np.pi/2. - (1.*scale_height))
+        th_l = AAT.find_nearest(x2v, np.pi/2. - (np.arctan(2.*dist/x1v[r_mid])))
+        th_u = AAT.find_nearest(x2v, np.pi/2. - (np.arctan(1.*dist/x1v[r_mid])))
     elif args.hemisphere=="lower":
-        th_l = AAT.find_nearest(x2v, np.pi/2. + (1.*scale_height))
-        th_u = AAT.find_nearest(x2v, np.pi/2. + (2.*scale_height))
+        th_l = AAT.find_nearest(x2v, np.pi/2. + (np.arctan(1.*dist/x1v[r_mid])))
+        th_u = AAT.find_nearest(x2v, np.pi/2. + (np.arctan(2.*dist/x1v[r_mid])))
 
     if rank==0:
         if not args.update:
-            with open(prob_dir + 'dyn_with_time.csv', 'w', newline='') as f:
+            with open(prob_dir+'dyn/huber/'+ av[:3]+'_'+hem+'_dyn_with_time.csv', 'w', newline='') as f:
                 writer = csv.writer(f, delimiter='\t')
                 writer.writerow(["sim_time", "orbit_time", "alpha", "C"])
     for t in local_times:
@@ -110,12 +107,12 @@ def main(**kwargs):
         data_cons = athena_read.athdf(problem + '.cons.' + str_t + '.athdf', quantities=['mom1','mom2','mom3','Bcc1','Bcc2','Bcc3'])
 
         #unpack data
-        mom1 = data_cons['mom1'][:,th_l:th_u,:r_u] #select points between 1-2 scale heights
-        mom2 = data_cons['mom2'][:,th_l:th_u,:r_u]
-        mom3 = data_cons['mom3'][:,th_l:th_u,:r_u]
-        Bcc1 = data_cons['Bcc1'][:,th_l:th_u,:r_u]
-        Bcc2 = data_cons['Bcc2'][:,th_l:th_u,:r_u]
-        Bcc3 = data_cons['Bcc3'][:,th_l:th_u,:r_u]
+        mom1 = data_cons['mom1'][:,th_l:th_u,r_l:r_u] #select points between 1-2 scale heights
+        mom2 = data_cons['mom2'][:,th_l:th_u,r_l:r_u]
+        mom3 = data_cons['mom3'][:,th_l:th_u,r_l:r_u]
+        Bcc1 = data_cons['Bcc1'][:,th_l:th_u,r_l:r_u]
+        Bcc2 = data_cons['Bcc2'][:,th_l:th_u,r_l:r_u]
+        Bcc3 = data_cons['Bcc3'][:,th_l:th_u,r_l:r_u]
 
         if args.average=='gaussian':
             s=5
@@ -153,22 +150,39 @@ def main(**kwargs):
         emf2 = -(mom1_fluc*Bcc3_fluc - mom3_fluc*Bcc1_fluc)
         emf3 = mom1_fluc*Bcc2_fluc - mom2_fluc*Bcc1_fluc
 
-        if args.average=='gaussian':
-            emf1_av = gaussian_filter(emf1, sigma=s)
-            emf2_av = gaussian_filter(emf2, sigma=s)
-            emf3_av = gaussian_filter(emf3, sigma=s)
+        #if args.average=='gaussian':
+        #    emf1_av = gaussian_filter(emf1, sigma=s)
+        #    emf2_av = gaussian_filter(emf2, sigma=s)
+        #    emf3_av = gaussian_filter(emf3, sigma=s)
 
-        if args.average=='azimuthal':
-            emf1_av = np.average(emf1, axis=0)
-            emf2_av = np.average(emf2, axis=0)
-            emf3_av = np.average(emf3, axis=0)
-            emf1_av = np.repeat(emf1_av[np.newaxis, :, :], np.shape(emf1)[0], axis=0)
-            emf2_av = np.repeat(emf2_av[np.newaxis, :, :], np.shape(emf2)[0], axis=0)
-            emf3_av = np.repeat(emf3_av[np.newaxis, :, :], np.shape(emf3)[0], axis=0)
+        #if args.average=='azimuthal':
+        #    emf1_av = np.average(emf1, axis=0)
+        #    emf2_av = np.average(emf2, axis=0)
+        #    emf3_av = np.average(emf3, axis=0)
+        #    emf1_av = np.repeat(emf1_av[np.newaxis, :, :], np.shape(emf1)[0], axis=0)
+        #    emf2_av = np.repeat(emf2_av[np.newaxis, :, :], np.shape(emf2)[0], axis=0)
+        #    emf3_av = np.repeat(emf3_av[np.newaxis, :, :], np.shape(emf3)[0], axis=0)
 
-        C1_i, alpha1_i = Polynomial.fit(x=Bcc1_av.flatten(), y=emf1_av.flatten(), deg=1)
-        C2_i, alpha2_i = Polynomial.fit(x=Bcc2_av.flatten(), y=emf2_av.flatten(), deg=1)
-        C3_i, alpha3_i = Polynomial.fit(x=Bcc3_av.flatten(), y=emf3_av.flatten(), deg=1)
+        #B_all = [Bcc1_av,Bcc2_av,Bcc3_av]
+        #emf_all = [emf1_av,emf2_av,emf3_av]
+
+        huber = HuberRegressor()
+        if t>0:
+            huber.fit(Bcc1_av.flatten().reshape(-1,1), emf1.flatten())
+            alpha1_i = huber.coef_[0]
+            C1_i = huber.intercept_
+
+            huber.fit(Bcc2_av.flatten().reshape(-1,1), emf2.flatten())
+            alpha2_i = huber.coef_[0]
+            C2_i = huber.intercept_
+
+            huber.fit(Bcc3_av.flatten().reshape(-1,1), emf3.flatten())
+            alpha3_i = huber.coef_[0]
+            C3_i = huber.intercept_
+        else:
+            C1_i, alpha1_i = np.nan, np.nan
+            C2_i, alpha2_i = np.nan, np.nan
+            C3_i, alpha3_i = np.nan, np.nan
         alpha = [alpha1_i,alpha2_i,alpha3_i]
         C = [C1_i,C2_i,C3_i]
 
@@ -177,7 +191,7 @@ def main(**kwargs):
         sim_t = data_cons['Time']
         orbit_t = sim_t/T_period
 
-        with open(prob_dir + 'dyn_with_time.csv', 'a', newline='') as f:
+        with open(prob_dir+'dyn/huber/'+ av[:3]+'_'+hem+'_dyn_with_time.csv', 'a', newline='') as f:
             writer = csv.writer(f, delimiter='\t')
             writer.writerow([sim_t,orbit_t,alpha,C])
 
