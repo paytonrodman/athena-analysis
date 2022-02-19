@@ -63,4 +63,4 @@ will show you the arguments (required and optional) that can be passed to that s
 
 To instead run in parallel, use the `parallel` scripts with
 
-`mpirun <script_name> <args> <*kwargs>`
+`mpirun -n <procs> <script_name> <args> <*kwargs>`
