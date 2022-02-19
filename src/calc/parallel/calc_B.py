@@ -10,19 +10,26 @@
 import numpy as np
 import os
 import sys
-#sys.path.insert(0, '/home/per29/rds/rds-accretion-zyNhkonJSR8/athena-analysis/dependencies')
-sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies')
+sys.path.insert(0, '/home/per29/rds/rds-accretion-zyNhkonJSR8/athena-analysis/dependencies')
+#sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies')
 import athena_read
 import AAT
 import glob
 import re
 import csv
 import argparse
+from math import sqrt
+from mpi4py import MPI
 
 def main(**kwargs):
+    # get number of processors and processor rank
+    comm = MPI.COMM_WORLD
+    size = comm.Get_size()
+    rank = comm.Get_rank()
+
     problem  = args.prob_id
-    root_dir = "/Users/paytonrodman/athena-sim/"
-    #root_dir = '/home/per29/rds/rds-accretion-zyNhkonJSR8/'
+    #root_dir = "/Users/paytonrodman/athena-sim/"
+    root_dir = '/home/per29/rds/rds-accretion-zyNhkonJSR8/'
     prob_dir = root_dir + problem + '/'
     data_dir = prob_dir + 'data/'
     runfile_dir = prob_dir + 'runfiles/'
@@ -49,6 +56,19 @@ def main(**kwargs):
                 times = np.append(times, float(time_sec[0]))
     if len(times)==0:
         sys.exit('No new timesteps to analyse in the given directory. Exiting.')
+
+    # distribute files to cores
+    count = len(times) // size  # number of files for each process to analyze
+    remainder = len(times) % size  # extra files if times is not a multiple of size
+    if rank < remainder:  # processes with rank < remainder analyze one extra file
+        start = rank * (count + 1)  # index of first file to analyze
+        stop = start + count + 1  # index of last file to analyze
+    else:
+        start = rank * count + remainder
+        stop = start + count
+    local_times = times[start:stop] # get the times to be analyzed by each rank
+
+    #local_times = [0.,5000.,10000.,15000.,20000.,25000.,30000.]
 
     data_input = athena_read.athinput(runfile_dir + 'athinput.' + problem)
     if 'refinement3' not in data_input:
@@ -78,7 +98,11 @@ def main(**kwargs):
     B_loatmos = []
     B_disk = []
     sim_time = []
-    for t in times:
+    if rank==0:
+        with open(prob_dir + 'B_strength_with_time.csv', 'w', newline='') as f:
+            writer = csv.writer(f, delimiter='\t')
+            writer.writerow(["sim_time", "B_flux", "B_jet", "B_upatmos", "B_loatmos", "B_disk"])
+    for t in local_times:
         str_t = str(int(t)).zfill(5)
         data_cons = athena_read.athdf(problem + '.cons.' + str_t + '.athdf', quantities=['x2v','x3v','x1f','x2f','x3f','Bcc1','Bcc2','Bcc3'])
 
@@ -130,20 +154,10 @@ def main(**kwargs):
         sim_t = data_cons['Time']
         orbit_t = sim_t/T_period
 
-
-        sim_time.append(data_cons['Time'])
-
-    sim_time,B_flux,B_jet,B_upatmos,B_loatmos,B_disk = (list(t) for t in zip(*sorted(zip(sim_time,B_flux,B_jet,B_upatmos,B_loatmos,B_disk))))
-    os.chdir(prob_dir)
-    if args.update:
-        with open('B_strength_with_time.csv', 'a', newline='') as f:
+        with open(prob_dir + 'B_strength_with_time.csv', 'a', newline='') as f:
             writer = csv.writer(f, delimiter='\t')
-            writer.writerows(zip(sim_time, B_flux, B_jet, B_upatmos, B_loatmos, B_disk))
-    else:
-        with open('B_strength_with_time.csv', 'w', newline='') as f:
-            writer = csv.writer(f, delimiter='\t')
-            writer.writerow(["sim_time", "B_flux", "B_jet", "B_upatmos", "B_loatmos", "B_disk"])
-            writer.writerows(zip(sim_time, B_flux, B_jet, B_upatmos, B_loatmos, B_disk))
+            row = [sim_t,orbit_t,B_flux,B_jet,B_upatmos,B_loatmos,B_disk]
+            writer.writerow(row)
 
 
 
