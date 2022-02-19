@@ -12,12 +12,17 @@ def main(**kwargs):
     # directory containing data
     problem  = args.prob_id
     root_dir = '/Users/paytonrodman/athena-sim/'
-    data_dir = root_dir + problem + '/'
+    prob_dir = root_dir + problem
+    data_dir = prob_dir + '/dyn/huber/'
     os.chdir(data_dir)
+
+    av = args.average
+    hem = args.hemisphere
+
     time = []
     alpha = []
     C = []
-    with open('dyn_with_time.csv', newline='\n') as csv_file:
+    with open(av[:3]+'_'+hem+'_dyn_with_time.csv', newline='\n') as csv_file:
         csv_reader = csv.reader(csv_file, delimiter='\t')
         next(csv_reader, None) # skip header
         for row in csv_reader:
@@ -26,16 +31,23 @@ def main(**kwargs):
             a = row[2]
             c = row[3]
             time.append(t)
-            alpha.append(literal_eval(a))
-            C.append(literal_eval(c))
+            alpha.append(np.fromstring(a.strip("[]"), sep=', '))
+            C.append(np.fromstring(c.strip("[]"), sep=', '))
 
     time, alpha, C = zip(*sorted(zip(time, alpha, C)))
 
-    print(np.shape(alpha))
+
+    time = np.asarray(time)
+    alpha = np.asarray(alpha)
+    C = np.asarray(C)
+
+    time_mask = time > 2.25e5
+    alpha = alpha[time_mask]
+    C = C[time_mask]
 
     for num in range(0,3):
         x = alpha[:,num]
-        C = C_all[num]
+        y = C[:,num]
         if num==0:
             xlab = r'Offset ($C$)'
             ylab = r'$\alpha_d$'
@@ -49,19 +61,17 @@ def main(**kwargs):
             ylab = r'$\alpha_d$'
             f = 'ph'
 
-        x = C
-        y = alpha
         #idx = [randint(0, np.size(x)-1) for p in range(0, 1000)]
         #x = x[idx]
         #y = y[idx]
         plt.plot(x,y,'k.', markersize=1)
         plt.ylabel(ylab)
         plt.xlabel(xlab)
-        title_str = "t=" + str(sim_t)
-        plt.title(title_str)
+        #title_str = "t=" + str(sim_t)
+        #plt.title(title_str)
         plt.ticklabel_format(axis="both", style="sci", scilimits=(0,0))
         plt.tight_layout()
-        plt.savefig(prob_dir+'/'+f+'_fit.png',dpi=300)
+        plt.savefig(data_dir+'/'+av[:3]+'_'+hem+'_'+f+'_fit.png',dpi=300)
         plt.close()
         #plt.show()
 

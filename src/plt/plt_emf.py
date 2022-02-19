@@ -22,18 +22,12 @@ import argparse
 from math import sqrt
 from scipy.ndimage import gaussian_filter
 import matplotlib.pyplot as plt
-from mpi4py import MPI
 from random import randint
-#from scipy.stats import kde
 import seaborn as sns
 import pandas as pd
+from sklearn.linear_model import HuberRegressor
 
 def main(**kwargs):
-    # get number of processors and processor rank
-    comm = MPI.COMM_WORLD
-    size = comm.Get_size()
-    rank = comm.Get_rank()
-
     problem  = args.prob_id
     root_dir = "/Users/paytonrodman/athena-sim/"
     #root_dir = '/home/per29/rds/rds-accretion-zyNhkonJSR8/'
@@ -42,81 +36,52 @@ def main(**kwargs):
     runfile_dir = prob_dir + 'runfiles/'
     os.chdir(data_dir)
 
+    av = args.average
+    hem = args.hemisphere
+
     if args.average not in ['azimuthal','gaussian']:
         sys.exit('Must select averaging method (azimuthal, gaussian)')
-
     if args.hemisphere not in ['upper','lower']:
         sys.exit('Must select hemisphere (upper, lower)')
-
-    # check if data file already exists
-    csv_time = np.empty(0)
-    if args.update:
-        with open(prob_dir + 'dyn_with_time.csv', 'r', newline='') as f:
-            csv_reader = csv.reader(f, delimiter='\t')
-            next(csv_reader, None) # skip header
-            for row in csv_reader:
-                csv_time = np.append(csv_time, float(row[0]))
 
     files = glob.glob('./'+problem+'.cons.*.athdf')
     times = np.empty(0)
     for f in files:
         time_sec = re.findall(r'\b\d+\b', f)
-        if args.update:
-            if float(time_sec[0]) not in times and float(time_sec[0]) not in csv_time:
-                times = np.append(times, float(time_sec[0]))
-        else:
-            if float(time_sec[0]) not in times:
-                times = np.append(times, float(time_sec[0]))
+        if float(time_sec[0]) not in times:
+            times = np.append(times, float(time_sec[0]))
     if len(times)==0:
         sys.exit('No new timesteps to analyse in the given directory. Exiting.')
 
-    # distribute files to cores
-    count = len(times) // size  # number of files for each process to analyze
-    remainder = len(times) % size  # extra files if times is not a multiple of size
-    if rank < remainder:  # processes with rank < remainder analyze one extra catchment
-        start = rank * (count + 1)  # index of first file to analyze
-        stop = start + count + 1  # index of last file to analyze
-    else:
-        start = rank * count + remainder
-        stop = start + count
-    local_times = times[start:stop] # get the times to be analyzed by each rank
-
-    local_times = [1500,3580] #43159 51273
+    times = [51273] #43159 51273
 
     data_input = athena_read.athinput(runfile_dir + 'athinput.' + problem)
     scale_height = data_input['problem']['h_r']
-    if 'refinement3' in data_input:
-        x1_high_max = data_input['refinement3']['x1max'] # bounds of high resolution region
-    elif 'refinement2' in data_input:
-        x1_high_max = data_input['refinement2']['x1max'] # bounds of high resolution region
-    elif 'refinement1' in data_input:
-        x1_high_max = data_input['refinement1']['x1max'] # bounds of high resolution region
-    else:
-        x1_high_max = data_input['mesh']['x1max']
     data_init = athena_read.athdf(problem + '.cons.00000.athdf', quantities=['x1v','x2v'])
     x1v = data_init['x1v']
     x2v = data_init['x2v']
-    r_u = AAT.find_nearest(x1v, x1_high_max)
+    r_l = AAT.find_nearest(x1v, 15.)
+    r_u = AAT.find_nearest(x1v, 15. + 15.*scale_height)
+    r_mid = np.int(r_l + (r_u - r_l)/2.)
+    dist = scale_height*x1v[r_mid]
     if args.hemisphere=='upper':
-        th_l = AAT.find_nearest(x2v, np.pi/2. - (2.*scale_height))
-        th_u = AAT.find_nearest(x2v, np.pi/2. - (1.*scale_height))
-        f2 = 'upper_atmos'
+        th_l = AAT.find_nearest(x2v, np.pi/2. - (np.arctan(2.*dist/x1v[r_mid])))
+        th_u = AAT.find_nearest(x2v, np.pi/2. - (np.arctan(1.*dist/x1v[r_mid])))
     elif args.hemisphere=="lower":
-        th_l = AAT.find_nearest(x2v, np.pi/2. + (1.*scale_height))
-        th_u = AAT.find_nearest(x2v, np.pi/2. + (2.*scale_height))
-        f2 = 'lower_atmos'
+        th_l = AAT.find_nearest(x2v, np.pi/2. + (np.arctan(1.*dist/x1v[r_mid])))
+        th_u = AAT.find_nearest(x2v, np.pi/2. + (np.arctan(2.*dist/x1v[r_mid])))
 
-    for t in local_times:
+    for t in times:
         str_t = str(int(t)).zfill(5)
         data_cons = athena_read.athdf(problem + '.cons.' + str_t + '.athdf', quantities=['mom1','mom2','mom3','Bcc1','Bcc2','Bcc3'])
 
         #unpack data
-        mom1 = data_cons['mom1'][:,th_l:th_u,:r_u] #select points between 1-2 scale heights
-        mom2 = data_cons['mom2'][:,th_l:th_u,:r_u]
-        mom3 = data_cons['mom3'][:,th_l:th_u,:r_u]
-        Bcc1 = data_cons['Bcc1'][:,th_l:th_u,:r_u]
-        Bcc2 = data_cons['Bcc2'][:,th_l:th_u,:r_u]
-        Bcc3 = data_cons['Bcc3'][:,th_l:th_u,:r_u]
+        mom1 = data_cons['mom1'][:,th_l:th_u,r_l:r_u] #select points between 1-2 scale heights
+        mom2 = data_cons['mom2'][:,th_l:th_u,r_l:r_u]
+        mom3 = data_cons['mom3'][:,th_l:th_u,r_l:r_u]
+        Bcc1 = data_cons['Bcc1'][:,th_l:th_u,r_l:r_u]
+        Bcc2 = data_cons['Bcc2'][:,th_l:th_u,r_l:r_u]
+        Bcc3 = data_cons['Bcc3'][:,th_l:th_u,r_l:r_u]
 
         if args.average=='gaussian':
             s=5
@@ -126,7 +91,6 @@ def main(**kwargs):
             Bcc1_av = gaussian_filter(Bcc1, sigma=s)
             Bcc2_av = gaussian_filter(Bcc2, sigma=s)
             Bcc3_av = gaussian_filter(Bcc3, sigma=s)
-            f1 = 'gau_'
 
         if args.average=='azimuthal':
             mom1_av = np.average(mom1, axis=0)
@@ -141,7 +105,6 @@ def main(**kwargs):
             Bcc1_av = np.repeat(Bcc1_av[np.newaxis, :, :], np.shape(Bcc1)[0], axis=0)
             Bcc2_av = np.repeat(Bcc2_av[np.newaxis, :, :], np.shape(Bcc2)[0], axis=0)
             Bcc3_av = np.repeat(Bcc3_av[np.newaxis, :, :], np.shape(Bcc3)[0], axis=0)
-            f1 = 'azi_'
 
         # fluctuating components of momentum and magnetic field
         mom1_fluc = mom1 - mom1_av
@@ -168,7 +131,6 @@ def main(**kwargs):
             emf1_av = np.repeat(emf1_av[np.newaxis, :, :], np.shape(emf1)[0], axis=0)
             emf2_av = np.repeat(emf2_av[np.newaxis, :, :], np.shape(emf2)[0], axis=0)
             emf3_av = np.repeat(emf3_av[np.newaxis, :, :], np.shape(emf3)[0], axis=0)
-            f1 = 'azi_'
 
         emf_all = [emf1,emf2,emf3]
         Bcc_all = [Bcc1_av,Bcc2_av,Bcc3_av]
@@ -184,33 +146,43 @@ def main(**kwargs):
             if num==0:
                 xlab1 = r'$\overline{B}_{r}$'
                 ylab1 = r'$\epsilon_{r}$'
-                f3 = '_r'
+                f3 = 'r'
             elif num==1:
                 xlab1 = r'$\overline{B}_{\theta}$'
                 ylab1 = r'$\epsilon_{\theta}$'
-                f3 = '_th'
+                f3 = 'th'
             elif num==2:
                 xlab1 = r'$\overline{B}_{\phi}$'
                 ylab1 = r'$\epsilon_{\phi}$'
-                f3 = '_ph'
+                f3 = 'ph'
 
-            #fig, ax = plt.subplots()
             x = Bcc.flatten()
             y = emf.flatten()
-            idx = [randint(0, np.size(x)-1) for p in range(0, 1000)]
+
+            #Huber regression
+            huber = HuberRegressor()
+            huber.fit(x.reshape(-1,1), y)
+            x_fit = np.linspace(np.min(x),np.max(x),100)
+            y_fit = huber.coef_*x_fit + huber.intercept_
+
+            idx = [randint(0, np.size(x)-1) for p in range(0, 10000)]
             x = x[idx]
             y = y[idx]
-            #plt.plot(x,y,'k.', markersize=1)
+
             df = pd.DataFrame(list(zip(x, y)), columns =['Bcc', 'emf'])
-            # set seaborn style
             sns.set_style("ticks")
             sns.despine()
             ax = sns.kdeplot(x=df.Bcc, y=df.emf, cmap="Reds", thresh=0.1, shade=True, bw_adjust=.5)
             ax.set(xlabel=xlab1, ylabel=ylab1)
-            title_str = "t=" + str(sim_t) + ", (" + str(orbit_t) + " orbits)"
+            title_str = "t=" + str(int(sim_t)) + ", (" + str(int(orbit_t)) + " orbits)"
             ax.set_title(title_str)
+
+            plt.plot(x_fit, y_fit, '-k', linewidth=1)
+            #plt.xlim([-0.002, 0.002])
+            #plt.ylim([-6e-6, 6e-6])
+
             plt.tight_layout()
-            plt.savefig(prob_dir+'/'+f1+f2+f3+'.png',dpi=300)
+            plt.savefig(prob_dir+'dyn/'+av[:3]+'_'+hem+'_'+f3+'_'+str_t+'.png',dpi=300)
             plt.close()
             #plt.show()
 
@@ -220,9 +192,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Calculate average magnetic field values within the midplane at a given radius (r)')
     parser.add_argument('prob_id',
                         help='base name of the data being analysed, e.g. inflow_var or disk_base')
-    parser.add_argument('-u', '--update',
-                        action="store_true",
-                        help='specify whether the results being analysed are from a restart')
     parser.add_argument('-a', '--average',
                         type=str,
                         default='azimuthal',

@@ -16,49 +16,55 @@ def main(**kwargs):
     data_dir = root_dir + problem + '/'
     os.chdir(data_dir)
     time = []
-    Bav = []
-    Bcc1_0sh = []
-    Bcc1_1sh = []
-    Bcc1_2sh = []
-    Bcc1_3sh = []
+    B_flux = []
+    B_jet = []
+    B_upper = []
+    B_lower = []
+    B_disk = []
     with open('B_strength_with_time.csv', newline='\n') as csv_file:
         csv_reader = csv.reader(csv_file, delimiter='\t')
         next(csv_reader, None) # skip header
         for row in csv_reader:
-            t = float(row[0])
-            bav = row[1]
-            bcc1_0sh = row[2]
-            bcc1_1sh = row[3]
-            bcc1_2sh = row[4]
-            bcc1_3sh = row[5]
+            sim_t_i = float(row[0])
+            orbit_t_i = float(row[1])
+            b_flux_i = row[2]
+            b_jet_i = row[3]
+            b_up_i = row[4]
+            b_low_i = row[5]
+            b_disk_i = row[6]
 
-            time.append(t)
-            Bav.append(literal_eval(bav))
-            Bcc1_0sh.append(float(bcc1_0sh))
-            Bcc1_1sh.append(literal_eval(bcc1_1sh))
-            Bcc1_2sh.append(literal_eval(bcc1_2sh))
-            Bcc1_3sh.append(literal_eval(bcc1_3sh))
+            time.append(sim_t_i)
+            B_flux.append(literal_eval(b_flux_i))
+            B_jet.append(literal_eval(b_jet_i))
+            B_upper.append(literal_eval(b_up_i))
+            B_lower.append(literal_eval(b_low_i))
+            B_disk.append(literal_eval(b_disk_i))
 
-    time, Bav, Bcc1_0sh, Bcc1_1sh, Bcc1_2sh, Bcc1_3sh = zip(*sorted(zip(time, Bav, Bcc1_0sh, Bcc1_1sh, Bcc1_2sh, Bcc1_3sh)))
+    time, B_flux, B_jet, B_upper, B_lower, B_disk = zip(*sorted(zip(time, B_flux, B_jet, B_upper, B_lower, B_disk)))
+
+    B_flux = np.abs(np.array(B_flux))
+    B_jet = np.abs(np.array(B_jet))
+    B_upper = np.abs(np.array(B_upper))
+    B_lower = np.abs(np.array(B_lower))
+    B_disk = np.abs(np.array(B_disk))
 
     fig, axs = plt.subplots(2)
-    Bav = np.abs(np.array(Bav))
-    axs[1].plot(time,Bav[:,0],label=r'$B_{\Phi}$')
-    axs[1].plot(time,Bcc1_0sh,label=r'$B_{\rm midplane}$')
-    axs[1].plot(time,np.array(Bcc1_1sh)[:,0],label=r'$B_{1H/r}$')
-    axs[1].plot(time,np.array(Bcc1_2sh)[:,0],label=r'$B_{2H/r}$')
-    axs[1].plot(time,np.array(Bcc1_3sh)[:,0],label=r'$B_{3H/r}$')
+    axs[1].plot(time,B_flux[:,0],label=r'$B_{\Phi}$',linewidth=1)
+    axs[1].plot(time,B_jet[:,0],label=r'$\overline{B}_{\rm jet}$',linewidth=1)
+    axs[1].plot(time,B_upper[:,0],label=r'$\overline{B}_{\rm upper atmos}$',linewidth=1)
+    axs[1].plot(time,B_lower[:,0],label=r'$\overline{B}_{\rm lower atmos}$',linewidth=1)
+    axs[1].plot(time,B_disk[:,0],label=r'$\overline{B}_{\rm disk}$',linewidth=1)
     axs[1].set_xlabel(r'time ($GM/c^3$)')
-    axs[1].set_ylabel(r'$\langle B\rangle_{r<100r_g}$ in disk (lower)')
+    axs[1].set_ylabel(r'$\overline{B}_{r\sim15r_g}$ (lower)')
     axs[1].legend()
 
-    axs[0].plot(time,Bav[:,1],label=r'$B_{\Phi}$')
-    axs[0].plot(time,Bcc1_0sh,label=r'$B_{\rm midplane}$')
-    axs[0].plot(time,np.array(Bcc1_1sh)[:,1],label=r'$B_{1H/r}$')
-    axs[0].plot(time,np.array(Bcc1_2sh)[:,1],label=r'$B_{2H/r}$')
-    axs[0].plot(time,np.array(Bcc1_3sh)[:,1],label=r'$B_{3H/r}$')
+    axs[0].plot(time,B_flux[:,1],label=r'$B_{\Phi}$',linewidth=1)
+    axs[0].plot(time,B_jet[:,1],label=r'$\overline{B}_{\rm jet}$',linewidth=1)
+    axs[0].plot(time,B_upper[:,1],label=r'$\overline{B}_{\rm upper atmos}$',linewidth=1)
+    axs[0].plot(time,B_lower[:,1],label=r'$\overline{B}_{\rm lower atmos}$',linewidth=1)
+    axs[0].plot(time,B_disk[:,1],label=r'$\overline{B}_{\rm disk}$',linewidth=1)
     axs[0].set_xlabel(r'time ($GM/c^3$)')
-    axs[0].set_ylabel(r'$\langle B\rangle_{r<100r_g}$ in disk (upper)')
+    axs[0].set_ylabel(r'$\overline{B}_{r\sim15r_g}$ (upper)')
     axs[0].legend()
 
     for ax in fig.get_axes():
@@ -73,20 +79,52 @@ def main(**kwargs):
     plt.close()
 
 
-
-    if args.logy:
-        fig = plt.figure()
-        ax = fig.add_subplot(111)
-        ax.semilogy(time,beta)
-        ax.grid()
-        ax.set_xlabel(r'time ($GM/c^3$)')
-        ax.set_ylabel(r'average $\beta$ in disk')
-        plt.ticklabel_format(axis="x", style="sci", scilimits=(0,0))
-        plt.grid(b=True, which='major', color='#666666', linestyle='-', alpha=0.5)
-        plt.minorticks_on()
-        plt.grid(b=True, which='minor', color='#999999', linestyle='-', alpha=0.2)
-        plt.savefig(data_dir + 'logy_beta' + '.png', dpi=1200)
-        plt.close()
+    # fig, axs = plt.subplots(2)
+    # Bav = np.abs(np.array(Bav))
+    # axs[1].plot(time,Bav[:,0],label=r'$B_{\Phi}$')
+    # axs[1].plot(time,Bcc1_0sh,label=r'$B_{\rm midplane}$')
+    # axs[1].plot(time,np.array(Bcc1_1sh)[:,0],label=r'$B_{1H/r}$')
+    # axs[1].plot(time,np.array(Bcc1_2sh)[:,0],label=r'$B_{2H/r}$')
+    # axs[1].plot(time,np.array(Bcc1_3sh)[:,0],label=r'$B_{3H/r}$')
+    # axs[1].set_xlabel(r'time ($GM/c^3$)')
+    # axs[1].set_ylabel(r'$\langle B\rangle_{r<100r_g}$ in disk (lower)')
+    # axs[1].legend()
+    #
+    # axs[0].plot(time,Bav[:,1],label=r'$B_{\Phi}$')
+    # axs[0].plot(time,Bcc1_0sh,label=r'$B_{\rm midplane}$')
+    # axs[0].plot(time,np.array(Bcc1_1sh)[:,1],label=r'$B_{1H/r}$')
+    # axs[0].plot(time,np.array(Bcc1_2sh)[:,1],label=r'$B_{2H/r}$')
+    # axs[0].plot(time,np.array(Bcc1_3sh)[:,1],label=r'$B_{3H/r}$')
+    # axs[0].set_xlabel(r'time ($GM/c^3$)')
+    # axs[0].set_ylabel(r'$\langle B\rangle_{r<100r_g}$ in disk (upper)')
+    # axs[0].legend()
+    #
+    # for ax in fig.get_axes():
+    #     ax.label_outer()
+    #     ax.grid(b=True, which='major', color='#666666', linestyle='-', alpha=0.5)
+    #     ax.minorticks_on()
+    #     ax.ticklabel_format(axis="x", style="sci", scilimits=(0,0))
+    #     ax.grid(b=True, which='minor', color='#999999', linestyle='-', alpha=0.2)
+    #
+    # plt.tight_layout()
+    # plt.savefig(data_dir + 'B_strength' + '.png', dpi=1200)
+    # plt.close()
+    #
+    #
+    #
+    # if args.logy:
+    #     fig = plt.figure()
+    #     ax = fig.add_subplot(111)
+    #     ax.semilogy(time,beta)
+    #     ax.grid()
+    #     ax.set_xlabel(r'time ($GM/c^3$)')
+    #     ax.set_ylabel(r'average $\beta$ in disk')
+    #     plt.ticklabel_format(axis="x", style="sci", scilimits=(0,0))
+    #     plt.grid(b=True, which='major', color='#666666', linestyle='-', alpha=0.5)
+    #     plt.minorticks_on()
+    #     plt.grid(b=True, which='minor', color='#999999', linestyle='-', alpha=0.2)
+    #     plt.savefig(data_dir + 'logy_beta' + '.png', dpi=1200)
+    #     plt.close()
 
 def mean_confidence_interval(data, confidence=0.95):
     a = 1.0 * np.array(data)
