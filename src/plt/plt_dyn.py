@@ -13,7 +13,7 @@ def main(**kwargs):
     problem  = args.prob_id
     root_dir = '/Users/paytonrodman/athena-sim/'
     prob_dir = root_dir + problem
-    data_dir = prob_dir + '/dyn/huber/'
+    data_dir = prob_dir + '/dyn/average/'
     os.chdir(data_dir)
 
     av = args.average
@@ -74,12 +74,6 @@ def main(**kwargs):
         plt.savefig(data_dir+'/'+av[:3]+'_'+hem+'_'+f+'_fit.png',dpi=300)
         plt.close()
         #plt.show()
-
-
-
-
-
-
 
 # Execute main function
 if __name__ == '__main__':
