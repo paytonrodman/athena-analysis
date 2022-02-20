@@ -25,7 +25,8 @@ import matplotlib.pyplot as plt
 from random import randint
 import seaborn as sns
 import pandas as pd
-from sklearn.linear_model import HuberRegressor
+#from sklearn.linear_model import HuberRegressor
+from scipy import optimize
 
 def main(**kwargs):
     problem  = args.prob_id
@@ -132,7 +133,7 @@ def main(**kwargs):
             emf2_av = np.repeat(emf2_av[np.newaxis, :, :], np.shape(emf2)[0], axis=0)
             emf3_av = np.repeat(emf3_av[np.newaxis, :, :], np.shape(emf3)[0], axis=0)
 
-        emf_all = [emf1,emf2,emf3]
+        emf_all = [emf1_av,emf2_av,emf3_av]
         Bcc_all = [Bcc1_av,Bcc2_av,Bcc3_av]
 
         r_ISCO = 6. # location of ISCO in PW potential
@@ -159,11 +160,16 @@ def main(**kwargs):
             x = Bcc.flatten()
             y = emf.flatten()
 
-            #Huber regression
-            huber = HuberRegressor()
-            huber.fit(x.reshape(-1,1), y)
-            x_fit = np.linspace(np.min(x),np.max(x),100)
-            y_fit = huber.coef_*x_fit + huber.intercept_
+            # HUBER REGRESSION
+            #huber = HuberRegressor()
+            #huber.fit(x.reshape(-1,1), y)
+            #x_fit = np.linspace(np.min(x),np.max(x),100)
+            #y_fit = huber.coef_*x_fit + huber.intercept_
+
+            # LINEAR LEAST SQUARES
+            alpha,C = optimize.curve_fit(func, xdata=x, ydata=y)[0]
+            y_fit = alpha*x + C
+            x_fit = x
 
             idx = [randint(0, np.size(x)-1) for p in range(0, 10000)]
             x = x[idx]
@@ -185,6 +191,10 @@ def main(**kwargs):
             plt.savefig(prob_dir+'dyn/'+av[:3]+'_'+hem+'_'+f3+'_'+str_t+'.png',dpi=300)
             plt.close()
             #plt.show()
+
+def func(x, a, b):
+    y = a*x + b
+    return y
 
 
 # Execute main function
