@@ -22,7 +22,8 @@ import argparse
 from math import sqrt
 from scipy.ndimage import gaussian_filter
 from mpi4py import MPI
-from sklearn.linear_model import HuberRegressor
+#from sklearn.linear_model import HuberRegressor
+from scipy import optimize
 
 def main(**kwargs):
     # get number of processors and processor rank
@@ -42,7 +43,6 @@ def main(**kwargs):
 
     if args.average not in ['azimuthal','gaussian']:
         sys.exit('Must select averaging method (azimuthal, gaussian)')
-
     if args.hemisphere not in ['upper','lower']:
         sys.exit('Must select hemisphere (upper, lower)')
 
@@ -99,7 +99,7 @@ def main(**kwargs):
 
     if rank==0:
         if not args.update:
-            with open(prob_dir+'dyn/huber/'+ av[:3]+'_'+hem+'_dyn_with_time.csv', 'w', newline='') as f:
+            with open(prob_dir+'dyn/average/'+ av[:3]+'_'+hem+'_dyn_with_time.csv', 'w', newline='') as f:
                 writer = csv.writer(f, delimiter='\t')
                 writer.writerow(["sim_time", "orbit_time", "alpha", "C"])
     for t in local_times:
@@ -150,50 +150,67 @@ def main(**kwargs):
         emf2 = -(mom1_fluc*Bcc3_fluc - mom3_fluc*Bcc1_fluc)
         emf3 = mom1_fluc*Bcc2_fluc - mom2_fluc*Bcc1_fluc
 
-        #if args.average=='gaussian':
-        #    emf1_av = gaussian_filter(emf1, sigma=s)
-        #    emf2_av = gaussian_filter(emf2, sigma=s)
-        #    emf3_av = gaussian_filter(emf3, sigma=s)
+        if args.average=='gaussian':
+            emf1_av = gaussian_filter(emf1, sigma=s)
+            emf2_av = gaussian_filter(emf2, sigma=s)
+            emf3_av = gaussian_filter(emf3, sigma=s)
 
-        #if args.average=='azimuthal':
-        #    emf1_av = np.average(emf1, axis=0)
-        #    emf2_av = np.average(emf2, axis=0)
-        #    emf3_av = np.average(emf3, axis=0)
-        #    emf1_av = np.repeat(emf1_av[np.newaxis, :, :], np.shape(emf1)[0], axis=0)
-        #    emf2_av = np.repeat(emf2_av[np.newaxis, :, :], np.shape(emf2)[0], axis=0)
-        #    emf3_av = np.repeat(emf3_av[np.newaxis, :, :], np.shape(emf3)[0], axis=0)
+        if args.average=='azimuthal':
+            emf1_av = np.average(emf1, axis=0)
+            emf2_av = np.average(emf2, axis=0)
+            emf3_av = np.average(emf3, axis=0)
+            emf1_av = np.repeat(emf1_av[np.newaxis, :, :], np.shape(emf1)[0], axis=0)
+            emf2_av = np.repeat(emf2_av[np.newaxis, :, :], np.shape(emf2)[0], axis=0)
+            emf3_av = np.repeat(emf3_av[np.newaxis, :, :], np.shape(emf3)[0], axis=0)
 
-        #B_all = [Bcc1_av,Bcc2_av,Bcc3_av]
-        #emf_all = [emf1_av,emf2_av,emf3_av]
+        B_all = [Bcc1_av,Bcc2_av,Bcc3_av]
+        emf_all = [emf1_av,emf2_av,emf3_av]
 
-        huber = HuberRegressor()
-        if t>0:
-            huber.fit(Bcc1_av.flatten().reshape(-1,1), emf1.flatten())
-            alpha1_i = huber.coef_[0]
-            C1_i = huber.intercept_
+        #huber = HuberRegressor()
+        #if t>0:
+        #    huber.fit(Bcc1_av.flatten().reshape(-1,1), emf1.flatten())
+        #    alpha1_i = huber.coef_[0]
+        #    C1_i = huber.intercept_
 
-            huber.fit(Bcc2_av.flatten().reshape(-1,1), emf2.flatten())
-            alpha2_i = huber.coef_[0]
-            C2_i = huber.intercept_
+        #    huber.fit(Bcc2_av.flatten().reshape(-1,1), emf2.flatten())
+        #    alpha2_i = huber.coef_[0]
+        #    C2_i = huber.intercept_
 
-            huber.fit(Bcc3_av.flatten().reshape(-1,1), emf3.flatten())
-            alpha3_i = huber.coef_[0]
-            C3_i = huber.intercept_
-        else:
-            C1_i, alpha1_i = np.nan, np.nan
-            C2_i, alpha2_i = np.nan, np.nan
-            C3_i, alpha3_i = np.nan, np.nan
-        alpha = [alpha1_i,alpha2_i,alpha3_i]
-        C = [C1_i,C2_i,C3_i]
+        #    huber.fit(Bcc3_av.flatten().reshape(-1,1), emf3.flatten())
+        #    alpha3_i = huber.coef_[0]
+        #    C3_i = huber.intercept_
+        #else:
+        #    C1_i, alpha1_i = np.nan, np.nan
+        #    C2_i, alpha2_i = np.nan, np.nan
+        #    C3_i, alpha3_i = np.nan, np.nan
+        alpha = []
+        C = []
+        for num in range(0,3):
+            x = B_all[num]
+            y = emf_all[num]
+
+            if t>0:
+                alpha_i,C_i = optimize.curve_fit(func, xdata=x.flatten(), ydata=y.flatten())[0]
+            else:
+                alpha_i,C_i = np.nan, np.nan
+            alpha.append(alpha_i)
+            C.append(C_i)
+
+        #alpha = [alpha1_i,alpha2_i,alpha3_i]
+        #C = [C1_i,C2_i,C3_i]
 
         r_ISCO = 6. # location of ISCO in PW potential
         T_period = 2.*np.pi*sqrt(r_ISCO)*(r_ISCO - 2.)
         sim_t = data_cons['Time']
         orbit_t = sim_t/T_period
 
-        with open(prob_dir+'dyn/huber/'+ av[:3]+'_'+hem+'_dyn_with_time.csv', 'a', newline='') as f:
+        with open(prob_dir+'dyn/average/'+ av[:3]+'_'+hem+'_dyn_with_time.csv', 'a', newline='') as f:
             writer = csv.writer(f, delimiter='\t')
             writer.writerow([sim_t,orbit_t,alpha,C])
+
+def func(x, a, b):
+    y = a*x + b
+    return y
 
 
 # Execute main function
