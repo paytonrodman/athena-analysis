@@ -323,6 +323,8 @@ def main(**kwargs):
         else:
             plt.xlabel(r'$x$')
             plt.ylabel(r'$z$')
+    if kwargs['time']:
+        plt.title(str(int(data['Time'])))
     plt.colorbar(im)
     if kwargs['output_file'] == 'show':
         plt.show()
@@ -398,6 +400,9 @@ if __name__ == '__main__':
                         default=None,
                         help=('compression parameter h in '
                               'theta = pi*x_2 + (1-h)/2 * sin(2*pi*x_2)'))
+    parser.add_argument('--time',
+                        action='store_true',
+                        help=('flag indicating title should be set to time'))
     parser.add_argument('--dpi',
                         type=int,
                         default=None,
