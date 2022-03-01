@@ -83,9 +83,10 @@ def main(**kwargs):
 
     data_input = athena_read.athinput(runfile_dir + 'athinput.' + problem)
     scale_height = data_input['problem']['h_r']
-    data_init = athena_read.athdf(problem + '.cons.00000.athdf', quantities=['x1v','x2v'])
+    data_init = athena_read.athdf(problem + '.cons.00000.athdf', quantities=['x1v','x2v','x3v'])
     x1v = data_init['x1v']
     x2v = data_init['x2v']
+    x3v = data_init['x3v']
     r_l = AAT.find_nearest(x1v, 15.)
     r_u = AAT.find_nearest(x1v, 15. + 15.*scale_height)
     r_mid = np.int(r_l + (r_u - r_l)/2.)
@@ -96,6 +97,12 @@ def main(**kwargs):
     elif args.hemisphere=="lower":
         th_l = AAT.find_nearest(x2v, np.pi/2. + (np.arctan(1.*dist/x1v[r_mid])))
         th_u = AAT.find_nearest(x2v, np.pi/2. + (np.arctan(2.*dist/x1v[r_mid])))
+    if args.reduced:
+        ph_l = AAT.find_nearest(x3v, x3v[0])
+        ph_u = AAT.find_nearest(x3v, x3v[int(np.size(x3v)/4.)])
+    else:
+        ph_l = AAT.find_nearest(x3v, x3v[0])
+        ph_u = AAT.find_nearest(x3v, x3v[-1])
 
     if rank==0:
         if not args.update:
@@ -107,12 +114,12 @@ def main(**kwargs):
         data_cons = athena_read.athdf(problem + '.cons.' + str_t + '.athdf', quantities=['mom1','mom2','mom3','Bcc1','Bcc2','Bcc3'])
 
         #unpack data
-        mom1 = data_cons['mom1'][:,th_l:th_u,r_l:r_u] #select points between 1-2 scale heights
-        mom2 = data_cons['mom2'][:,th_l:th_u,r_l:r_u]
-        mom3 = data_cons['mom3'][:,th_l:th_u,r_l:r_u]
-        Bcc1 = data_cons['Bcc1'][:,th_l:th_u,r_l:r_u]
-        Bcc2 = data_cons['Bcc2'][:,th_l:th_u,r_l:r_u]
-        Bcc3 = data_cons['Bcc3'][:,th_l:th_u,r_l:r_u]
+        mom1 = data_cons['mom1'][ph_l:ph_u,th_l:th_u,r_l:r_u] #select points between 1-2 scale heights
+        mom2 = data_cons['mom2'][ph_l:ph_u,th_l:th_u,r_l:r_u]
+        mom3 = data_cons['mom3'][ph_l:ph_u,th_l:th_u,r_l:r_u]
+        Bcc1 = data_cons['Bcc1'][ph_l:ph_u,th_l:th_u,r_l:r_u]
+        Bcc2 = data_cons['Bcc2'][ph_l:ph_u,th_l:th_u,r_l:r_u]
+        Bcc3 = data_cons['Bcc3'][ph_l:ph_u,th_l:th_u,r_l:r_u]
 
         if args.average=='gaussian':
             s=5
@@ -124,18 +131,19 @@ def main(**kwargs):
             Bcc3_av = gaussian_filter(Bcc3, sigma=s)
 
         if args.average=='azimuthal':
-            mom1_av = np.average(mom1, axis=0)
-            mom2_av = np.average(mom2, axis=0)
-            mom3_av = np.average(mom3, axis=0)
-            Bcc1_av = np.average(Bcc1, axis=0)
-            Bcc2_av = np.average(Bcc2, axis=0)
-            Bcc3_av = np.average(Bcc3, axis=0)
-            mom1_av = np.repeat(mom1_av[np.newaxis, :, :], np.shape(mom1)[0], axis=0)
-            mom2_av = np.repeat(mom2_av[np.newaxis, :, :], np.shape(mom2)[0], axis=0)
-            mom3_av = np.repeat(mom3_av[np.newaxis, :, :], np.shape(mom3)[0], axis=0)
-            Bcc1_av = np.repeat(Bcc1_av[np.newaxis, :, :], np.shape(Bcc1)[0], axis=0)
-            Bcc2_av = np.repeat(Bcc2_av[np.newaxis, :, :], np.shape(Bcc2)[0], axis=0)
-            Bcc3_av = np.repeat(Bcc3_av[np.newaxis, :, :], np.shape(Bcc3)[0], axis=0)
+            mom1_av = np.average(mom1[ph_l:ph_u,:,:], axis=0)
+            mom2_av = np.average(mom2[ph_l:ph_u,:,:], axis=0)
+            mom3_av = np.average(mom3[ph_l:ph_u,:,:], axis=0)
+            Bcc1_av = np.average(Bcc1[ph_l:ph_u,:,:], axis=0)
+            Bcc2_av = np.average(Bcc2[ph_l:ph_u,:,:], axis=0)
+            Bcc3_av = np.average(Bcc3[ph_l:ph_u,:,:], axis=0)
+            mom1_av = np.repeat(mom1_av[np.newaxis, :, :], np.shape(mom1[ph_l:ph_u,:,:])[0], axis=0)
+            mom2_av = np.repeat(mom2_av[np.newaxis, :, :], np.shape(mom2[ph_l:ph_u,:,:])[0], axis=0)
+            mom3_av = np.repeat(mom3_av[np.newaxis, :, :], np.shape(mom3[ph_l:ph_u,:,:])[0], axis=0)
+            Bcc1_av = np.repeat(Bcc1_av[np.newaxis, :, :], np.shape(Bcc1[ph_l:ph_u,:,:])[0], axis=0)
+            Bcc2_av = np.repeat(Bcc2_av[np.newaxis, :, :], np.shape(Bcc2[ph_l:ph_u,:,:])[0], axis=0)
+            Bcc3_av = np.repeat(Bcc3_av[np.newaxis, :, :], np.shape(Bcc3[ph_l:ph_u,:,:])[0], axis=0)
+
 
         # fluctuating components of momentum and magnetic field
         mom1_fluc = mom1 - mom1_av
@@ -189,10 +197,10 @@ def main(**kwargs):
             x = B_all[num]
             y = emf_all[num]
 
-            if t>0:
-                alpha_i,C_i = optimize.curve_fit(func, xdata=x.flatten(), ydata=y.flatten())[0]
-            else:
+            if t==0:
                 alpha_i,C_i = np.nan, np.nan
+            else:
+                alpha_i,C_i = optimize.curve_fit(func, xdata=x.flatten(), ydata=y.flatten())[0]
             alpha.append(alpha_i)
             C.append(C_i)
 
@@ -221,6 +229,9 @@ if __name__ == '__main__':
     parser.add_argument('-u', '--update',
                         action="store_true",
                         help='specify whether the results being analysed are from a restart')
+    parser.add_argument('--reduced',
+                        action="store_true",
+                        help='specify whether to average over a reduced azimuthal range')
     parser.add_argument('-a', '--average',
                         type=str,
                         default='azimuthal',

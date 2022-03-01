@@ -100,17 +100,17 @@ def main(**kwargs):
             for k in range(len(x3v)):
                 dS = (x1f[0]**2.)*np.sin(x2f[j])*dx2f[j]*dx3f[k] # r^2 * sin(theta) * dtheta * dphi
                 mf_u.append(Bcc1[k,j,0]*dS)
-                mf_u_abs.append(np.abs(Bcc1[k,j,0])*dS)
+                #mf_u_abs.append(np.abs(Bcc1[k,j,0])*dS)
         for j in range(th_id,len(x2v)):
             for k in range(len(x3v)):
                 dS = (x1f[0]**2.)*np.sin(x2f[j])*dx2f[j]*dx3f[k] # r^2 * sin(theta) * dtheta * dphi
                 mf_l.append(Bcc1[k,j,0]*dS)
-                mf_l_abs.append(np.abs(Bcc1[k,j,0])*dS)
+                #mf_l_abs.append(np.abs(Bcc1[k,j,0])*dS)
 
         mag_flux_u = np.sum(mf_u)
-        mag_flux_u_abs = np.sum(mf_u_abs)
+        mag_flux_u_abs = np.sum(np.abs(mf_u))
         mag_flux_l = np.sum(mf_l)
-        mag_flux_l_abs = np.sum(mf_l_abs)
+        mag_flux_l_abs = np.sum(np.abs(mf_l))
 
         r_ISCO = 6. # location of ISCO in PW potential
         T_period = 2.*np.pi*sqrt(r_ISCO)*(r_ISCO - 2.)
