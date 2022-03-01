@@ -14,10 +14,8 @@ def main(**kwargs):
         sys.exit('Must specify a valid B component')
 
     # directory containing data
-    problem  = args.prob_id
-    comp = args.component
     root_dir = '/Users/paytonrodman/athena-sim/'
-    data_dir = root_dir + problem + '/'
+    data_dir = root_dir + args.prob_id + '/'
     os.chdir(data_dir)
     time = []
     abs_B_flux = []
