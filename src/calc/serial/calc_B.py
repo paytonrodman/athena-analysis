@@ -10,8 +10,8 @@
 import numpy as np
 import os
 import sys
-#sys.path.insert(0, '/home/per29/rds/rds-accretion-zyNhkonJSR8/athena-analysis/dependencies')
-sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies')
+sys.path.insert(0, '/home/per29/rds/rds-accretion-zyNhkonJSR8/athena-analysis/dependencies')
+#sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies')
 import athena_read
 import AAT
 import glob
@@ -21,8 +21,8 @@ import argparse
 
 def main(**kwargs):
     problem  = args.prob_id
-    root_dir = "/Users/paytonrodman/athena-sim/"
-    #root_dir = '/home/per29/rds/rds-accretion-zyNhkonJSR8/'
+    #root_dir = "/Users/paytonrodman/athena-sim/"
+    root_dir = '/home/per29/rds/rds-accretion-zyNhkonJSR8/'
     prob_dir = root_dir + problem + '/'
     data_dir = prob_dir + 'data/'
     runfile_dir = prob_dir + 'runfiles/'
@@ -55,7 +55,6 @@ def main(**kwargs):
         sys.exit('Simulation must have 3 levels of refinement in mesh. Exiting.')
     x1min = data_input['mesh']['x1min']
     x1max = data_input['refinement3']['x1max']
-    scale_height = data_input['problem']['h_r']
 
     data_init = athena_read.athdf(problem + '.cons.00000.athdf', quantities=['x2v'])
     x2v = data_init['x2v']
@@ -72,12 +71,6 @@ def main(**kwargs):
     upatmos_max_u = AAT.find_nearest(x2v, data_input['refinement1']['x2max'])
     jet_max_u = AAT.find_nearest(x2v, np.pi)
 
-    B_flux = []
-    B_jet = []
-    B_upatmos = []
-    B_loatmos = []
-    B_disk = []
-    sim_time = []
     for t in times:
         str_t = str(int(t)).zfill(5)
         data_cons = athena_read.athdf(problem + '.cons.' + str_t + '.athdf', quantities=['x2v','x3v','x1f','x2f','x3f','Bcc1','Bcc2','Bcc3'])
@@ -94,56 +87,77 @@ def main(**kwargs):
 
         # Calculations
         _,dx2f,dx3f = AAT.calculate_delta(x1f,x2f,x3f)
-        B = np.abs(np.sqrt(Bcc1**2. + Bcc2**2. + Bcc3**2.))
+        if args.component=='all':
+            B = np.sqrt(Bcc1**2. + Bcc2**2. + Bcc3**2.)
+        elif args.component=='r':
+            B = Bcc1
+        elif args.component=='theta':
+            B = Bcc2
+        elif args.component=='phi':
+            B = Bcc3
 
         mf_l = []
-        mf_l_abs = []
         mf_u = []
-        mf_u_abs = []
         for j in range(th_id):
             for k in range(len(x3v)):
                 dS = (x1f[0]**2.)*np.sin(x2f[j])*dx2f[j]*dx3f[k] # r^2 * sin(theta) * dtheta * dphi
                 mf_u.append(Bcc1[k,j,0]*dS)
-                mf_u_abs.append(np.abs(Bcc1[k,j,0])*dS)
         for j in range(th_id,len(x2v)):
             for k in range(len(x3v)):
                 dS = (x1f[0]**2.)*np.sin(x2f[j])*dx2f[j]*dx3f[k] # r^2 * sin(theta) * dtheta * dphi
                 mf_l.append(Bcc1[k,j,0]*dS)
-                mf_l_abs.append(np.abs(Bcc1[k,j,0])*dS)
 
-        mag_flux_u = np.sum(mf_u)
-        mag_flux_u_abs = np.sum(mf_u_abs)
-        mag_flux_l = np.sum(mf_l)
-        mag_flux_l_abs = np.sum(mf_l_abs)
+        abs_B_flux_l = np.sum(np.abs(mf_l)) / (2.*np.pi*(x1min**2.))
+        abs_B_flux_u = np.sum(np.abs(mf_u)) / (2.*np.pi*(x1min**2.))
+        abs_B_flux = [abs_B_flux_l, abs_B_flux_u]
 
-        Bflux_l = mag_flux_l / (2.*np.pi*(x1min**2.))
-        Bflux_u = mag_flux_u / (2.*np.pi*(x1min**2.))
-        B_flux = [Bflux_l,Bflux_u]
+        abs_B_jet_l = np.average(abs(B[:,:jet_max_l,:x1max]))
+        abs_B_jet_u = np.average(abs(B[:,upatmos_max_u+1:jet_max_u,:x1max]))
+        abs_B_jet = [abs_B_jet_l, abs_B_jet_u]
 
-        B_jet = [ np.average(B[:,:jet_max_l,:x1max]), np.average(B[:,upatmos_max_u+1:jet_max_u,:x1max]) ]
-        B_upatmos = [ np.average(B[:,jet_max_l+1:upatmos_max_l,:x1max]), np.average(B[:,loatmos_max_u+1:upatmos_max_u,:x1max]) ]
-        B_loatmos = [ np.average(B[:,upatmos_max_l+1:loatmos_max_l,:x1max]), np.average(B[:,disk_max_u+1:loatmos_max_u,:x1max]) ]
-        B_disk = [ np.average(B[:,loatmos_max_l+1:disk_max_l,:x1max]), np.average(B[:,disk_max_l+1:disk_max_u,:x1max]) ]
+        abs_B_upatmos_l = np.average(abs(B[:,jet_max_l+1:upatmos_max_l,:x1max]))
+        abs_B_upatmos_u = np.average(abs(B[:,loatmos_max_u+1:upatmos_max_u,:x1max]))
+        abs_B_upatmos = [abs_B_upatmos_l, abs_B_upatmos_u]
+
+        abs_B_loatmos_l = np.average(abs(B[:,upatmos_max_l+1:loatmos_max_l,:x1max]))
+        abs_B_loatmos_u = np.average(abs(B[:,disk_max_u+1:loatmos_max_u,:x1max]))
+        abs_B_loatmos = [abs_B_loatmos_l, abs_B_loatmos_u]
+
+        abs_B_disk_l = np.average(abs(B[:,loatmos_max_l+1:disk_max_l,:x1max]))
+        abs_B_disk_u = np.average(abs(B[:,disk_max_l+1:disk_max_u,:x1max]))
+        abs_B_disk = [abs_B_disk_l, abs_B_disk_u]
+
+        sign_B_flux_l = np.sum(mf_l) / (2.*np.pi*(x1min**2.))
+        sign_B_flux_u = np.sum(mf_u) / (2.*np.pi*(x1min**2.))
+        sign_B_flux = [sign_B_flux_l, sign_B_flux_u]
+
+        sign_B_jet_l = np.average(B[:,:jet_max_l,:x1max])
+        sign_B_jet_u = np.average(B[:,upatmos_max_u+1:jet_max_u,:x1max])
+        sign_B_jet = [sign_B_jet_l, sign_B_jet_u]
+
+        sign_B_upatmos_l = np.average(B[:,jet_max_l+1:upatmos_max_l,:x1max])
+        sign_B_upatmos_u = np.average(B[:,loatmos_max_u+1:upatmos_max_u,:x1max])
+        sign_B_upatmos = [sign_B_upatmos_l, sign_B_upatmos_u]
+
+        sign_B_loatmos_l = np.average(B[:,upatmos_max_l+1:loatmos_max_l,:x1max])
+        sign_B_loatmos_u = np.average(B[:,disk_max_u+1:loatmos_max_u,:x1max])
+        sign_B_loatmos = [sign_B_loatmos_l, sign_B_loatmos_u]
+
+        sign_B_disk_l = np.average(B[:,loatmos_max_l+1:disk_max_l,:x1max])
+        sign_B_disk_u = np.average(B[:,disk_max_l+1:disk_max_u,:x1max])
+        sign_B_disk = [sign_B_disk_l, sign_B_disk_u]
 
         r_ISCO = 6 # location of ISCO in PW potential
         T_period = 2.*np.pi*sqrt(r_ISCO)*(r_ISCO - 2.)
         sim_t = data_cons['Time']
         orbit_t = sim_t/T_period
 
-
-        sim_time.append(data_cons['Time'])
-
-    sim_time,B_flux,B_jet,B_upatmos,B_loatmos,B_disk = (list(t) for t in zip(*sorted(zip(sim_time,B_flux,B_jet,B_upatmos,B_loatmos,B_disk))))
-    os.chdir(prob_dir)
-    if args.update:
-        with open('B_strength_with_time.csv', 'a', newline='') as f:
+        with open(prob_dir + 'B_strength_with_time_'+args.component+'.csv', 'a', newline='') as f:
             writer = csv.writer(f, delimiter='\t')
-            writer.writerows(zip(sim_time, B_flux, B_jet, B_upatmos, B_loatmos, B_disk))
-    else:
-        with open('B_strength_with_time.csv', 'w', newline='') as f:
-            writer = csv.writer(f, delimiter='\t')
-            writer.writerow(["sim_time", "B_flux", "B_jet", "B_upatmos", "B_loatmos", "B_disk"])
-            writer.writerows(zip(sim_time, B_flux, B_jet, B_upatmos, B_loatmos, B_disk))
+            row = [sim_t,orbit_t,
+                   abs_B_flux,abs_B_jet,abs_B_upatmos,abs_B_loatmos,abs_B_disk,
+                   sign_B_flux,sign_B_jet,sign_B_upatmos,sign_B_loatmos,sign_B_disk]
+            writer.writerow(row)
 
 
 
