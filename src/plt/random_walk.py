@@ -20,8 +20,6 @@ def main(**kwargs):
     step_shape = (step_n,dims)
     steps = np.random.choice(a=step_set, size=step_shape)
     path = np.concatenate([origin, steps]).cumsum(0)
-    start = path[:1]
-    stop = path[-1:]
 
     yhat = savitzky_golay(path.flatten(), 501, 3) # window size 51, polynomial order 3
     zero_crossings = np.where(np.diff(np.signbit(np.asarray(yhat))))[0]
@@ -96,7 +94,6 @@ def savitzky_golay(y, window_size, order, deriv=0, rate=1):
        W.H. Press, S.A. Teukolsky, W.T. Vetterling, B.P. Flannery
        Cambridge University Press ISBN-13: 9780521880688
     """
-    import numpy as np
     from math import factorial
 
     try:

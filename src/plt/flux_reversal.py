@@ -9,14 +9,12 @@
 #
 import argparse
 import numpy as np
-from scipy import optimize
 import os
 import sys
 sys.path.insert(0, '/Users/paytonrodman/athena/vis/python')
 import csv
 import matplotlib.pyplot as plt
 from matplotlib import colors
-from statsmodels.graphics.tsaplots import plot_acf
 from pandas.plotting import autocorrelation_plot
 from statsmodels.tsa.stattools import adfuller
 from scipy import signal
@@ -111,7 +109,7 @@ def main(**kwargs):
         	print('\t%s: %.3f' % (key, value))
 
     if args.spec:
-        freqs, times, spectrogram = signal.spectrogram(data)
+        freqs, _, spectrogram = signal.spectrogram(data)
 
         plt.figure()
         im = plt.imshow(spectrogram, aspect='auto', cmap='viridis', origin='lower', norm=colors.LogNorm())
@@ -130,19 +128,15 @@ def main(**kwargs):
         new_freqs = np.linspace(np.nanmin(freqs),np.nanmax(freqs),num=10000)
 
         # fit curve
-        popt, pcov = curve_fit(DHO_PSD, freqs, psd)
+        popt, _ = curve_fit(DHO_PSD, freqs, psd)
         beta0, beta1, alpha1, alpha2 = popt
         DHO_fit = DHO_PSD(new_freqs, beta0, beta1, alpha1, alpha2)
 
-        popt2, pcov2 = curve_fit(DRW_PSD, freqs, psd)
-        beta02, alpha12 = popt2
-        DRW_fit = DRW_PSD(new_freqs, beta02, alpha12)
-
-        freq_blue = beta0/(2*np.pi*abs(beta1))
-        print(r'$\nu_{blue}=$%.2f' % freq_blue)
+        popt, _ = curve_fit(DRW_PSD, freqs, psd)
+        beta0, alpha1 = popt
+        DRW_fit = DRW_PSD(new_freqs, beta0, alpha1)
 
         freqs[freqs==0] = np.nan
-
         nu0 = freqs**0.
         nu1 = freqs**(-1.5)
         nu1[nu1==np.inf] = np.nan
@@ -168,28 +162,6 @@ def main(**kwargs):
         plt.savefig(prob_dir + 'PSD.png', dpi=1200)
         plt.close()
 
-
-
-
-
-    #plot_acf(random_walk)
-    #plt.plot(limit_x,limit_y_lo,'gray',linestyle='--')
-    #plt.plot(limit_x,limit_y_up,'gray',linestyle='--')
-    #plt.xlim(-2,50)
-    #plt.xlabel('Lag')
-    #plt.ylabel('ACF')
-    #plt.savefig(prob_dir + 'ACF.png', dpi=1200)
-    #plt.show()
-
-    #plt.plot(time,mag_flux_u, linewidth=2)
-    #plt.plot(time,data_fit, linewidth=1)
-    #plt.plot(time[zero_crossings],data_fit[zero_crossings], 'k.')
-    #plt.plot()
-    #plt.show()
-
-    #plt.plot(np.diff(time[zero_crossings]), 'k.')
-    #plt.show()
-
 def DRW_PSD(freq, beta0, alpha1):
     return (beta0**2.) / (alpha1 + (2.*np.pi*freq**2.))
 
@@ -200,9 +172,7 @@ def sinusoid(x, amplitude, offset, freq, phase):
     return np.sin(freq*x + phase)*amplitude + offset
 
 def savitzky_golay(y, window_size, order, deriv=0, rate=1):
-    import numpy as np
     from math import factorial
-
     try:
         window_size = np.abs(np.int(window_size))
         order = np.abs(np.int(order))
