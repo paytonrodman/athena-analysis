@@ -89,15 +89,17 @@ def plot_ratio(time, a_B_f, s_B_f, data_dir):
     axs[0].set_xlabel(r'time ($GM/c^3$)')
     axs[0].set_ylabel(r'$\frac{\int B_r \cdot dS}{\int|{B_r}|\cdot dS}$')
     axs[0].set_title('Upper hemisphere')
+    axs[0].set_ylim(-1,1)
 
     axs[1].plot(time, R_l, linewidth=1, color='k')
     axs[1].set_xlabel(r'time ($GM/c^3$)')
     axs[1].set_ylabel(r'$\frac{\int B_r \cdot dS}{\int|{B_r}|\cdot dS}$')
     axs[1].set_title('Lower hemisphere')
+    axs[1].set_ylim(-1,1)
 
 
     for ax in fig.get_axes():
-        ax.set_yscale("log", base=10)
+        #ax.set_yscale("log", base=10)
         ax.label_outer()
         ax.grid(b=True, which='major', color='#666666', linestyle='-', alpha=0.5)
         ax.minorticks_on()
