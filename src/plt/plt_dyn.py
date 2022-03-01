@@ -20,6 +20,7 @@ def main(**kwargs):
     hem = args.hemisphere
 
     time = []
+    time_orb = []
     alpha = []
     C = []
     with open(av[:3]+'_'+hem+'_dyn_with_time.csv', newline='\n') as csv_file:
@@ -27,21 +28,26 @@ def main(**kwargs):
         next(csv_reader, None) # skip header
         for row in csv_reader:
             t = float(row[0])
-            #t_orb = float(row[1])
+            t_orb = float(row[1])
             a = row[2]
             c = row[3]
             time.append(t)
+            time_orb.append(t_orb)
             alpha.append(np.fromstring(a.strip("[]"), sep=', '))
             C.append(np.fromstring(c.strip("[]"), sep=', '))
 
-    time, alpha, C = zip(*sorted(zip(time, alpha, C)))
 
+    time, time_orb, alpha, C = zip(*sorted(zip(time, time_orb, alpha, C)))
 
     time = np.asarray(time)
+    time_orb = np.asarray(time_orb)
     alpha = np.asarray(alpha)
     C = np.asarray(C)
 
-    time_mask = time > 2.25e5
+    if args.path:
+        time_mask = (time_orb > 350.) & (time_orb < 400.)
+    else:
+        time_mask = (time_orb > 50.)
     alpha = alpha[time_mask]
     C = C[time_mask]
 
@@ -61,12 +67,23 @@ def main(**kwargs):
             ylab = r'$\alpha_d$'
             f = 'ph'
 
+        #N = np.size(x)
+        #base = plt.cm.get_cmap('viridis')
+        #color_list = base(np.linspace(0, 1, N))
+        #cmap_name = base.name + str(N)
+        #cm = plt.cm.get_cmap('jet', N)
+        #c = np.random.randint(N, size=np.size(x))
+
         #idx = [randint(0, np.size(x)-1) for p in range(0, 1000)]
         #x = x[idx]
         #y = y[idx]
-        plt.plot(x,y,'k.', markersize=1)
+        #plt.scatter(x,y,c=c, cmap=cm, s=50)
+        plt.plot(x,y,'k.',markersize=5)
+        if args.path:
+            plt.plot(x,y,'r')
         plt.ylabel(ylab)
         plt.xlabel(xlab)
+        plt.grid(True)
         #title_str = "t=" + str(sim_t)
         #plt.title(title_str)
         plt.ticklabel_format(axis="both", style="sci", scilimits=(0,0))
@@ -91,10 +108,9 @@ if __name__ == '__main__':
                         type=str,
                         default='upper',
                         help='specify which hemisphere to average in (upper, lower)')
-    parser.add_argument('--r',
-                        type=float,
-                        default=None,
-                        help=('value of r where averages are calculated (default: 25rg)'))
+    parser.add_argument('-p', '--path',
+                        action="store_true",
+                        help='specify whether to plot the path over time')
     args = parser.parse_args()
 
     main(**vars(args))

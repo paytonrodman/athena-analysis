@@ -5,7 +5,9 @@ import matplotlib.pyplot as plt
 import os
 import sys
 sys.path.insert(0, '/Users/paytonrodman/athena/vis/python')
+sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies')
 import csv
+import AAT
 from ast import literal_eval
 import argparse
 
@@ -42,17 +44,30 @@ def main(**kwargs):
     t_min = 0
     t_max = time[-1]
 
-    make_plots(Bcc1,data_dir,r'$B_r$','butterfly_Bcc1',t_min,t_max,theta_min,theta_max,None)
-    make_plots(Bcc2,data_dir,r'$B_\theta$','butterfly_Bcc2',t_min,t_max,theta_min,theta_max,None)
-    make_plots(Bcc3,data_dir,r'$B_\phi$','butterfly_Bcc3',t_min,t_max,theta_min,theta_max,None)
+    make_butterfly_plots(Bcc1,data_dir,r'$B_r$','butterfly_Bcc1',t_min,t_max,theta_min,theta_max,None)
+    make_butterfly_plots(Bcc2,data_dir,r'$B_\theta$','butterfly_Bcc2',t_min,t_max,theta_min,theta_max,None)
+    make_butterfly_plots(Bcc3,data_dir,r'$B_\phi$','butterfly_Bcc3',t_min,t_max,theta_min,theta_max,None)
+
+    #make_cyclic_plots(Bcc3)
 
 
-def make_plots(data,data_dir,xlabel,save_name,x_min,x_max,y_min,y_max,max_extent):
+def make_cyclic_plots(data,theta_min,theta_max):
+    theta = np.linspace(theta_min, theta_max, num=np.shape(data)[1], endpoint=False)
+    th_low = AAT.find_nearest(theta,-1.)
+    th_upp = AAT.find_nearest(theta,1.)
+
+    Bcc3_reduc = Bcc[:,th_low:th_upp]
+    print(np.shape(Bcc3_reduc))
+
+
+def make_butterfly_plots(data,data_dir,xlabel,save_name,x_min,x_max,y_min,y_max,max_extent):
     fig = plt.figure(figsize=(18, 6))
     ax = fig.add_subplot(111)
     if max_extent is None:
         max_extent = np.max(np.abs(np.asarray(data).T))
-    pos = ax.imshow(np.asarray(data).T, extent=[x_min,x_max,y_min,y_max], cmap='RdBu', norm=matplotlib.colors.Normalize(vmin=-max_extent, vmax=max_extent),interpolation='none')
+    #norm = matplotlib.colors.Normalize(vmin=-max_extent, vmax=max_extent)
+    norm = matplotlib.colors.SymLogNorm(linthresh=0.01*max_extent, linscale=0.01*max_extent, vmin=-max_extent, vmax=max_extent, base=10)
+    pos = ax.imshow(np.asarray(data).T, extent=[x_min,x_max,y_min,y_max], cmap='RdBu', norm=norm, interpolation='gaussian')
     ax.axis('auto')
     plt.ticklabel_format(axis="x", style="sci", scilimits=(0,0))
     ax.set_xlabel(r'time ($GM/c^3$)',fontsize=14)
@@ -63,6 +78,7 @@ def make_plots(data,data_dir,xlabel,save_name,x_min,x_max,y_min,y_max,max_extent
     #plt.tight_layout()
     plt.savefig(data_dir + save_name + '.png',dpi=1200)
     plt.close()
+
 
 # Execute main function
 if __name__ == '__main__':

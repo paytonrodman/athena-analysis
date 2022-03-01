@@ -54,7 +54,7 @@ def main(**kwargs):
     if len(times)==0:
         sys.exit('No new timesteps to analyse in the given directory. Exiting.')
 
-    times = [51273] #43159 51273
+    times = [6140] #43159 51273 6140 5000
 
     data_input = athena_read.athinput(runfile_dir + 'athinput.' + problem)
     scale_height = data_input['problem']['h_r']
@@ -171,16 +171,16 @@ def main(**kwargs):
             y_fit = alpha*x + C
             x_fit = x
 
-            idx = [randint(0, np.size(x)-1) for p in range(0, 10000)]
-            x = x[idx]
-            y = y[idx]
+            #idx = [randint(0, np.size(x)-1) for p in range(0, 10000)]
+            #x = x[idx]
+            #y = y[idx]
 
             df = pd.DataFrame(list(zip(x, y)), columns =['Bcc', 'emf'])
             sns.set_style("ticks")
             sns.despine()
-            ax = sns.kdeplot(x=df.Bcc, y=df.emf, cmap="Reds", thresh=0.1, shade=True, bw_adjust=.5)
+            ax = sns.kdeplot(x=df.Bcc, y=df.emf, cmap="Reds", shade=True, bw_adjust=5)
             ax.set(xlabel=xlab1, ylabel=ylab1)
-            title_str = "t=" + str(int(sim_t)) + ", (" + str(int(orbit_t)) + " orbits)"
+            title_str = "t=" + str(int(sim_t)) + " (" + str(int(orbit_t)) + " orbits)"
             ax.set_title(title_str)
 
             plt.plot(x_fit, y_fit, '-k', linewidth=1)
