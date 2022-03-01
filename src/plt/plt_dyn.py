@@ -5,7 +5,6 @@ import sys
 sys.path.insert(0, '/Users/paytonrodman/athena/vis/python')
 import csv
 import numpy as np
-from ast import literal_eval
 import argparse
 
 def main(**kwargs):

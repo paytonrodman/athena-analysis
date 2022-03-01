@@ -33,7 +33,7 @@ def main(**kwargs):
         next(csv_reader, None) # skip header
         for row in csv_reader:
             sim_t_i = float(row[0])
-            orbit_t_i = float(row[1])
+            #orbit_t_i = float(row[1])
             abs_b_flux_i = row[2]
             abs_b_jet_i = row[3]
             abs_b_up_i = row[4]

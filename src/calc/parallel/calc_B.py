@@ -79,7 +79,6 @@ def main(**kwargs):
         sys.exit('Simulation must have 3 levels of refinement in mesh. Exiting.')
     x1min = data_input['mesh']['x1min']
     x1max = data_input['refinement3']['x1max']
-    #scale_height = data_input['problem']['h_r']
 
     data_init = athena_read.athdf(problem + '.cons.00000.athdf', quantities=['x2v'])
     x2v = data_init['x2v']

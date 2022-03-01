@@ -17,15 +17,12 @@ import athena_read
 import AAT
 import glob
 import re
-import csv
 import argparse
 from math import sqrt
 from scipy.ndimage import gaussian_filter
 import matplotlib.pyplot as plt
-from random import randint
 import seaborn as sns
 import pandas as pd
-#from sklearn.linear_model import HuberRegressor
 from scipy import optimize
 
 def main(**kwargs):
