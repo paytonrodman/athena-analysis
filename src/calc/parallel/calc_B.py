@@ -27,43 +27,44 @@ def main(**kwargs):
     size = comm.Get_size()
     rank = comm.Get_rank()
 
+    # check user has passed valid --c variable
     if args.component not in ['r','theta','phi','all']:
         sys.exit('Must specify a valid B component')
 
-    problem  = args.prob_id
     #root_dir = "/Users/paytonrodman/athena-sim/"
     root_dir = '/home/per29/rds/rds-accretion-zyNhkonJSR8/'
-    prob_dir = root_dir + problem + '/'
+    prob_dir = root_dir + args.prob_id + '/'
     data_dir = prob_dir + 'data/'
     runfile_dir = prob_dir + 'runfiles/'
     filename_output = 'B_strength_with_time_' + args.component + '.csv'
     os.chdir(data_dir)
 
     # check if data file already exists
-    csv_time = np.empty(0)
+    csv_times = np.empty(0)
     if args.update:
         with open(prob_dir + filename_output, 'r', newline='') as f:
             csv_reader = csv.reader(f, delimiter='\t')
             next(csv_reader, None) # skip header
             for row in csv_reader:
-                csv_time = np.append(csv_time, float(row[0]))
+                csv_times = np.append(csv_times, float(row[0]))
 
-    files = glob.glob('./'+problem+'.cons.*.athdf')
-    times = np.empty(0)
+    # compile a list of unique times associated with data files
+    files = glob.glob('./' + args.prob_id + '.cons.*.athdf')
+    file_times = np.empty(0)
     for f in files:
-        time_sec = re.findall(r'\b\d+\b', f)
+        current_time = re.findall(r'\b\d+\b', f)
         if args.update:
-            if float(time_sec[0]) not in times and float(time_sec[0]) not in csv_time:
-                times = np.append(times, float(time_sec[0]))
+            if float(current_time[0]) not in file_times and float(current_time[0]) not in csv_times:
+                file_times = np.append(file_times, float(current_time[0]))
         else:
-            if float(time_sec[0]) not in times:
-                times = np.append(times, float(time_sec[0]))
-    if len(times)==0:
+            if float(current_time[0]) not in times:
+                file_times = np.append(file_times, float(current_time[0]))
+    if len(file_times)==0:
         sys.exit('No new timesteps to analyse in the given directory. Exiting.')
 
     # distribute files to cores
-    count = len(times) // size  # number of files for each process to analyze
-    remainder = len(times) % size  # extra files if times is not a multiple of size
+    count = len(file_times) // size  # number of files for each process to analyze
+    remainder = len(file_times) % size  # extra files if times is not a multiple of size
     if rank < remainder:  # processes with rank < remainder analyze one extra file
         start = rank * (count + 1)  # index of first file to analyze
         stop = start + count + 1  # index of last file to analyze
@@ -75,13 +76,13 @@ def main(**kwargs):
     #local_times = [0.,5000.,10000.,15000.,20000.,25000.,30000.]
     #local_times = [5000.]
 
-    data_input = athena_read.athinput(runfile_dir + 'athinput.' + problem)
+    data_input = athena_read.athinput(runfile_dir + 'athinput.' + args.prob_id)
     if 'refinement3' not in data_input:
         sys.exit('Simulation must have 3 levels of refinement in mesh. Exiting.')
     x1min = data_input['mesh']['x1min']
     x1max = data_input['refinement3']['x1max']
 
-    data_init = athena_read.athdf(problem + '.cons.00000.athdf', quantities=['x2v'])
+    data_init = athena_read.athdf(args.prob_id + '.cons.00000.athdf', quantities=['x2v'])
     x2v = data_init['x2v']
     th_id = AAT.find_nearest(x2v, np.pi/2.)
 
@@ -102,7 +103,7 @@ def main(**kwargs):
             writer.writerow(["sim_time", "orbit_time", "abs_B_flux", "abs_B_jet", "abs_B_upatmos", "abs_B_loatmos", "abs_B_disk", "sign_B_flux", "sign_B_jet", "sign_B_upatmos", "sign_B_loatmos", "sign_B_disk"])
     for t in local_times:
         str_t = str(int(t)).zfill(5)
-        data_cons = athena_read.athdf(problem + '.cons.' + str_t + '.athdf', quantities=['x2v','x3v','x1f','x2f','x3f','Bcc1','Bcc2','Bcc3'])
+        data_cons = athena_read.athdf(args.prob_id + '.cons.' + str_t + '.athdf', quantities=['x2v','x3v','x1f','x2f','x3f','Bcc1','Bcc2','Bcc3'])
 
         #unpack data
         x2v = data_cons['x2v'] # theta

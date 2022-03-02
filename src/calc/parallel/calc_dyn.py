@@ -31,10 +31,9 @@ def main(**kwargs):
     size = comm.Get_size()
     rank = comm.Get_rank()
 
-    problem  = args.prob_id
     #root_dir = "/Users/paytonrodman/athena-sim/"
     root_dir = '/home/per29/rds/rds-accretion-zyNhkonJSR8/'
-    prob_dir = root_dir + problem + '/'
+    prob_dir = root_dir + args.prob_id + '/'
     data_dir = prob_dir + 'data/'
     runfile_dir = prob_dir + 'runfiles/'
     filename_output = 'dyn/huber/'+ av[:3]+'_'+hem+'_dyn_with_time.csv'
@@ -48,25 +47,26 @@ def main(**kwargs):
         sys.exit('Must select hemisphere (upper, lower)')
 
     # check if data file already exists
-    csv_time = np.empty(0)
+    csv_times = np.empty(0)
     if args.update:
         with open(prob_dir + filename_output, 'r', newline='') as f:
             csv_reader = csv.reader(f, delimiter='\t')
             next(csv_reader, None) # skip header
             for row in csv_reader:
-                csv_time = np.append(csv_time, float(row[0]))
+                csv_times = np.append(csv_times, float(row[0]))
 
-    files = glob.glob('./'+problem+'.cons.*.athdf')
-    times = np.empty(0)
+    # compile a list of unique times associated with data files
+    files = glob.glob('./' + args.prob_id + '.cons.*.athdf')
+    file_times = np.empty(0)
     for f in files:
-        time_sec = re.findall(r'\b\d+\b', f)
+        current_time = re.findall(r'\b\d+\b', f)
         if args.update:
-            if float(time_sec[0]) not in times and float(time_sec[0]) not in csv_time:
-                times = np.append(times, float(time_sec[0]))
+            if float(current_time[0]) not in file_times and float(current_time[0]) not in csv_times:
+                file_times = np.append(file_times, float(current_time[0]))
         else:
-            if float(time_sec[0]) not in times:
-                times = np.append(times, float(time_sec[0]))
-    if len(times)==0:
+            if float(current_time[0]) not in times:
+                file_times = np.append(file_times, float(current_time[0]))
+    if len(file_times)==0:
         sys.exit('No new timesteps to analyse in the given directory. Exiting.')
 
     # distribute files to cores
@@ -82,9 +82,9 @@ def main(**kwargs):
 
     #local_times = [43159] #43159 51273
 
-    data_input = athena_read.athinput(runfile_dir + 'athinput.' + problem)
+    data_input = athena_read.athinput(runfile_dir + 'athinput.' + args.prob_id)
     scale_height = data_input['problem']['h_r']
-    data_init = athena_read.athdf(problem + '.cons.00000.athdf', quantities=['x1v','x2v','x3v'])
+    data_init = athena_read.athdf(args.prob_id + '.cons.00000.athdf', quantities=['x1v','x2v','x3v'])
     x1v = data_init['x1v']
     x2v = data_init['x2v']
     x3v = data_init['x3v']
@@ -112,7 +112,7 @@ def main(**kwargs):
                 writer.writerow(["sim_time", "orbit_time", "alpha", "C"])
     for t in local_times:
         str_t = str(int(t)).zfill(5)
-        data_cons = athena_read.athdf(problem + '.cons.' + str_t + '.athdf', quantities=['mom1','mom2','mom3','Bcc1','Bcc2','Bcc3'])
+        data_cons = athena_read.athdf(args.prob_id + '.cons.' + str_t + '.athdf', quantities=['mom1','mom2','mom3','Bcc1','Bcc2','Bcc3'])
 
         #unpack data
         mom1 = data_cons['mom1'][ph_l:ph_u,th_l:th_u,r_l:r_u] #select points between 1-2 scale heights

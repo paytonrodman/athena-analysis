@@ -28,34 +28,34 @@ def main(**kwargs):
     size = comm.Get_size()
     rank = comm.Get_rank()
 
-    problem  = args.prob_id
     #root_dir = "/Users/paytonrodman/athena-sim/"
     root_dir = '/home/per29/rds/rds-accretion-zyNhkonJSR8/'
-    prob_dir = root_dir + problem + '/'
+    prob_dir = root_dir + args.prob_id + '/'
     data_dir = prob_dir + 'data/'
     filename_output = 'flux_with_time.csv'
     os.chdir(data_dir)
 
     # check if data file already exists
-    csv_time = np.empty(0)
+    csv_times = np.empty(0)
     if args.update:
         with open(prob_dir + filename_output, 'r', newline='') as f:
             csv_reader = csv.reader(f, delimiter='\t')
             next(csv_reader, None) # skip header
             for row in csv_reader:
-                csv_time = np.append(csv_time, float(row[0]))
+                csv_times = np.append(csv_times, float(row[0]))
 
-    files = glob.glob('./'+prob_id+'.cons.*.athdf')
-    times = np.empty(0)
+    # compile a list of unique times associated with data files
+    files = glob.glob('./' + args.prob_id + '.cons.*.athdf')
+    file_times = np.empty(0)
     for f in files:
-        time_sec = re.findall(r'\b\d+\b', f)
+        current_time = re.findall(r'\b\d+\b', f)
         if args.update:
-            if float(time_sec[0]) not in times and float(time_sec[0]) not in csv_time:
-                times = np.append(times, float(time_sec[0]))
+            if float(current_time[0]) not in file_times and float(current_time[0]) not in csv_times:
+                file_times = np.append(file_times, float(current_time[0]))
         else:
-            if float(time_sec[0]) not in times:
-                times = np.append(times, float(time_sec[0]))
-    if len(times)==0:
+            if float(current_time[0]) not in times:
+                file_times = np.append(file_times, float(current_time[0]))
+    if len(file_times)==0:
         sys.exit('No new timesteps to analyse in the given directory. Exiting.')
 
     # distribute files to cores
@@ -69,7 +69,7 @@ def main(**kwargs):
         stop = start + count
     local_times = times[start:stop] # get the times to be analyzed by each rank
 
-    data_init = athena_read.athdf(problem + '.cons.00000.athdf', quantities=['x2v'])
+    data_init = athena_read.athdf(args.prob_id + '.cons.00000.athdf', quantities=['x2v'])
     x2v_init = data_init['x2v']
     th_id = AAT.find_nearest(x2v_init, np.pi/2.)
 
@@ -80,7 +80,7 @@ def main(**kwargs):
                 writer.writerow(["sim_time", "orbit_time", "mag_flux_u", "mag_flux_l", "mag_flux_u_abs", "mag_flux_l_abs"])
     for t in local_times:
         str_t = str(int(t)).zfill(5)
-        data_cons = athena_read.athdf(problem + '.cons.' + str_t + '.athdf', quantities=['x2v','x3v','x1f','x2f','x3f','Bcc1'])
+        data_cons = athena_read.athdf(args.prob_id + '.cons.' + str_t + '.athdf', quantities=['x2v','x3v','x1f','x2f','x3f','Bcc1'])
 
         #unpack data
         x2v = data_cons['x2v'] # theta

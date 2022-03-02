@@ -30,15 +30,14 @@ def main(**kwargs):
     size = comm.Get_size()
     rank = comm.Get_rank()
 
-    problem  = args.prob_id
     #root_dir = "/Users/paytonrodman/athena-sim/"
     root_dir = '/home/per29/rds/rds-accretion-zyNhkonJSR8/'
-    prob_dir = root_dir + problem + '/'
+    prob_dir = root_dir + args.prob_id + '/'
     data_dir = prob_dir + 'data/'
     runfile_dir = prob_dir + 'runfiles/'
     os.chdir(data_dir)
 
-    data_input = athena_read.athinput(runfile_dir + 'athinput.' + problem)
+    data_input = athena_read.athinput(runfile_dir + 'athinput.' + args.prob_id)
     x1min = data_input['mesh']['x1min'] # bounds of simulation
     x1max = data_input['mesh']['x1max']
     x2min = data_input['mesh']['x2min']
@@ -64,7 +63,7 @@ def main(**kwargs):
         x2_high_min = x2min
         x2_high_max = x2max
 
-    data_init = athena_read.athdf(problem + '.cons.00000.athdf', quantities=['x1v','x2v'])
+    data_init = athena_read.athdf(args.prob_id + '.cons.00000.athdf', quantities=['x1v','x2v'])
     x1v_init = data_init['x1v'] # r
     x2v_init = data_init['x2v'] # theta
 
@@ -100,25 +99,26 @@ def main(**kwargs):
 
     filename_output = 'qual_with_time_' + str(rl) + '_' + str(ru) + '_' + str(tl) + '_' + str(tu) + '.csv'
     # check if data file already exists
-    csv_time = np.empty(0)
+    csv_times = np.empty(0)
     if args.update:
         with open(prob_dir + filename_output, 'r', newline='') as f:
             csv_reader = csv.reader(f, delimiter='\t')
             next(csv_reader, None) # skip header
             for row in csv_reader:
-                csv_time = np.append(csv_time, float(row[0]))
+                csv_times = np.append(csv_times, float(row[0]))
 
-    files = glob.glob('./high_res.cons.*.athdf')
-    times = np.empty(0)
+    # compile a list of unique times associated with data files
+    files = glob.glob('./' + args.prob_id + '.cons.*.athdf')
+    file_times = np.empty(0)
     for f in files:
-        time_sec = re.findall(r'\b\d+\b', f)
+        current_time = re.findall(r'\b\d+\b', f)
         if args.update:
-            if float(time_sec[0]) not in times and float(time_sec[0]) not in csv_time:
-                times = np.append(times, float(time_sec[0]))
+            if float(current_time[0]) not in file_times and float(current_time[0]) not in csv_times:
+                file_times = np.append(file_times, float(current_time[0]))
         else:
-            if float(time_sec[0]) not in times:
-                times = np.append(times, float(time_sec[0]))
-    if len(times)==0:
+            if float(current_time[0]) not in times:
+                file_times = np.append(file_times, float(current_time[0]))
+    if len(file_times)==0:
         sys.exit('No new timesteps to analyse in the given directory. Exiting.')
 
     # distribute files to cores
@@ -144,10 +144,10 @@ def main(**kwargs):
         GM = 1.
 
         #unpack data
-        data_prim = athena_read.athdf(problem + '.prim.' + str_t + '.athdf', quantities=['press'])
+        data_prim = athena_read.athdf(args.prob_id + '.prim.' + str_t + '.athdf', quantities=['press'])
         press = data_prim['press']
 
-        data_cons = athena_read.athdf(problem + '.cons.' + str_t + '.athdf', quantities=['x1v','x2v','x3v','x1f','x2f','x3f','dens','mom1','mom2','mom3','Bcc1','Bcc2','Bcc3'])
+        data_cons = athena_read.athdf(args.prob_id + '.cons.' + str_t + '.athdf', quantities=['x1v','x2v','x3v','x1f','x2f','x3f','dens','mom1','mom2','mom3','Bcc1','Bcc2','Bcc3'])
         x1v = data_cons['x1v'] # r
         x2v = data_cons['x2v'] # theta
         x3v = data_cons['x3v'] # phi

@@ -27,34 +27,34 @@ def main(**kwargs):
     rank = comm.Get_rank()
     size = comm.Get_size()
 
-    problem  = args.prob_id
     #root_dir = "/Users/paytonrodman/athena-sim/"
     root_dir = '/home/per29/rds/rds-accretion-zyNhkonJSR8/'
-    prob_dir = root_dir + problem + '/'
+    prob_dir = root_dir + args.prob_id + '/'
     data_dir = prob_dir + 'data/'
     filename_output = 'scale_with_time.csv'
     os.chdir(data_dir)
 
-    csv_time = np.empty(0)
     # check if data file already exists
+    csv_times = np.empty(0)
     if args.update:
         with open(prob_dir + filename_output, 'r', newline='') as f:
             csv_reader = csv.reader(f, delimiter='\t')
             next(csv_reader, None) # skip header
             for row in csv_reader:
-                csv_time = np.append(csv_time, float(row[0]))
+                csv_times = np.append(csv_times, float(row[0]))
 
-    files = glob.glob('./high_res.cons.*.athdf')
-    times = np.empty(0)
+    # compile a list of unique times associated with data files
+    files = glob.glob('./' + args.prob_id + '.cons.*.athdf')
+    file_times = np.empty(0)
     for f in files:
-        time_sec = re.findall(r'\b\d+\b', f)
+        current_time = re.findall(r'\b\d+\b', f)
         if args.update:
-            if float(time_sec[0]) not in times and float(time_sec[0]) not in csv_time:
-                times = np.append(times, float(time_sec[0]))
+            if float(current_time[0]) not in file_times and float(current_time[0]) not in csv_times:
+                file_times = np.append(file_times, float(current_time[0]))
         else:
-            if float(time_sec[0]) not in times:
-                times = np.append(times, float(time_sec[0]))
-    if len(times)==0:
+            if float(current_time[0]) not in times:
+                file_times = np.append(file_times, float(current_time[0]))
+    if len(file_times)==0:
         sys.exit('No new timesteps to analyse in the given directory. Exiting.')
 
     count = len(times) // size  # number of files for each process to analyze
@@ -68,7 +68,7 @@ def main(**kwargs):
     local_times = times[start:stop] # get the times to be analyzed by each rank
 
     # get mesh data for all files (static)
-    data_init = athena_read.athdf(problem + '.cons.00000.athdf', quantities=['x1v','x2v','x3v','x1f','x2f','x3f'])
+    data_init = athena_read.athdf(args.prob_id + '.cons.00000.athdf', quantities=['x1v','x2v','x3v','x1f','x2f','x3f'])
     x1v = data_init['x1v'] # r
     x2v = data_init['x2v'] # theta
     x3v = data_init['x3v'] # phi
@@ -88,8 +88,7 @@ def main(**kwargs):
                 writer.writerow(["sim_time", "orbit_time", "scale_height"])
     for t in local_times:
         str_t = str(int(t)).zfill(5)
-        filename_cons = problem + '.cons.' + str_t + '.athdf'
-        data_cons = athena_read.athdf(filename_cons, quantities=['dens'])
+        data_cons = athena_read.athdf(args.prob_id + '.cons.' + str_t + '.athdf', quantities=['dens'])
         #unpack data
         dens = data_cons['dens']
 
