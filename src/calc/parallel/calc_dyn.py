@@ -36,10 +36,8 @@ def main(**kwargs):
     prob_dir = root_dir + args.prob_id + '/'
     data_dir = prob_dir + 'data/'
     runfile_dir = prob_dir + 'runfiles/'
-    filename_output = 'dyn/huber/'+ av[:3]+'_'+hem+'_dyn_with_time.csv'
+    filename_output = 'dyn/huber/' + args.average[:3] + '_' + args.hemisphere + '_dyn_with_time.csv'
     os.chdir(data_dir)
-    av = args.average
-    hem = args.hemisphere
 
     if args.average not in ['azimuthal','gaussian']:
         sys.exit('Must select averaging method (azimuthal, gaussian)')
