@@ -64,13 +64,12 @@ def main(**kwargs):
     remainder = len(times) % size
     if rank < remainder:  # processes with rank < remainder analyze one extra catchment
         start = rank * (files_per_process + 1)
-        stop = start + files_per_process + 1 
+        stop = start + files_per_process + 1
     else:
         start = rank * files_per_process + remainder
         stop = start + files_per_process
 
     local_times = times[start:stop] # get the times to be analyzed by each rank
-    #local_times=[10000]
 
     data_init = athena_read.athdf(args.prob_id + '.cons.00000.athdf', quantities=['x1v'])
     x1v_init = data_init['x1v']

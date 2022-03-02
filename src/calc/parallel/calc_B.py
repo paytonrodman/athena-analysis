@@ -73,8 +73,6 @@ def main(**kwargs):
         stop = start + files_per_process
 
     local_times = times[start:stop] # get the times to be analyzed by each rank
-    #local_times = [0.,5000.,10000.,15000.,20000.,25000.,30000.]
-    #local_times = [5000.]
 
     data_input = athena_read.athinput(runfile_dir + 'athinput.' + args.prob_id)
     if 'refinement3' not in data_input:

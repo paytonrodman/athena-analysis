@@ -74,13 +74,12 @@ def main(**kwargs):
     remainder = len(times) % size
     if rank < remainder:  # processes with rank < remainder analyze one extra catchment
         start = rank * (files_per_process + 1)
-        stop = start + files_per_process + 1 
+        stop = start + files_per_process + 1
     else:
         start = rank * files_per_process + remainder
         stop = start + files_per_process
 
     local_times = times[start:stop] # get the times to be analyzed by each rank
-    #local_times = [43159] #43159 51273
 
     data_input = athena_read.athinput(runfile_dir + 'athinput.' + args.prob_id)
     scale_height = data_input['problem']['h_r']
