@@ -12,8 +12,8 @@
 import numpy as np
 import os
 import sys
-sys.path.insert(0, '/home/per29/rds/rds-accretion-zyNhkonJSR8/athena-analysis/dependencies')
-#sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies')
+#sys.path.insert(0, '/home/per29/rds/rds-accretion-zyNhkonJSR8/athena-analysis/dependencies')
+sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies')
 import athena_read
 import AAT
 import glob
@@ -30,8 +30,9 @@ def main(**kwargs):
     size = comm.Get_size()
     rank = comm.Get_rank()
 
-    #root_dir = "/Users/paytonrodman/athena-sim/"
-    root_dir = '/home/per29/rds/rds-accretion-zyNhkonJSR8/'
+    root_dir = "/Users/paytonrodman/athena-sim/"
+    #root_dir = '/home/per29/rds/rds-accretion-zyNhkonJSR8/'
+
     prob_dir = root_dir + args.prob_id + '/'
     data_dir = prob_dir + 'data/'
     runfile_dir = prob_dir + 'runfiles/'
@@ -116,22 +117,23 @@ def main(**kwargs):
             if float(current_time[0]) not in file_times and float(current_time[0]) not in csv_times:
                 file_times = np.append(file_times, float(current_time[0]))
         else:
-            if float(current_time[0]) not in times:
+            if float(current_time[0]) not in file_times:
                 file_times = np.append(file_times, float(current_time[0]))
     if len(file_times)==0:
         sys.exit('No new timesteps to analyse in the given directory. Exiting.')
 
     # distribute files to cores
-    files_per_process = len(times) // size
-    remainder = len(times) % size
+    files_per_process = len(file_times) // size
+    remainder = len(file_times) % size
     if rank < remainder:  # processes with rank < remainder analyze one extra file
         start = rank * (files_per_process + 1)
-        stop = start + files_per_process + 1 
+        stop = start + files_per_process + 1
     else:
         start = rank * files_per_process + remainder
         stop = start + files_per_process
 
-    local_times = times[start:stop] # get the times to be analyzed by each rank
+    local_times = file_times[start:stop] # get the times to be analyzed by each rank
+    local_times = [5000]
 
     if rank==0:
         if not args.update:
@@ -140,49 +142,32 @@ def main(**kwargs):
                 writer.writerow(["sim_time", "orbit_time", "theta_B", "Q_theta", "Q_phi"])
     for t in local_times:
         str_t = str(int(t)).zfill(5)
-        #constants
         gamma = 5./3.
         GM = 1.
 
         #unpack data
-        data_prim = athena_read.athdf(args.prob_id + '.prim.' + str_t + '.athdf', quantities=['press'])
-        press = data_prim['press']
-
         data_cons = athena_read.athdf(args.prob_id + '.cons.' + str_t + '.athdf', quantities=['x1v','x2v','x3v','x1f','x2f','x3f','dens','mom1','mom2','mom3','Bcc1','Bcc2','Bcc3'])
-        x1v = data_cons['x1v'] # r
-        x2v = data_cons['x2v'] # theta
-        x3v = data_cons['x3v'] # phi
-        x1f = data_cons['x1f'] # r
-        x2f = data_cons['x2f'] # theta
-        x3f = data_cons['x3f'] # phi
-        dens = data_cons['dens']
-        mom1 = data_cons['mom1']
-        mom2 = data_cons['mom2']
-        mom3 = data_cons['mom3']
-        Bcc1 = data_cons['Bcc1']
-        Bcc2 = data_cons['Bcc2']
-        Bcc3 = data_cons['Bcc3']
+        data_prim = athena_read.athdf(args.prob_id + '.prim.' + str_t + '.athdf', quantities=['press'])
 
-        Omega_kep = np.empty_like(dens)
+        x1v = data_cons['x1v']
+        x2v = data_cons['x2v']
+        x3v = data_cons['x3v']
+        x1f = data_cons['x1f']
+        x2f = data_cons['x2f']
+        x3f = data_cons['x3f']
+        dens = data_cons['dens'][:, tl:tu, rl:ru]
+        mom1 = data_cons['mom1'][:, tl:tu, rl:ru]
+        mom2 = data_cons['mom2'][:, tl:tu, rl:ru]
+        mom3 = data_cons['mom3'][:, tl:tu, rl:ru]
+        Bcc1 = data_cons['Bcc1'][:, tl:tu, rl:ru]
+        Bcc2 = data_cons['Bcc2'][:, tl:tu, rl:ru]
+        Bcc3 = data_cons['Bcc3'][:, tl:tu, rl:ru]
+        press = data_prim['press'][:, tl:tu, rl:ru]
 
-        # Calculations
-        dx1f,dx2f,dx3f = AAT.calculate_delta(x1f,x2f,x3f)
-        del x1f,x2f,x3f
+        Omega_kep = np.sqrt(GM/(x1v[rl:ru]**3.))
+        Omega_kep = np.broadcast_to(Omega_kep, (np.shape(dens)[0], np.shape(dens)[1], np.shape(dens)[2]))
 
-        for ii in range(0,256):
-            Omega_kep[ii, :, :] = np.sqrt(GM/(x1v**3.)) #Keplerian angular velocity in midplane
-
-        Bcc1 = Bcc1[:, tl:tu, rl:ru]
-        Bcc2 = Bcc2[:, tl:tu, rl:ru]
-        Bcc3 = Bcc3[:, tl:tu, rl:ru]
-        dens = dens[:, tl:tu, rl:ru]
-        mom1 = mom1[:, tl:tu, rl:ru]
-        mom2 = mom2[:, tl:tu, rl:ru]
-        mom3 = mom3[:, tl:tu, rl:ru]
-        press = press[:, tl:tu, rl:ru]
-        Omega_kep = Omega_kep[:, tl:tu, rl:ru]
-
-        tB = (-np.arctan(Bcc1/Bcc3)) * (180./np.pi) #degrees
+        tB = (-np.arctan(Bcc1/Bcc3)) * (180./np.pi) #magnetic tilt angle in degrees
         tB_av = np.average(tB)
 
         w = dens + (gamma/(gamma - 1.))*press
@@ -192,6 +177,7 @@ def main(**kwargs):
         lambda_MRI_theta = 2.*np.pi*np.sqrt(16./15.)*np.abs(vA_theta)/Omega_kep
         lambda_MRI_phi = 2.*np.pi*np.sqrt(16./15.)*np.abs(vA_phi)/Omega_kep
 
+        dx1f,dx2f,dx3f = AAT.calculate_delta(x1f,x2f,x3f)
         phi,_,r = np.meshgrid(x3v,x2v,x1v, sparse=False, indexing='ij')
         dphi,dtheta,_ = np.meshgrid(dx3f,dx2f,dx1f, sparse=False, indexing='ij')
 
