@@ -70,17 +70,17 @@ def main(**kwargs):
 
     # get mesh data for all files (static)
     data_init = athena_read.athdf(args.prob_id + '.cons.00000.athdf', quantities=['x1v','x2v','x3v','x1f','x2f','x3f'])
-    x1v = data_init['x1v'] # r
-    x2v = data_init['x2v'] # theta
-    x3v = data_init['x3v'] # phi
-    x1f = data_init['x1f'] # r
-    x2f = data_init['x2f'] # theta
-    x3f = data_init['x3f'] # phi
+    x1v = data_init['x1v']
+    x2v = data_init['x2v']
+    x3v = data_init['x3v']
+    x1f = data_init['x1f']
+    x2f = data_init['x2f']
+    x3f = data_init['x3f']
 
     dx1f,dx2f,dx3f = AAT.calculate_delta(x1f,x2f,x3f)
     _,theta,_ = np.meshgrid(x3v,x2v,x1v, sparse=False, indexing='ij')
     dphi,dtheta,_ = np.meshgrid(dx3f,dx2f,dx1f, sparse=False, indexing='ij')
-    dOmega = np.sin(theta)*dtheta*dphi
+    dOmega = np.sin(theta)*dtheta*dphi # solid angle
 
     if rank==0:
         if not args.update:
@@ -90,10 +90,9 @@ def main(**kwargs):
     for t in local_times:
         str_t = str(int(t)).zfill(5)
         data_cons = athena_read.athdf(args.prob_id + '.cons.' + str_t + '.athdf', quantities=['dens'])
-        #unpack data
         dens = data_cons['dens']
 
-        # Calculations
+        # calculate the geometric scale height (see Hogg & Reynolds 2018 for details)
         polar_ang = np.sum(theta*dens*dOmega,axis=(0,1))/np.sum(dens*dOmega,axis=(0,1))
         h_up = (theta-polar_ang)**2. * dens*dOmega
         h_down = dens*dOmega
