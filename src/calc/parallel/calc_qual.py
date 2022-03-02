@@ -12,8 +12,8 @@
 import numpy as np
 import os
 import sys
-#sys.path.insert(0, '/home/per29/rds/rds-accretion-zyNhkonJSR8/athena-analysis/dependencies')
-sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies')
+sys.path.insert(0, '/home/per29/rds/rds-accretion-zyNhkonJSR8/athena-analysis/dependencies')
+#sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies')
 import athena_read
 import AAT
 import glob
@@ -30,8 +30,8 @@ def main(**kwargs):
     size = comm.Get_size()
     rank = comm.Get_rank()
 
-    root_dir = "/Users/paytonrodman/athena-sim/"
-    #root_dir = '/home/per29/rds/rds-accretion-zyNhkonJSR8/'
+    #root_dir = "/Users/paytonrodman/athena-sim/"
+    root_dir = '/home/per29/rds/rds-accretion-zyNhkonJSR8/'
 
     prob_dir = root_dir + args.prob_id + '/'
     data_dir = prob_dir + 'data/'
@@ -133,7 +133,6 @@ def main(**kwargs):
         stop = start + files_per_process
 
     local_times = file_times[start:stop] # get the times to be analyzed by each rank
-    local_times = [5000]
 
     if rank==0:
         if not args.update:
