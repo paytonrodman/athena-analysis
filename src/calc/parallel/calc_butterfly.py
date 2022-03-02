@@ -60,17 +60,17 @@ def main(**kwargs):
         sys.exit('No new timesteps to analyse in the given directory. Exiting.')
 
     # distribute files to cores
-    count = len(times) // size  # number of files for each process to analyze
-    remainder = len(times) % size  # extra files if times is not a multiple of size
+    files_per_process = len(times) // size
+    remainder = len(times) % size
     if rank < remainder:  # processes with rank < remainder analyze one extra catchment
-        start = rank * (count + 1)  # index of first file to analyze
-        stop = start + count + 1  # index of last file to analyze
+        start = rank * (files_per_process + 1)
+        stop = start + files_per_process + 1 
     else:
-        start = rank * count + remainder
-        stop = start + count
-    local_times = times[start:stop] # get the times to be analyzed by each rank
+        start = rank * files_per_process + remainder
+        stop = start + files_per_process
 
-    local_times=[10000]
+    local_times = times[start:stop] # get the times to be analyzed by each rank
+    #local_times=[10000]
 
     data_init = athena_read.athdf(args.prob_id + '.cons.00000.athdf', quantities=['x1v'])
     x1v_init = data_init['x1v']
