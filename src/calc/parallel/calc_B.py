@@ -36,12 +36,13 @@ def main(**kwargs):
     prob_dir = root_dir + problem + '/'
     data_dir = prob_dir + 'data/'
     runfile_dir = prob_dir + 'runfiles/'
+    filename_output = 'B_strength_with_time_' + args.component + '.csv'
     os.chdir(data_dir)
 
     # check if data file already exists
     csv_time = np.empty(0)
     if args.update:
-        with open(prob_dir + 'B_strength_with_time.csv', 'r', newline='') as f:
+        with open(prob_dir + filename_output, 'r', newline='') as f:
             csv_reader = csv.reader(f, delimiter='\t')
             next(csv_reader, None) # skip header
             for row in csv_reader:
@@ -96,7 +97,7 @@ def main(**kwargs):
     jet_max_u = AAT.find_nearest(x2v, np.pi)
 
     if rank==0:
-        with open(prob_dir + 'B_strength_with_time_'+args.component+'.csv', 'w', newline='') as f:
+        with open(prob_dir + filename_output, 'w', newline='') as f:
             writer = csv.writer(f, delimiter='\t')
             writer.writerow(["sim_time", "orbit_time", "abs_B_flux", "abs_B_jet", "abs_B_upatmos", "abs_B_loatmos", "abs_B_disk", "sign_B_flux", "sign_B_jet", "sign_B_upatmos", "sign_B_loatmos", "sign_B_disk"])
     for t in local_times:
@@ -180,7 +181,7 @@ def main(**kwargs):
         sim_t = data_cons['Time']
         orbit_t = sim_t/T_period
 
-        with open(prob_dir + 'B_strength_with_time_'+args.component+'.csv', 'a', newline='') as f:
+        with open(prob_dir + filename_output, 'a', newline='') as f:
             writer = csv.writer(f, delimiter='\t')
             row = [sim_t,orbit_t,
                    abs_B_flux,abs_B_jet,abs_B_upatmos,abs_B_loatmos,abs_B_disk,

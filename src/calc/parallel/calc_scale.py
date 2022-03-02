@@ -32,12 +32,13 @@ def main(**kwargs):
     root_dir = '/home/per29/rds/rds-accretion-zyNhkonJSR8/'
     prob_dir = root_dir + problem + '/'
     data_dir = prob_dir + 'data/'
+    filename_output = 'scale_with_time.csv'
     os.chdir(data_dir)
 
     csv_time = np.empty(0)
     # check if data file already exists
     if args.update:
-        with open(prob_dir + 'scale_with_time.csv', 'r', newline='') as f:
+        with open(prob_dir + filename_output, 'r', newline='') as f:
             csv_reader = csv.reader(f, delimiter='\t')
             next(csv_reader, None) # skip header
             for row in csv_reader:
@@ -82,7 +83,7 @@ def main(**kwargs):
 
     if rank==0:
         if not args.update:
-            with open(prob_dir + 'scale_with_time.csv', 'w', newline='') as f:
+            with open(prob_dir + filename_output, 'w', newline='') as f:
                 writer = csv.writer(f, delimiter='\t')
                 writer.writerow(["sim_time", "orbit_time", "scale_height"])
     for t in local_times:
@@ -104,7 +105,7 @@ def main(**kwargs):
         sim_t = data_cons['Time']
         orbit_t = sim_t/T_period
 
-        with open(prob_dir + 'scale_with_time.csv', 'a', newline='') as f:
+        with open(prob_dir + filename_output, 'a', newline='') as f:
             writer = csv.writer(f, delimiter='\t')
             row = [sim_t,orbit_t,scale_h_av]
             writer.writerow(row)

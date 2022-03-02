@@ -37,6 +37,7 @@ def main(**kwargs):
     prob_dir = root_dir + problem + '/'
     data_dir = prob_dir + 'data/'
     runfile_dir = prob_dir + 'runfiles/'
+    filename_output = 'dyn/huber/'+ av[:3]+'_'+hem+'_dyn_with_time.csv'
     os.chdir(data_dir)
     av = args.average
     hem = args.hemisphere
@@ -49,7 +50,7 @@ def main(**kwargs):
     # check if data file already exists
     csv_time = np.empty(0)
     if args.update:
-        with open(prob_dir+'dyn/huber/'+ av[:3]+'_'+hem+'_dyn_with_time.csv', 'r', newline='') as f:
+        with open(prob_dir + filename_output, 'r', newline='') as f:
             csv_reader = csv.reader(f, delimiter='\t')
             next(csv_reader, None) # skip header
             for row in csv_reader:
@@ -106,7 +107,7 @@ def main(**kwargs):
 
     if rank==0:
         if not args.update:
-            with open(prob_dir+'dyn/average/'+ av[:3]+'_'+hem+'_dyn_with_time.csv', 'w', newline='') as f:
+            with open(prob_dir + filename_output, 'w', newline='') as f:
                 writer = csv.writer(f, delimiter='\t')
                 writer.writerow(["sim_time", "orbit_time", "alpha", "C"])
     for t in local_times:
@@ -212,7 +213,7 @@ def main(**kwargs):
         sim_t = data_cons['Time']
         orbit_t = sim_t/T_period
 
-        with open(prob_dir+'dyn/average/'+ av[:3]+'_'+hem+'_dyn_with_time.csv', 'a', newline='') as f:
+        with open(prob_dir + filename_output, 'a', newline='') as f:
             writer = csv.writer(f, delimiter='\t')
             writer.writerow([sim_t,orbit_t,alpha,C])
 
