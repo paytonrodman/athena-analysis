@@ -64,14 +64,14 @@ def main(**kwargs):
             if float(current_time[0]) not in file_times and float(current_time[0]) not in csv_times:
                 file_times = np.append(file_times, float(current_time[0]))
         else:
-            if float(current_time[0]) not in times:
+            if float(current_time[0]) not in file_times:
                 file_times = np.append(file_times, float(current_time[0]))
     if len(file_times)==0:
         sys.exit('No new timesteps to analyse in the given directory. Exiting.')
 
     # distribute files to cores
-    files_per_process = len(times) // size
-    remainder = len(times) % size
+    files_per_process = len(file_times) // size
+    remainder = len(file_times) % size
     if rank < remainder:  # processes with rank < remainder analyze one extra catchment
         start = rank * (files_per_process + 1)
         stop = start + files_per_process + 1
@@ -79,7 +79,7 @@ def main(**kwargs):
         start = rank * files_per_process + remainder
         stop = start + files_per_process
 
-    local_times = times[start:stop] # get the times to be analyzed by each rank
+    local_times = file_times[start:stop] # get the times to be analyzed by each rank
 
     data_input = athena_read.athinput(runfile_dir + 'athinput.' + args.prob_id)
     scale_height = data_input['problem']['h_r']
@@ -113,8 +113,8 @@ def main(**kwargs):
         str_t = str(int(t)).zfill(5)
         data_cons = athena_read.athdf(args.prob_id + '.cons.' + str_t + '.athdf', quantities=['mom1','mom2','mom3','Bcc1','Bcc2','Bcc3'])
 
-        #unpack data
-        mom1 = data_cons['mom1'][ph_l:ph_u,th_l:th_u,r_l:r_u] #select points between 1-2 scale heights
+        #unpack data and select points between 1-2 scale heights
+        mom1 = data_cons['mom1'][ph_l:ph_u,th_l:th_u,r_l:r_u]
         mom2 = data_cons['mom2'][ph_l:ph_u,th_l:th_u,r_l:r_u]
         mom3 = data_cons['mom3'][ph_l:ph_u,th_l:th_u,r_l:r_u]
         Bcc1 = data_cons['Bcc1'][ph_l:ph_u,th_l:th_u,r_l:r_u]

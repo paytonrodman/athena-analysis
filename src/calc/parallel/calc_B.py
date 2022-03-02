@@ -57,7 +57,7 @@ def main(**kwargs):
             if float(current_time[0]) not in file_times and float(current_time[0]) not in csv_times:
                 file_times = np.append(file_times, float(current_time[0]))
         else:
-            if float(current_time[0]) not in times:
+            if float(current_time[0]) not in file_times:
                 file_times = np.append(file_times, float(current_time[0]))
     if len(file_times)==0:
         sys.exit('No new timesteps to analyse in the given directory. Exiting.')
@@ -72,7 +72,7 @@ def main(**kwargs):
         start = rank * files_per_process + remainder
         stop = start + files_per_process
 
-    local_times = times[start:stop] # get the times to be analyzed by each rank
+    local_times = file_times[start:stop] # get the times to be analyzed by each rank
 
     data_input = athena_read.athinput(runfile_dir + 'athinput.' + args.prob_id)
     if 'refinement3' not in data_input:
@@ -84,7 +84,6 @@ def main(**kwargs):
     x2v = data_init['x2v']
     th_id = AAT.find_nearest(x2v, np.pi/2.)
 
-    #jet_min_l = AAT.find_nearest(x2v, 0.0)
     jet_max_l = AAT.find_nearest(x2v, data_input['refinement1']['x2min'])
     upatmos_max_l = AAT.find_nearest(x2v, data_input['refinement2']['x2min'])
     loatmos_max_l = AAT.find_nearest(x2v, data_input['refinement3']['x2min'])
@@ -104,16 +103,15 @@ def main(**kwargs):
         data_cons = athena_read.athdf(args.prob_id + '.cons.' + str_t + '.athdf', quantities=['x2v','x3v','x1f','x2f','x3f','Bcc1','Bcc2','Bcc3'])
 
         #unpack data
-        x2v = data_cons['x2v'] # theta
-        x3v = data_cons['x3v'] # phi
-        x1f = data_cons['x1f'] # r
-        x2f = data_cons['x2f'] # theta
-        x3f = data_cons['x3f'] # phi
+        x2v = data_cons['x2v']
+        x3v = data_cons['x3v']
+        x1f = data_cons['x1f']
+        x2f = data_cons['x2f']
+        x3f = data_cons['x3f']
         Bcc1 = data_cons['Bcc1']
         Bcc2 = data_cons['Bcc2']
         Bcc3 = data_cons['Bcc3']
 
-        # Calculations
         _,dx2f,dx3f = AAT.calculate_delta(x1f,x2f,x3f)
         if args.component=='all':
             B = np.sqrt(Bcc1**2. + Bcc2**2. + Bcc3**2.)

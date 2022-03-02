@@ -54,14 +54,14 @@ def main(**kwargs):
             if float(current_time[0]) not in file_times and float(current_time[0]) not in csv_times:
                 file_times = np.append(file_times, float(current_time[0]))
         else:
-            if float(current_time[0]) not in times:
+            if float(current_time[0]) not in file_times:
                 file_times = np.append(file_times, float(current_time[0]))
     if len(file_times)==0:
         sys.exit('No new timesteps to analyse in the given directory. Exiting.')
 
     # distribute files to cores
-    files_per_process = len(times) // size
-    remainder = len(times) % size
+    files_per_process = len(file_times) // size
+    remainder = len(file_times) % size
     if rank < remainder:  # processes with rank < remainder analyze one extra catchment
         start = rank * (files_per_process + 1)
         stop = start + files_per_process + 1
@@ -69,7 +69,7 @@ def main(**kwargs):
         start = rank * files_per_process + remainder
         stop = start + files_per_process
 
-    local_times = times[start:stop] # get the times to be analyzed by each rank
+    local_times = file_times[start:stop] # get the times to be analyzed by each rank
 
     data_init = athena_read.athdf(args.prob_id + '.cons.00000.athdf', quantities=['x1v'])
     x1v_init = data_init['x1v']
