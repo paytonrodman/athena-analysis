@@ -65,11 +65,12 @@ def main(**kwargs):
 
 
     if rank==0:
-        with open(prob_dir + filename_output, 'w', newline='') as f:
-            writer = csv.writer(f, delimiter='\t')
-            writer.writerow(["sim_time", "orbit_time",
-            "abs_B_flux", "abs_B_jet", "abs_B_upatmos", "abs_B_loatmos", "abs_B_disk",
-            "sign_B_flux", "sign_B_jet", "sign_B_upatmos", "sign_B_loatmos", "sign_B_disk"])
+        if not args.update:
+            with open(prob_dir + filename_output, 'w', newline='') as f:
+                writer = csv.writer(f, delimiter='\t')
+                writer.writerow(["sim_time", "orbit_time",
+                "abs_B_flux", "abs_B_jet", "abs_B_upatmos", "abs_B_loatmos", "abs_B_disk",
+                "sign_B_flux", "sign_B_jet", "sign_B_upatmos", "sign_B_loatmos", "sign_B_disk"])
     for t in local_times:
         str_t = str(int(t)).zfill(5)
         data_cons = athena_read.athdf(args.prob_id + '.cons.' + str_t + '.athdf',
