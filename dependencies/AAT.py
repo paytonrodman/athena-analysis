@@ -26,6 +26,7 @@ def add_time_to_list(update_flag, directory, output_filename, problem_id):
     import csv
     import re
     import numpy as np
+
     # check if data file already exists
     csv_times = np.empty(0)
     if update_flag:
@@ -53,6 +54,7 @@ def add_time_to_list(update_flag, directory, output_filename, problem_id):
 
 def distribute_files_to_cores(file_list, n_process, rank):
     """Distribute files to cores in a balanced way."""
+
     files_per_process = len(file_list) // n_process
     remainder = len(file_list) % n_process
     if rank < remainder:  # processes with rank < remainder analyze one extra catchment
@@ -66,8 +68,11 @@ def distribute_files_to_cores(file_list, n_process, rank):
     return local_times
 
 def calculate_orbit_time(simulation_time):
+    """Calculate the orbital time at the ISCO."""
+
     import numpy as np
+
     r_ISCO = 6. # location of ISCO in PW potential
-    T_period = 2.*np.pi*sqrt(r_ISCO)*(r_ISCO - 2.)
+    T_period = 2.*np.pi*np.sqrt(r_ISCO)*(r_ISCO - 2.)
     orbit_time = simulation_time/T_period
     return orbit_time
