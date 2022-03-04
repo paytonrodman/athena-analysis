@@ -17,7 +17,6 @@ import AAT
 import csv
 import argparse
 import numpy as np
-from math import sqrt
 from scipy import optimize
 from scipy.ndimage import gaussian_filter
 from mpi4py import MPI

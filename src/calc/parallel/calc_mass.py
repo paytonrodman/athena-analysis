@@ -16,7 +16,6 @@ import AAT
 import csv
 import argparse
 import numpy as np
-from math import sqrt
 from mpi4py import MPI
 
 def main(**kwargs):

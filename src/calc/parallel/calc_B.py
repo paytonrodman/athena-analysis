@@ -15,7 +15,6 @@ import athena_read
 import AAT
 import csv
 import argparse
-from math import sqrt
 import numpy as np
 from mpi4py import MPI
 
