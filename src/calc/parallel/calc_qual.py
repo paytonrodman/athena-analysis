@@ -15,8 +15,6 @@ sys.path.insert(0, '/home/per29/rds/rds-accretion-zyNhkonJSR8/athena-analysis/de
 #sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies')
 import athena_read
 import AAT
-#import glob
-#import re
 import csv
 import argparse
 import scipy.stats as st

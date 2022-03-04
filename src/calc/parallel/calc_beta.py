@@ -14,8 +14,6 @@ sys.path.insert(0, '/home/per29/rds/rds-accretion-zyNhkonJSR8/athena-analysis/de
 #sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies')
 import athena_read
 import AAT
-#import glob
-#import re
 import csv
 import argparse
 import numpy as np
@@ -114,10 +112,6 @@ def main(**kwargs):
         else:
             current_beta = np.nan
 
-        #r_ISCO = 6. # location of ISCO in PW potential
-        #T_period = 2.*np.pi*sqrt(r_ISCO)*(r_ISCO - 2.)
-        #sim_t = data_cons['Time']
-        #orbit_t = sim_t/T_period
         sim_t = data_cons['Time']
         orbit_t = AAT.calculate_orbit_time(sim_t)
 
