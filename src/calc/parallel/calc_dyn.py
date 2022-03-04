@@ -43,28 +43,7 @@ def main(**kwargs):
     if args.hemisphere not in ['upper','lower']:
         sys.exit('Must select hemisphere (upper, lower)')
 
-    # check if data file already exists
-    csv_times = np.empty(0)
-    if args.update:
-        with open(prob_dir + filename_output, 'r', newline='') as f:
-            csv_reader = csv.reader(f, delimiter='\t')
-            next(csv_reader, None) # skip header
-            for row in csv_reader:
-                csv_times = np.append(csv_times, float(row[0]))
-
-    # compile a list of unique times associated with data files
-    files = glob.glob('./' + args.prob_id + '.cons.*.athdf')
-    file_times = np.empty(0)
-    for f in files:
-        current_time = re.findall(r'\b\d+\b', f)
-        if args.update:
-            if float(current_time[0]) not in file_times and float(current_time[0]) not in csv_times:
-                file_times = np.append(file_times, float(current_time[0]))
-        else:
-            if float(current_time[0]) not in file_times:
-                file_times = np.append(file_times, float(current_time[0]))
-    if len(file_times)==0:
-        sys.exit('No new timesteps to analyse in the given directory. Exiting.')
+    file_times = AAT.add_time_to_list(args.update, prob_dir, filename_output, args.prob_id)
 
     # distribute files to cores
     files_per_process = len(file_times) // size

@@ -19,3 +19,32 @@ def find_nearest(array, value):
     array = np.asarray(array);
     idx = (np.abs(array - value)).argmin();
     return idx;
+
+def add_time_to_list(update_flag, directory, output_filename, problem_id):
+    import glob
+    import csv
+    import re
+    # check if data file already exists
+    csv_times = np.empty(0)
+    if update_flag:
+        with open(prob_dir + filename_output, 'r', newline='') as f:
+            csv_reader = csv.reader(f, delimiter='\t')
+            next(csv_reader, None) # skip header
+            for row in csv_reader:
+                csv_times = np.append(csv_times, float(row[0]))
+
+    # compile a list of unique times associated with data files
+    files = glob.glob('./' + problem_id + '.cons.*.athdf')
+    file_times = np.empty(0)
+    for f in files:
+        current_time = re.findall(r'\b\d+\b', f)
+        if update_flag:
+            if float(current_time[0]) not in file_times and float(current_time[0]) not in csv_times:
+                file_times = np.append(file_times, float(current_time[0]))
+        else:
+            if float(current_time[0]) not in file_times:
+                file_times = np.append(file_times, float(current_time[0]))
+    if len(file_times)==0:
+        sys.exit('No new timesteps to analyse in the given directory. Exiting.')
+
+    return file_times

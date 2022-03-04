@@ -10,12 +10,12 @@
 #
 import os
 import sys
-sys.path.insert(0, '/home/per29/rds/rds-accretion-zyNhkonJSR8/athena-analysis/dependencies')
-#sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies')
+#sys.path.insert(0, '/home/per29/rds/rds-accretion-zyNhkonJSR8/athena-analysis/dependencies')
+sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies')
 import athena_read
 import AAT
-import glob
-import re
+#import glob
+#import re
 import csv
 import argparse
 import numpy as np
@@ -28,36 +28,15 @@ def main(**kwargs):
     size = comm.Get_size()
     rank = comm.Get_rank()
 
-    #root_dir = "/Users/paytonrodman/athena-sim/"
-    root_dir = '/home/per29/rds/rds-accretion-zyNhkonJSR8/'
+    root_dir = "/Users/paytonrodman/athena-sim/"
+    #root_dir = '/home/per29/rds/rds-accretion-zyNhkonJSR8/'
     prob_dir = root_dir + args.prob_id + '/'
     data_dir = prob_dir + 'data/'
     runfile_dir = prob_dir + 'runfiles/'
     filename_output = 'beta_with_time.csv'
     os.chdir(data_dir)
 
-    # check if data file already exists
-    csv_times = np.empty(0)
-    if args.update:
-        with open(prob_dir + filename_output, 'r', newline='') as f:
-            csv_reader = csv.reader(f, delimiter='\t')
-            next(csv_reader, None) # skip header
-            for row in csv_reader:
-                csv_times = np.append(csv_times, float(row[0]))
-
-    # compile a list of unique times associated with data files
-    files = glob.glob('./' + args.prob_id + '.cons.*.athdf')
-    file_times = np.empty(0)
-    for f in files:
-        current_time = re.findall(r'\b\d+\b', f)
-        if args.update:
-            if float(current_time[0]) not in file_times and float(current_time[0]) not in csv_times:
-                file_times = np.append(file_times, float(current_time[0]))
-        else:
-            if float(current_time[0]) not in file_times:
-                file_times = np.append(file_times, float(current_time[0]))
-    if len(file_times)==0:
-        sys.exit('No new timesteps to analyse in the given directory. Exiting.')
+    file_times = AAT.add_time_to_list(args.update, prob_dir, filename_output, args.prob_id)
 
     # distribute files to cores
     files_per_process = len(file_times) // size
@@ -88,9 +67,6 @@ def main(**kwargs):
     r_u = AAT.find_nearest(x1v, x1_high_max)
     th_u = AAT.find_nearest(x2v, np.pi/2. + (3.*scale_height))
     th_l = AAT.find_nearest(x2v, np.pi/2. - (3.*scale_height))
-
-    del data_input
-    del data_init
 
     if rank==0:
         if not args.update:
