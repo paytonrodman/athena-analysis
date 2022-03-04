@@ -10,8 +10,8 @@
 #
 import os
 import sys
-#sys.path.insert(0, '/home/per29/rds/rds-accretion-zyNhkonJSR8/athena-analysis/dependencies')
-sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies')
+sys.path.insert(0, '/home/per29/rds/rds-accretion-zyNhkonJSR8/athena-analysis/dependencies')
+#sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies')
 import athena_read
 import AAT
 #import glob
@@ -28,8 +28,8 @@ def main(**kwargs):
     size = comm.Get_size()
     rank = comm.Get_rank()
 
-    root_dir = "/Users/paytonrodman/athena-sim/"
-    #root_dir = '/home/per29/rds/rds-accretion-zyNhkonJSR8/'
+    #root_dir = "/Users/paytonrodman/athena-sim/"
+    root_dir = '/home/per29/rds/rds-accretion-zyNhkonJSR8/'
     prob_dir = root_dir + args.prob_id + '/'
     data_dir = prob_dir + 'data/'
     runfile_dir = prob_dir + 'runfiles/'
@@ -38,8 +38,6 @@ def main(**kwargs):
 
     file_times = AAT.add_time_to_list(args.update, prob_dir, filename_output, args.prob_id)
     local_times = AAT.distribute_files_to_cores(file_times, size, rank)
-
-    print(wndnwj)
 
     data_input = athena_read.athinput(runfile_dir + 'athinput.' + args.prob_id)
     scale_height = data_input['problem']['h_r']
