@@ -15,8 +15,8 @@ sys.path.insert(0, '/home/per29/rds/rds-accretion-zyNhkonJSR8/athena-analysis/de
 #sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies')
 import athena_read
 import AAT
-import glob
-import re
+#import glob
+#import re
 import csv
 import argparse
 import scipy.stats as st
@@ -100,18 +100,7 @@ def main(**kwargs):
 
     filename_output = 'qual_with_time_' + str(rl) + '_' + str(ru) + '_' + str(tl) + '_' + str(tu) + '.csv'
     file_times = AAT.add_time_to_list(args.update, prob_dir, filename_output, args.prob_id)
-
-    # distribute files to cores
-    files_per_process = len(file_times) // size
-    remainder = len(file_times) % size
-    if rank < remainder:  # processes with rank < remainder analyze one extra file
-        start = rank * (files_per_process + 1)
-        stop = start + files_per_process + 1
-    else:
-        start = rank * files_per_process + remainder
-        stop = start + files_per_process
-
-    local_times = file_times[start:stop] # get the times to be analyzed by each rank
+    local_times = distribute_files_to_cores(file_times, size, rank)
 
     if rank==0:
         if not args.update:

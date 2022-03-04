@@ -21,6 +21,7 @@ def find_nearest(array, value):
     return idx;
 
 def add_time_to_list(update_flag, directory, output_filename, problem_id):
+    """Compile a unique list of files that have not been analysed before."""
     import glob
     import csv
     import re
@@ -48,3 +49,17 @@ def add_time_to_list(update_flag, directory, output_filename, problem_id):
         sys.exit('No new timesteps to analyse in the given directory. Exiting.')
 
     return file_times
+
+def distribute_files_to_cores(file_list, n_process, rank):
+    """Distribute files to cores in a balanced way."""
+    files_per_process = len(file_list) // n_process
+    remainder = len(file_list) % n_process
+    if rank < remainder:  # processes with rank < remainder analyze one extra catchment
+        start = rank * (files_per_process + 1)
+        stop = start + files_per_process + 1
+    else:
+        start = rank * files_per_process + remainder
+        stop = start + files_per_process
+
+    local_times = file_list[start:stop] # get the times to be analyzed by each rank
+    return local_times
