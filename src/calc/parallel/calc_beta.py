@@ -114,10 +114,12 @@ def main(**kwargs):
         else:
             current_beta = np.nan
 
-        r_ISCO = 6. # location of ISCO in PW potential
-        T_period = 2.*np.pi*sqrt(r_ISCO)*(r_ISCO - 2.)
+        #r_ISCO = 6. # location of ISCO in PW potential
+        #T_period = 2.*np.pi*sqrt(r_ISCO)*(r_ISCO - 2.)
+        #sim_t = data_cons['Time']
+        #orbit_t = sim_t/T_period
         sim_t = data_cons['Time']
-        orbit_t = sim_t/T_period
+        orbit_t = AAT.calculate_orbit_time(sim_t)
 
         with open(prob_dir + filename_output, 'a', newline='') as f:
             writer = csv.writer(f, delimiter='\t')

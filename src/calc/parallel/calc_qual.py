@@ -163,13 +163,11 @@ def main(**kwargs):
         Qp_l,Qp_h = st.t.interval(0.95, len(Q_phi)-1, loc=np.mean(Q_phi), scale=st.sem(Q_phi))
         Qp_av = np.mean(Q_phi)
 
-        r_ISCO = 6 # location of ISCO in PW potential
-        T_period = 2.*np.pi*sqrt(r_ISCO)*(r_ISCO - 2.)
-        sim_t = data_cons['Time']
-        orbit_t = sim_t/T_period
-
         Qt_all = [Qt_l,Qt_av,Qt_h]
         Qp_all = [Qp_l,Qp_av,Qp_h]
+
+        sim_t = data_cons['Time']
+        orbit_t = AAT.calculate_orbit_time(sim_t)
 
         with open(prob_dir + filename_output, 'a', newline='') as f:
             writer = csv.writer(f, delimiter='\t')

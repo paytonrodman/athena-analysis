@@ -78,10 +78,8 @@ def main(**kwargs):
                     mf_i.append(-dens[k,j,r_id_i] * v1[k,j,r_id_i] * (x1f[r_id_i])**2. * dOmega)
             mf_local.append(np.sum(mf_i))
 
-        r_ISCO = 6 # location of ISCO in PW potential
-        T_period = 2.*np.pi*sqrt(r_ISCO)*(r_ISCO - 2.)
         sim_t = data_cons['Time']
-        orbit_t = sim_t/T_period
+        orbit_t = AAT.calculate_orbit_time(sim_t)
 
         with open(prob_dir + filename_output, 'a', newline='') as f:
             writer = csv.writer(f, delimiter='\t')

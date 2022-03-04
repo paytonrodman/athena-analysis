@@ -70,10 +70,8 @@ def main(**kwargs):
         scale_h = np.sqrt(np.sum(h_up,axis=(0,1))/np.sum(h_down,axis=(0,1)))
         scale_h_av = np.average(scale_h,weights=dx1f)
 
-        r_ISCO = 6 # location of ISCO in PW potential
-        T_period = 2.*np.pi*sqrt(r_ISCO)*(r_ISCO - 2.)
         sim_t = data_cons['Time']
-        orbit_t = sim_t/T_period
+        orbit_t = AAT.calculate_orbit_time(sim_t)
 
         with open(prob_dir + filename_output, 'a', newline='') as f:
             writer = csv.writer(f, delimiter='\t')

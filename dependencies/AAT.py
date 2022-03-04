@@ -1,5 +1,3 @@
-import numpy as np
-
 def calculate_velocity(mom1,mom2,mom3,dens):
     """Calculates the 3-vector velocity from 3-vector momentum density and scalar density."""
     v1 = mom1/dens
@@ -9,6 +7,7 @@ def calculate_velocity(mom1,mom2,mom3,dens):
 
 def calculate_delta(x1,x2,x3):
     """For 3 vector arrays x1,x2,x3, return the difference between each adjacent entry."""
+    import numpy as np
     dx1 = np.diff(x1)
     dx2 = np.diff(x2)
     dx3 = np.diff(x3)
@@ -16,6 +15,7 @@ def calculate_delta(x1,x2,x3):
 
 def find_nearest(array, value):
     """For a given array, find the index of the entry closest to 'value'."""
+    import numpy as np
     array = np.asarray(array);
     idx = (np.abs(array - value)).argmin();
     return idx;
@@ -25,6 +25,7 @@ def add_time_to_list(update_flag, directory, output_filename, problem_id):
     import glob
     import csv
     import re
+    import numpy as np
     # check if data file already exists
     csv_times = np.empty(0)
     if update_flag:
@@ -63,3 +64,10 @@ def distribute_files_to_cores(file_list, n_process, rank):
 
     local_times = file_list[start:stop] # get the times to be analyzed by each rank
     return local_times
+
+def calculate_orbit_time(simulation_time):
+    import numpy as np
+    r_ISCO = 6. # location of ISCO in PW potential
+    T_period = 2.*np.pi*sqrt(r_ISCO)*(r_ISCO - 2.)
+    orbit_time = simulation_time/T_period
+    return orbit_time

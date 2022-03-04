@@ -139,23 +139,6 @@ def main(**kwargs):
         B_all = [Bcc1_av,Bcc2_av,Bcc3_av]
         emf_all = [emf1_av,emf2_av,emf3_av]
 
-        #huber = HuberRegressor()
-        #if t>0:
-        #    huber.fit(Bcc1_av.flatten().reshape(-1,1), emf1.flatten())
-        #    alpha1_i = huber.coef_[0]
-        #    C1_i = huber.intercept_
-
-        #    huber.fit(Bcc2_av.flatten().reshape(-1,1), emf2.flatten())
-        #    alpha2_i = huber.coef_[0]
-        #    C2_i = huber.intercept_
-
-        #    huber.fit(Bcc3_av.flatten().reshape(-1,1), emf3.flatten())
-        #    alpha3_i = huber.coef_[0]
-        #    C3_i = huber.intercept_
-        #else:
-        #    C1_i, alpha1_i = np.nan, np.nan
-        #    C2_i, alpha2_i = np.nan, np.nan
-        #    C3_i, alpha3_i = np.nan, np.nan
         alpha = []
         C = []
         for num in range(0,3):
@@ -169,13 +152,8 @@ def main(**kwargs):
             alpha.append(alpha_i)
             C.append(C_i)
 
-        #alpha = [alpha1_i,alpha2_i,alpha3_i]
-        #C = [C1_i,C2_i,C3_i]
-
-        r_ISCO = 6. # location of ISCO in PW potential
-        T_period = 2.*np.pi*sqrt(r_ISCO)*(r_ISCO - 2.)
         sim_t = data_cons['Time']
-        orbit_t = sim_t/T_period
+        orbit_t = AAT.calculate_orbit_time(sim_t)
 
         with open(prob_dir + filename_output, 'a', newline='') as f:
             writer = csv.writer(f, delimiter='\t')
