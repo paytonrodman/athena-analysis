@@ -7,10 +7,9 @@
 #
 # Usage: python calc_B.py [options]
 #
-import numpy as np
 import os
 import sys
-sys.path.insert(0, '/home/per29/rds/rds-accretion-zyNhkonJSR8/athena-analysis/dependencies')
+sys.path.insert(0, '/home/per29/rds/rds-accretion-zyNhkonJSR8/athena-analysis/dependencies') 
 #sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies')
 import athena_read
 import AAT
@@ -19,7 +18,9 @@ import re
 import csv
 import argparse
 from math import sqrt
+import numpy as np
 from mpi4py import MPI
+
 
 def main(**kwargs):
     # get number of processors and processor rank
@@ -94,13 +95,17 @@ def main(**kwargs):
     upatmos_max_u = AAT.find_nearest(x2v, data_input['refinement1']['x2max'])
     jet_max_u = AAT.find_nearest(x2v, np.pi)
 
+
     if rank==0:
         with open(prob_dir + filename_output, 'w', newline='') as f:
             writer = csv.writer(f, delimiter='\t')
-            writer.writerow(["sim_time", "orbit_time", "abs_B_flux", "abs_B_jet", "abs_B_upatmos", "abs_B_loatmos", "abs_B_disk", "sign_B_flux", "sign_B_jet", "sign_B_upatmos", "sign_B_loatmos", "sign_B_disk"])
+            writer.writerow(["sim_time", "orbit_time",
+            "abs_B_flux", "abs_B_jet", "abs_B_upatmos", "abs_B_loatmos", "abs_B_disk",
+            "sign_B_flux", "sign_B_jet", "sign_B_upatmos", "sign_B_loatmos", "sign_B_disk"])
     for t in local_times:
         str_t = str(int(t)).zfill(5)
-        data_cons = athena_read.athdf(args.prob_id + '.cons.' + str_t + '.athdf', quantities=['x2v','x3v','x1f','x2f','x3f','Bcc1','Bcc2','Bcc3'])
+        data_cons = athena_read.athdf(args.prob_id + '.cons.' + str_t + '.athdf',
+                    quantities=['x2v','x3v','x1f','x2f','x3f','Bcc1','Bcc2','Bcc3'])
 
         #unpack data
         x2v = data_cons['x2v']
@@ -137,40 +142,40 @@ def main(**kwargs):
         abs_B_flux_u = np.sum(np.abs(mf_u)) / (2.*np.pi*(x1min**2.))
         abs_B_flux = [abs_B_flux_l, abs_B_flux_u]
 
-        abs_B_jet_l = np.average(abs(B[:,:jet_max_l,:x1max]))
-        abs_B_jet_u = np.average(abs(B[:,upatmos_max_u+1:jet_max_u,:x1max]))
+        abs_B_jet_l = np.average(abs(B[:, :jet_max_l, :x1max]))
+        abs_B_jet_u = np.average(abs(B[:, upatmos_max_u+1:jet_max_u, :x1max]))
         abs_B_jet = [abs_B_jet_l, abs_B_jet_u]
 
-        abs_B_upatmos_l = np.average(abs(B[:,jet_max_l+1:upatmos_max_l,:x1max]))
-        abs_B_upatmos_u = np.average(abs(B[:,loatmos_max_u+1:upatmos_max_u,:x1max]))
+        abs_B_upatmos_l = np.average(abs(B[:, jet_max_l+1:upatmos_max_l, :x1max]))
+        abs_B_upatmos_u = np.average(abs(B[:, loatmos_max_u+1:upatmos_max_u, :x1max]))
         abs_B_upatmos = [abs_B_upatmos_l, abs_B_upatmos_u]
 
-        abs_B_loatmos_l = np.average(abs(B[:,upatmos_max_l+1:loatmos_max_l,:x1max]))
-        abs_B_loatmos_u = np.average(abs(B[:,disk_max_u+1:loatmos_max_u,:x1max]))
+        abs_B_loatmos_l = np.average(abs(B[:, upatmos_max_l+1:loatmos_max_l, :x1max]))
+        abs_B_loatmos_u = np.average(abs(B[:, disk_max_u+1:loatmos_max_u, :x1max]))
         abs_B_loatmos = [abs_B_loatmos_l, abs_B_loatmos_u]
 
-        abs_B_disk_l = np.average(abs(B[:,loatmos_max_l+1:disk_max_l,:x1max]))
-        abs_B_disk_u = np.average(abs(B[:,disk_max_l+1:disk_max_u,:x1max]))
+        abs_B_disk_l = np.average(abs(B[:, loatmos_max_l+1:disk_max_l, :x1max]))
+        abs_B_disk_u = np.average(abs(B[:, disk_max_l+1:disk_max_u, :x1max]))
         abs_B_disk = [abs_B_disk_l, abs_B_disk_u]
 
         sign_B_flux_l = np.sum(mf_l) / (2.*np.pi*(x1min**2.))
         sign_B_flux_u = np.sum(mf_u) / (2.*np.pi*(x1min**2.))
         sign_B_flux = [sign_B_flux_l, sign_B_flux_u]
 
-        sign_B_jet_l = np.average(B[:,:jet_max_l,:x1max])
-        sign_B_jet_u = np.average(B[:,upatmos_max_u+1:jet_max_u,:x1max])
+        sign_B_jet_l = np.average(B[:, :jet_max_l, :x1max])
+        sign_B_jet_u = np.average(B[:, upatmos_max_u+1:jet_max_u, :x1max])
         sign_B_jet = [sign_B_jet_l, sign_B_jet_u]
 
-        sign_B_upatmos_l = np.average(B[:,jet_max_l+1:upatmos_max_l,:x1max])
-        sign_B_upatmos_u = np.average(B[:,loatmos_max_u+1:upatmos_max_u,:x1max])
+        sign_B_upatmos_l = np.average(B[:, jet_max_l+1:upatmos_max_l,:x1max])
+        sign_B_upatmos_u = np.average(B[:, loatmos_max_u+1:upatmos_max_u,:x1max])
         sign_B_upatmos = [sign_B_upatmos_l, sign_B_upatmos_u]
 
-        sign_B_loatmos_l = np.average(B[:,upatmos_max_l+1:loatmos_max_l,:x1max])
-        sign_B_loatmos_u = np.average(B[:,disk_max_u+1:loatmos_max_u,:x1max])
+        sign_B_loatmos_l = np.average(B[:, upatmos_max_l+1:loatmos_max_l, :x1max])
+        sign_B_loatmos_u = np.average(B[:, disk_max_u+1:loatmos_max_u, :x1max])
         sign_B_loatmos = [sign_B_loatmos_l, sign_B_loatmos_u]
 
-        sign_B_disk_l = np.average(B[:,loatmos_max_l+1:disk_max_l,:x1max])
-        sign_B_disk_u = np.average(B[:,disk_max_l+1:disk_max_u,:x1max])
+        sign_B_disk_l = np.average(B[:, loatmos_max_l+1:disk_max_l, :x1max])
+        sign_B_disk_u = np.average(B[:, disk_max_l+1:disk_max_u, :x1max])
         sign_B_disk = [sign_B_disk_l, sign_B_disk_u]
 
         r_ISCO = 6 # location of ISCO in PW potential
@@ -189,7 +194,7 @@ def main(**kwargs):
 
 # Execute main function
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Calculate various quality factors from raw simulation data.')
+    parser = argparse.ArgumentParser(description='Calculate quality factors from simulation data.')
     parser.add_argument('prob_id',
                         help='base name of the data being analysed, e.g. inflow_var or disk_base')
     parser.add_argument('-u', '--update',
@@ -198,7 +203,7 @@ if __name__ == '__main__':
     parser.add_argument('-c', '--component',
                         type=str,
                         default='all',
-                        help='specify the B component to calculate, e.g. r, theta, phi, all (default:all)')
+                        help='specify the B component to calculate (default:all)')
     args = parser.parse_args()
 
     main(**vars(args))

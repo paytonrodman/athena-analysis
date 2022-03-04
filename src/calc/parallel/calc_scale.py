@@ -8,19 +8,19 @@
 # mpirun -n [n] python calc_scale.py [options]
 # for [n] cores.
 #
-import sys
-import numpy as np
 import os
+import sys
 sys.path.insert(0, '/home/per29/rds/rds-accretion-zyNhkonJSR8/athena-analysis/dependencies')
 #sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies')
-import athena_read
-import AAT
 import glob
 import re
 import csv
 import argparse
 from math import sqrt
 from mpi4py import MPI
+import numpy as np
+import athena_read
+import AAT
 
 def main(**kwargs):
     comm = MPI.COMM_WORLD
@@ -69,7 +69,8 @@ def main(**kwargs):
     local_times = file_times[start:stop] # get the times to be analyzed by each rank
 
     # get mesh data for all files (static)
-    data_init = athena_read.athdf(args.prob_id + '.cons.00000.athdf', quantities=['x1v','x2v','x3v','x1f','x2f','x3f'])
+    data_init = athena_read.athdf(args.prob_id + '.cons.00000.athdf',
+                                    quantities=['x1v','x2v','x3v','x1f','x2f','x3f'])
     x1v = data_init['x1v']
     x2v = data_init['x2v']
     x3v = data_init['x3v']
@@ -89,7 +90,8 @@ def main(**kwargs):
                 writer.writerow(["sim_time", "orbit_time", "scale_height"])
     for t in local_times:
         str_t = str(int(t)).zfill(5)
-        data_cons = athena_read.athdf(args.prob_id + '.cons.' + str_t + '.athdf', quantities=['dens'])
+        data_cons = athena_read.athdf(args.prob_id + '.cons.' + str_t + '.athdf',
+                                        quantities=['dens'])
         dens = data_cons['dens']
 
         # calculate the geometric scale height (see Hogg & Reynolds 2018 for details)
@@ -112,7 +114,7 @@ def main(**kwargs):
 
 # Execute main function
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Calculate the average geometric scale height over the disk')
+    parser = argparse.ArgumentParser(description='Calculates the average geometric scale height over the disk')
     parser.add_argument('prob_id',
                         help='base name of the data being analysed, e.g. inflow_var or disk_base')
     parser.add_argument('-u', '--update',

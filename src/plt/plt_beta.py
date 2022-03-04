@@ -30,29 +30,18 @@ def main(**kwargs):
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
-    ax.plot(time,beta)
+    if args.logy:
+        ax.semilogy(time,beta)
+    else:
+        ax.plot(time,beta)
     ax.set_xlabel(r'time ($GM/c^3$)')
-    ax.set_ylabel(r'average $\beta$ in disk')
+    ax.set_ylabel(r'$\langle\beta\rangle_{\rm disk}$')
     plt.ticklabel_format(axis="x", style="sci", scilimits=(0,0))
     plt.grid(b=True, which='major', color='#666666', linestyle='-', alpha=0.5)
     plt.minorticks_on()
     plt.grid(b=True, which='minor', color='#999999', linestyle='-', alpha=0.2)
     plt.savefig(data_dir + 'beta' + '.png', dpi=1200)
     plt.close()
-
-    if args.logy:
-        fig = plt.figure()
-        ax = fig.add_subplot(111)
-        ax.semilogy(time,beta)
-        ax.grid()
-        ax.set_xlabel(r'time ($GM/c^3$)')
-        ax.set_ylabel(r'average $\beta$ in disk')
-        plt.ticklabel_format(axis="x", style="sci", scilimits=(0,0))
-        plt.grid(b=True, which='major', color='#666666', linestyle='-', alpha=0.5)
-        plt.minorticks_on()
-        plt.grid(b=True, which='minor', color='#999999', linestyle='-', alpha=0.2)
-        plt.savefig(data_dir + 'logy_beta' + '.png', dpi=1200)
-        plt.close()
 
 def mean_confidence_interval(data, confidence=0.95):
     a = 1.0 * np.array(data)

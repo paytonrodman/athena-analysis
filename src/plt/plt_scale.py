@@ -33,7 +33,7 @@ def main(**kwargs):
     ax = fig.add_subplot(111)
     ax.plot(time,scale_height)
     ax.set_xlabel(r'time ($GM/c^3$)')
-    ax.set_ylabel(r'$h/r$')
+    ax.set_ylabel(r'geometric scale height, $h/r$')
     ax.set_xlim(left=0)
     ax.set_ylim(0,0.5)
     plt.ticklabel_format(axis='x', style='sci', scilimits=(0,0))

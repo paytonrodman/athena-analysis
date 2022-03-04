@@ -8,7 +8,6 @@
 # mpirun -n [n] python calc_beta.py [options]
 # for [n] cores.
 #
-import numpy as np
 import os
 import sys
 sys.path.insert(0, '/home/per29/rds/rds-accretion-zyNhkonJSR8/athena-analysis/dependencies')
@@ -19,6 +18,7 @@ import glob
 import re
 import csv
 import argparse
+import numpy as np
 from math import sqrt
 from mpi4py import MPI
 

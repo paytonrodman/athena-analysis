@@ -9,7 +9,6 @@
 # mpirun -n [n] python calc_qual.py [options]
 # for [n] cores.
 #
-import numpy as np
 import os
 import sys
 sys.path.insert(0, '/home/per29/rds/rds-accretion-zyNhkonJSR8/athena-analysis/dependencies')
@@ -19,8 +18,9 @@ import AAT
 import glob
 import re
 import csv
-import scipy.stats as st
 import argparse
+import scipy.stats as st
+import numpy as np
 from math import sqrt
 from mpi4py import MPI
 
@@ -145,7 +145,10 @@ def main(**kwargs):
         GM = 1.
 
         #unpack data
-        data_cons = athena_read.athdf(args.prob_id + '.cons.' + str_t + '.athdf', quantities=['x1v','x2v','x3v','x1f','x2f','x3f','dens','mom1','mom2','mom3','Bcc1','Bcc2','Bcc3'])
+        data_cons = athena_read.athdf(args.prob_id + '.cons.' + str_t + '.athdf',
+                                        quantities=['x1v','x2v','x3v','x1f','x2f','x3f',
+                                                    'dens','mom1','mom2','mom3',
+                                                    'Bcc1','Bcc2','Bcc3'])
         data_prim = athena_read.athdf(args.prob_id + '.prim.' + str_t + '.athdf', quantities=['press'])
 
         x1v = data_cons['x1v']

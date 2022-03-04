@@ -73,8 +73,8 @@ def main(**kwargs):
     sign_B_lower = np.asarray(sign_B_lower)
     sign_B_disk = np.asarray(sign_B_disk)
 
-    #plot_signed(time, sign_B_flux, sign_B_jet, sign_B_upper, sign_B_lower, sign_B_disk, data_dir)
     #plot_all(time, abs_B_flux, abs_B_jet, abs_B_upper, abs_B_lower, abs_B_disk, sign_B_flux, sign_B_jet, sign_B_upper, sign_B_lower, sign_B_disk, data_dir)
+    #plot_signed(time, sign_B_flux, sign_B_jet, sign_B_upper, sign_B_lower, sign_B_disk, data_dir)
     #plot_stacked(time, abs_B_flux, abs_B_jet, abs_B_upper, abs_B_lower, abs_B_disk, data_dir)
     plot_ratio(time[mask], abs_B_flux[mask], sign_B_flux[mask], data_dir)
 
@@ -85,14 +85,16 @@ def plot_ratio(time, a_B_f, s_B_f, data_dir):
     fig, axs = plt.subplots(2, 1, figsize=(5,5), sharex=True, sharey=True)
     axs[0].plot(time, R_u, linewidth=1, color='k')
     axs[0].set_xlabel(r'time ($GM/c^3$)')
-    axs[0].set_ylabel(r'$\frac{\int B_r \cdot dS}{\int|{B_r}|\cdot dS}$')
-    axs[0].set_title('Upper hemisphere')
+    axs[0].set_ylabel(r'Upper Hemisphere' '\n' r'$\frac{\int B_{%s} \cdot dS}{\int|{B_{%s}}|\cdot dS}$'%(args.component,args.component))
+    #axs[0].set_ylabel(r'$\frac{\int B_r \cdot dS}{\int|{B_r}|\cdot dS}$')
+    #axs[0].set_title('Upper hemisphere')
     axs[0].set_ylim(-1,1)
 
     axs[1].plot(time, R_l, linewidth=1, color='k')
     axs[1].set_xlabel(r'time ($GM/c^3$)')
-    axs[1].set_ylabel(r'$\frac{\int B_r \cdot dS}{\int|{B_r}|\cdot dS}$')
-    axs[1].set_title('Lower hemisphere')
+    axs[1].set_ylabel(r'Lower Hemisphere' '\n' r'$\frac{\int B_{%s} \cdot dS}{\int|{B_{%s}}|\cdot dS}$'%(args.component,args.component))
+    #axs[1].set_ylabel(r'$\frac{\int B_r \cdot dS}{\int|{B_r}|\cdot dS}$')
+    #axs[1].set_title('Lower hemisphere')
     axs[1].set_ylim(-1,1)
 
 
@@ -108,32 +110,24 @@ def plot_ratio(time, a_B_f, s_B_f, data_dir):
     plt.close()
 
 def plot_stacked(time, B_f, B_j, B_u, B_l, B_d, data_dir):
-    upper_B_by_type = {
-    'disk': B_d[:,1],
-    'lower_atmos': B_l[:,1],
-    'upper_atmos': B_u[:,1],
-    'jet': B_j[:,1],
-    }
+    upper_B_by_type = {'disk': B_d[:,1],
+                        'lower_atmos': B_l[:,1],
+                        'upper_atmos': B_u[:,1],
+                        'jet': B_j[:,1]}
 
-    lower_B_by_type = {
-    'disk': B_d[:,0],
-    'lower_atmos': B_l[:,0],
-    'upper_atmos': B_u[:,0],
-    'jet': B_j[:,0],
-    }
+    lower_B_by_type = {'disk': B_d[:,0],
+                        'lower_atmos': B_l[:,0],
+                        'upper_atmos': B_u[:,0],
+                        'jet': B_j[:,0]}
 
     fig, axs = plt.subplots(2, 1, figsize=(5,5), sharex=True, sharey=True)
     axs[0].stackplot(time, upper_B_by_type.values(), labels=upper_B_by_type.keys())
-    axs[0].legend(loc='upper left')
-    axs[0].set_title('Upper')
     axs[0].set_xlabel('time (GM/c3)')
-    axs[0].set_ylabel('average B')
+    axs[0].set_ylabel(r'Upper Hemisphere' '\n' r'$\langle|{B}_{%s}|\rangle$ ($\sim15r_g$)'%args.component)
 
     axs[1].stackplot(time, lower_B_by_type.values(), labels=lower_B_by_type.keys())
-    axs[1].legend(loc='upper left')
-    axs[1].set_title('Lower')
     axs[1].set_xlabel('time (GM/c3)')
-    axs[1].set_ylabel('average B')
+    axs[1].set_ylabel(r'Lower Hemisphere' '\n' r'$\langle|{B}_{%s}|\rangle$ ($\sim15r_g$)'%args.component)
 
     for ax in fig.get_axes():
         ax.label_outer()
@@ -141,33 +135,36 @@ def plot_stacked(time, B_f, B_j, B_u, B_l, B_d, data_dir):
         ax.minorticks_on()
         ax.ticklabel_format(axis="x", style="sci", scilimits=(0,0))
         ax.grid(b=True, which='minor', color='#999999', linestyle='-', alpha=0.2)
-
-    plt.tight_layout()
-    plt.savefig(data_dir + 'B_strength_' + args.component + '_stacked.png', dpi=1200)
-    #plt.show()
+    lg = plt.legend(upper_B_by_type.keys(), bbox_to_anchor=(1.05, 1), loc='upper left')
+    plt.savefig(data_dir + 'B_strength_' + args.component + '_stacked.png', dpi=1200, bbox_extra_artists=(lg,), bbox_inches='tight')
 
 def plot_signed(time, B_f, B_j, B_u, B_l, B_d, data_dir):
-    fig, axs = plt.subplots(2, 1, figsize=(5,5), sharex=True, sharey=True)
-    labels = ['jet', 'upper atmos.', 'lower atmos.', 'in disk', 'from flux']
-    lw = 1
-    a = 0.5
+    upper_B_by_type = {'disk': B_d[:,1],
+                        'lower_atmos': B_l[:,1],
+                        'upper_atmos': B_u[:,1],
+                        'jet': B_j[:,1]}
 
-    axs[0].plot(time, B_j[:,1], linewidth=lw, alpha=a)
-    axs[0].plot(time, B_u[:,1], linewidth=lw, alpha=a)
-    axs[0].plot(time, B_l[:,1], linewidth=lw, alpha=a)
-    axs[0].plot(time, B_d[:,1], linewidth=lw, alpha=a)
+    lower_B_by_type = {'disk': B_d[:,0],
+                        'lower_atmos': B_l[:,0],
+                        'upper_atmos': B_u[:,0],
+                        'jet': B_j[:,0]}
+
+    fig, axs = plt.subplots(2, 1, figsize=(5,5), sharex=True, sharey=True)
+
+    colors = ['#d62728', '#2ca02c', '#ff7f0e', '#1f77b4']
+    for data in upper_B_by_type.values():
+        axs[0].plot(time, data, linewidth=1, color=colors.pop(), alpha=0.8)
     axs[0].plot(time, B_f[:,0], linewidth=1, color='k') #for some reason, Bflux is reversed
     axs[0].set_xlabel(r'time ($GM/c^3$)')
-    axs[0].set_ylabel(r'$\overline{B}_{r\sim15r_g}$ (upper)')
+    axs[0].set_ylabel(r'Upper Hemisphere' '\n' r'$\langle{B}_{%s}\rangle$ ($\sim15r_g$)'%args.component)
     axs[0].set_title('Signed')
 
-    axs[1].plot(time, B_j[:,0], linewidth=lw, alpha=a)
-    axs[1].plot(time, B_u[:,0], linewidth=lw, alpha=a)
-    axs[1].plot(time, B_l[:,0], linewidth=lw, alpha=a)
-    axs[1].plot(time, B_d[:,0], linewidth=lw, alpha=a)
+    colors = ['#d62728', '#2ca02c', '#ff7f0e', '#1f77b4']
+    for data in lower_B_by_type.values():
+        axs[1].plot(time, data, linewidth=1, color=colors.pop(), alpha=0.8)
     axs[1].plot(time, B_f[:,1], linewidth=1, color='k')
     axs[1].set_xlabel(r'time ($GM/c^3$)')
-    axs[1].set_ylabel(r'$\overline{B}_{r\sim15r_g}$ (lower)')
+    axs[1].set_ylabel(r'Lower Hemisphere' '\n' r'$\langle{B}_{%s}\rangle$ ($\sim15r_g$)'%args.component)
 
     for ax in fig.get_axes():
         ax.label_outer()
@@ -175,50 +172,69 @@ def plot_signed(time, B_f, B_j, B_u, B_l, B_d, data_dir):
         ax.minorticks_on()
         ax.ticklabel_format(axis="x", style="sci", scilimits=(0,0))
         ax.grid(b=True, which='minor', color='#999999', linestyle='-', alpha=0.2)
-    lg = plt.legend(labels,bbox_to_anchor=(1.05, 1), loc='upper left')
-    #plt.tight_layout()
+    lg = plt.legend(upper_B_by_type.keys(),bbox_to_anchor=(1.05, 1), loc='upper left')
     plt.savefig(data_dir + 'B_strength_' + args.component + '_signed.png', dpi=1200, bbox_extra_artists=(lg,), bbox_inches='tight')
     plt.close()
 
 def plot_all(time, a_B_f, a_B_j, a_B_u, a_B_l, a_B_d, s_B_f, s_B_j, s_B_u, s_B_l, s_B_d, data_dir):
-    fig, axs = plt.subplots(2, 2, figsize=(8,5), sharex=True, sharey=True)
-    labels = ['jet', 'upper atmos.', 'lower atmos.', 'in disk', 'from flux']
-    lw = 1
-    a = 0.5
+    abs_upper_B_by_type = {'disk': a_B_d[:,1],
+                            'lower_atmos': a_B_l[:,1],
+                            'upper_atmos': a_B_u[:,1],
+                            'jet': a_B_j[:,1]}
 
-    axs[0,0].plot(time, a_B_j[:,1], linewidth=lw, alpha=a)
-    axs[0,0].plot(time, a_B_u[:,1], linewidth=lw, alpha=a)
-    axs[0,0].plot(time, a_B_l[:,1], linewidth=lw, alpha=a)
-    axs[0,0].plot(time, a_B_d[:,1], linewidth=lw, alpha=a)
+    abs_lower_B_by_type = {'disk': a_B_d[:,0],
+                            'lower_atmos': a_B_l[:,0],
+                            'upper_atmos': a_B_u[:,0],
+                            'jet': a_B_j[:,0]}
+
+    sign_upper_B_by_type = {'disk': s_B_d[:,1],
+                            'lower_atmos': s_B_l[:,1],
+                            'upper_atmos': s_B_u[:,1],
+                            'jet': s_B_j[:,1]}
+
+    sign_lower_B_by_type = {'disk': s_B_d[:,0],
+                            'lower_atmos': s_B_l[:,0],
+                            'upper_atmos': s_B_u[:,0],
+                            'jet': s_B_j[:,0]}
+
+    regions = list(abs_upper_B_by_type.keys())
+
+    fig, axs = plt.subplots(2, 2, figsize=(10,5), sharex=True, sharey=True)
+    colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728']
+
+    # Upper left
+    for region_number in range(np.size(regions)):
+        data = list(abs_upper_B_by_type.values())[region_number]
+        axs[0,0].plot(time, data, linewidth=1, color=colors[region_number], alpha=0.8)
     axs[0,0].plot(time, a_B_f[:,1], linewidth=1, color='k')
     axs[0,0].set_xlabel(r'time ($GM/c^3$)')
-    axs[0,0].set_ylabel(r'$\overline{B}_{r\sim15r_g}$ (upper)')
+    axs[0,0].set_ylabel(r'Upper Hemisphere' '\n' r'$\langle{B}_{%s}\rangle$ ($\sim15r_g$)'%args.component)
     axs[0,0].set_title('Average')
 
-    axs[0,1].plot(time, s_B_j[:,1], linewidth=lw, alpha=a)
-    axs[0,1].plot(time, s_B_u[:,1], linewidth=lw, alpha=a)
-    axs[0,1].plot(time, s_B_l[:,1], linewidth=lw, alpha=a)
-    axs[0,1].plot(time, s_B_d[:,1], linewidth=lw, alpha=a)
+    # Upper right
+    for region_number in range(np.size(regions)):
+        data = list(sign_upper_B_by_type.values())[region_number]
+        axs[0,1].plot(time, data, linewidth=1, color=colors[region_number], alpha=0.8)
     axs[0,1].plot(time, s_B_f[:,0], linewidth=1, color='k')
     axs[0,1].set_xlabel(r'time ($GM/c^3$)')
-    axs[0,1].set_ylabel(r'$\overline{B}_{r\sim15r_g}$ (upper)')
+    axs[0,1].set_ylabel(r'Upper Hemisphere' '\n' r'$\langle{B}_{%s}\rangle$ ($\sim15r_g$)'%args.component)
     axs[0,1].set_title('Signed')
 
-    axs[1,0].plot(time, a_B_j[:,0], linewidth=lw, alpha=a)
-    axs[1,0].plot(time, a_B_u[:,0], linewidth=lw, alpha=a)
-    axs[1,0].plot(time, a_B_l[:,0], linewidth=lw, alpha=a)
-    axs[1,0].plot(time, a_B_d[:,0], linewidth=lw, alpha=a)
+    # Lower left
+    for region_number in range(np.size(regions)):
+        data = list(abs_lower_B_by_type.values())[region_number]
+        axs[1,0].plot(time, data, linewidth=1, color=colors[region_number], alpha=0.8)
     axs[1,0].plot(time, a_B_f[:,0], linewidth=1, color='k')
     axs[1,0].set_xlabel(r'time ($GM/c^3$)')
-    axs[1,0].set_ylabel(r'$\overline{B}_{r\sim15r_g}$ (lower)')
+    axs[1,0].set_ylabel(r'Lower Hemisphere' '\n' r'$\langle{B}_{%s}\rangle$ ($\sim15r_g$)'%args.component)
 
-    axs[1,1].plot(time, s_B_j[:,0], linewidth=lw, alpha=a)
-    axs[1,1].plot(time, s_B_u[:,0], linewidth=lw, alpha=a)
-    axs[1,1].plot(time, s_B_l[:,0], linewidth=lw, alpha=a)
-    axs[1,1].plot(time, s_B_d[:,0], linewidth=lw, alpha=a)
+    # Lower right
+    for region_number in range(np.size(regions)):
+        data = list(sign_lower_B_by_type.values())[region_number]
+        axs[1,1].plot(time, data, linewidth=1, color=colors[region_number], alpha=0.8)
     axs[1,1].plot(time, s_B_f[:,1], linewidth=1, color='k')
     axs[1,1].set_xlabel(r'time ($GM/c^3$)')
-    axs[1,1].set_ylabel(r'$\overline{B}_{r\sim15r_g}$ (lower)')
+    axs[1,1].set_ylabel(r'Lower Hemisphere' '\n' r'$\langle{B}_{%s}\rangle$ ($\sim15r_g$)'%args.component)
 
     for ax in fig.get_axes():
         ax.label_outer()
@@ -226,8 +242,8 @@ def plot_all(time, a_B_f, a_B_j, a_B_u, a_B_l, a_B_d, s_B_f, s_B_j, s_B_u, s_B_l
         ax.minorticks_on()
         ax.ticklabel_format(axis="x", style="sci", scilimits=(0,0))
         ax.grid(b=True, which='minor', color='#999999', linestyle='-', alpha=0.2)
-    plt.legend(labels,bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)
-    plt.subplots_adjust(right=0.85)
+    plt.legend(regions,bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)
+    #plt.subplots_adjust(right=0.85)
     plt.tight_layout()
     plt.savefig(data_dir + 'B_strength_' + args.component + '.png', dpi=1200)
     plt.close()

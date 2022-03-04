@@ -5,6 +5,7 @@ import sys
 sys.path.insert(0, '/Users/paytonrodman/athena/vis/python')
 import csv
 import argparse
+import numpy as np
 
 def main(**kwargs):
     # directory containing data
@@ -44,7 +45,7 @@ def main(**kwargs):
     plt.legend(loc='best')
     plt.ticklabel_format(axis="x", style="sci", scilimits=(0,0))
     ax.set_xlabel(r'time ($GM/c^3$)')
-    ax.set_ylabel(r'average $\Phi_{B}$ at $5r_g$')
+    ax.set_ylabel(r'$\langle\Phi_{B}\rangle$ at $5r_g$')
     ax.set_xlim(left=0)
     plt.grid(b=True, which='major', color='#666666', linestyle='-', alpha=0.5)
     plt.minorticks_on()
@@ -53,8 +54,8 @@ def main(**kwargs):
     plt.close()
 
     if args.ratio:
-        flux_u = mag_flux_u_abs / mag_flux_u
-        flux_l = mag_flux_l_abs / mag_flux_l
+        flux_u = np.asarray(mag_flux_u) / np.asarray(mag_flux_u_abs)
+        flux_l = np.asarray(mag_flux_l) / np.asarray(mag_flux_l_abs)
 
         fig = plt.figure()
         ax = fig.add_subplot(111)
@@ -63,11 +64,13 @@ def main(**kwargs):
         plt.legend(loc='best')
         plt.ticklabel_format(axis="x", style="sci", scilimits=(0,0))
         ax.set_xlabel(r'time ($GM/c^3$)')
-        ax.set_ylabel(r'$|\Phi_{B}|/\Phi_{B}$ at $5r_g$')
+        ax.set_ylabel(r'$\frac{\int B\cdot dS}{\int |B|\cdot dS}$ at $5r_g$')
         ax.set_xlim(left=0)
+        ax.set_ylim(top=1,bottom=-1)
         plt.grid(b=True, which='major', color='#666666', linestyle='-', alpha=0.5)
         plt.minorticks_on()
         plt.grid(b=True, which='minor', color='#999999', linestyle='-', alpha=0.2)
+        plt.tight_layout()
         plt.savefig(data_dir + 'mag_flux_ratio' + '.png',dpi=1200)
         plt.close()
 

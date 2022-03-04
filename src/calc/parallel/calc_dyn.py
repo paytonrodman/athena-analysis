@@ -8,7 +8,6 @@
 # mpirun -n [n] python calc_dyn.py [options]
 # for [n] cores.
 #
-import numpy as np
 import os
 import sys
 sys.path.insert(0, '/home/per29/rds/rds-accretion-zyNhkonJSR8/athena-analysis/dependencies')
@@ -19,11 +18,11 @@ import glob
 import re
 import csv
 import argparse
+import numpy as np
 from math import sqrt
+from scipy import optimize
 from scipy.ndimage import gaussian_filter
 from mpi4py import MPI
-#from sklearn.linear_model import HuberRegressor
-from scipy import optimize
 
 def main(**kwargs):
     # get number of processors and processor rank

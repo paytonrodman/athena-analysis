@@ -7,7 +7,6 @@
 # To run:
 # mpirun -n [n] python calc_mass.py [options]
 # for [n] cores.
-import numpy as np
 import os
 import sys
 sys.path.append('/home/per29/rds/rds-accretion-zyNhkonJSR8/athena-analysis/dependencies')
@@ -18,6 +17,7 @@ import glob
 import re
 import csv
 import argparse
+import numpy as np
 from math import sqrt
 from mpi4py import MPI
 
@@ -84,7 +84,8 @@ def main(**kwargs):
                 writer.writerow(["sim_time", "orbit_time", "mass_flux"])
     for t in local_times:
         str_t = str(int(t)).zfill(5)
-        data_cons = athena_read.athdf(args.prob_id + '.cons.' + str_t + '.athdf', quantities=['x2v','x3v','x1f','x2f','x3f','dens','mom1','mom2','mom3'])
+        data_cons = athena_read.athdf(args.prob_id + '.cons.' + str_t + '.athdf',
+                            quantities=['x2v','x3v','x1f','x2f','x3f','dens','mom1','mom2','mom3'])
 
         #unpack data
         x2v = data_cons['x2v']
