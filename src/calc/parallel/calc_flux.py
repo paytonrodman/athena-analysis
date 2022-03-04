@@ -36,7 +36,7 @@ def main(**kwargs):
     os.chdir(data_dir)
 
     file_times = AAT.add_time_to_list(args.update, prob_dir, filename_output, args.prob_id)
-    local_times = distribute_files_to_cores(file_times, size, rank)
+    local_times = AAT.distribute_files_to_cores(file_times, size, rank)
 
     data_init = athena_read.athdf(args.prob_id + '.cons.00000.athdf', quantities=['x2v'])
     x2v_init = data_init['x2v']

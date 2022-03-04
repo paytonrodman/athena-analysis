@@ -100,7 +100,7 @@ def main(**kwargs):
 
     filename_output = 'qual_with_time_' + str(rl) + '_' + str(ru) + '_' + str(tl) + '_' + str(tu) + '.csv'
     file_times = AAT.add_time_to_list(args.update, prob_dir, filename_output, args.prob_id)
-    local_times = distribute_files_to_cores(file_times, size, rank)
+    local_times = AAT.distribute_files_to_cores(file_times, size, rank)
 
     if rank==0:
         if not args.update:

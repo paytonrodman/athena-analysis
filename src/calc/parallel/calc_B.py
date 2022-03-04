@@ -41,7 +41,7 @@ def main(**kwargs):
     os.chdir(data_dir)
 
     file_times = AAT.add_time_to_list(args.update, prob_dir, filename_output, args.prob_id)
-    local_times = distribute_files_to_cores(file_times, size, rank)
+    local_times = AAT.distribute_files_to_cores(file_times, size, rank)
 
     data_input = athena_read.athinput(runfile_dir + 'athinput.' + args.prob_id)
     if 'refinement3' not in data_input:
