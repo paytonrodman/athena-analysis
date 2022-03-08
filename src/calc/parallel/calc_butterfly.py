@@ -76,7 +76,7 @@ if __name__ == '__main__':
                         help='base name of the data being analysed, e.g. inflow_var or disk_base')
     parser.add_argument('-u', '--update',
                         action="store_true",
-                        help='specify whether the results being analysed are from a restart')
+                        help='append new results to an existing data file')
     parser.add_argument('--r',
                         type=float,
                         default=None,

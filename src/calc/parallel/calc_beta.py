@@ -126,7 +126,7 @@ if __name__ == '__main__':
                         help='base name of the data being analysed, e.g. inflow_var or disk_base')
     parser.add_argument('-u', '--update',
                         action="store_true",
-                        help='specify whether the results being analysed are from a restart (reduces computational time by only appending to files, rather than rewriting)')
+                        help='append new results to an existing data file')
     args = parser.parse_args()
 
     main(**vars(args))
