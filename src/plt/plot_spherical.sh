@@ -5,7 +5,7 @@ PROBLEM=$1
 
 if [ $# -lt 3 ]
   then
-    echo "Must specify (1) problem ID, (2) minimum time, (3) maximum time"
+    echo "Must specify (1) problem ID, (2) start time, (3) end time"
     exit 1
 fi
 
@@ -33,7 +33,8 @@ for FILE in ./${PROBLEM}.cons.*.athdf; do
       --time \
       --dpi 1200 \
       --stream Bcc \
-      --midplane
+      --output_file show \
+      #--midplane
       #fi
     fi
   fi

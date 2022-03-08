@@ -19,8 +19,15 @@ from pandas.plotting import autocorrelation_plot
 from statsmodels.tsa.stattools import adfuller
 from scipy import signal
 from scipy.optimize import curve_fit
+from ast import literal_eval
 
 def main(**kwargs):
+    if args.component not in ['r','theta','phi','all']:
+        sys.exit("Must specify valid B component (r,theta,phi)")
+
+    if args.region not in ['jet','upper_atmos','lower_atmos','disk','all']:
+        sys.exit("Must specify valid region for analysis (jet,upper_atmos,lower_atmos,disk,all)")
+
     # directory containing data
     problem  = args.prob_id
     root_dir = '/Users/paytonrodman/athena-sim/'
@@ -28,25 +35,62 @@ def main(**kwargs):
     os.chdir(prob_dir)
 
     time = []
-    mag_flux_u = []
-    mag_flux_l = []
-    with open('flux_with_time.csv', newline='\n') as csv_file:
+    abs_B_flux = []
+    abs_B_jet = []
+    abs_B_upper = []
+    abs_B_lower = []
+    abs_B_disk = []
+    sign_B_flux = []
+    sign_B_jet = []
+    sign_B_upper = []
+    sign_B_lower = []
+    sign_B_disk = []
+    with open('B_strength_with_time_'+args.component+'.csv', newline='\n') as csv_file:
         csv_reader = csv.reader(csv_file, delimiter='\t')
         next(csv_reader, None) # skip header
         for row in csv_reader:
-            t = float(row[0])
-            #t_orb = float(row[1])
-            mf_u = float(row[2])
-            mf_l = float(row[3])
+            sim_t_i = float(row[0])
+            #orbit_t_i = float(row[1])
+            abs_b_flux_i = row[2]
+            abs_b_jet_i = row[3]
+            abs_b_up_i = row[4]
+            abs_b_low_i = row[5]
+            abs_b_disk_i = row[6]
+            sign_b_flux_i = row[7]
+            sign_b_jet_i = row[8]
+            sign_b_up_i = row[9]
+            sign_b_low_i = row[10]
+            sign_b_disk_i = row[11]
 
-            time.append(t)
-            mag_flux_u.append(mf_u)
-            mag_flux_l.append(mf_l)
+            time.append(sim_t_i)
+            abs_B_flux.append(literal_eval(abs_b_flux_i))
+            abs_B_jet.append(literal_eval(abs_b_jet_i))
+            abs_B_upper.append(literal_eval(abs_b_up_i))
+            abs_B_lower.append(literal_eval(abs_b_low_i))
+            abs_B_disk.append(literal_eval(abs_b_disk_i))
+            sign_B_flux.append(literal_eval(sign_b_flux_i))
+            sign_B_jet.append(literal_eval(sign_b_jet_i))
+            sign_B_upper.append(literal_eval(sign_b_up_i))
+            sign_B_lower.append(literal_eval(sign_b_low_i))
+            sign_B_disk.append(literal_eval(sign_b_disk_i))
 
-    time, mag_flux_u, mag_flux_l = zip(*sorted(zip(time, mag_flux_u, mag_flux_l)))
+    time, abs_B_flux, abs_B_jet, abs_B_upper, abs_B_lower, abs_B_disk, sign_B_flux, sign_B_jet, sign_B_upper, sign_B_lower, sign_B_disk = zip(*sorted(zip(time, abs_B_flux, abs_B_jet, abs_B_upper, abs_B_lower, abs_B_disk, sign_B_flux, sign_B_jet, sign_B_upper, sign_B_lower, sign_B_disk)))
 
     time = np.asarray(time)
-    data = np.asarray(mag_flux_u)
+    if args.region == 'all':
+        disk = np.asarray(sign_B_disk)
+        upper = np.asarray(sign_B_upper)
+        lower = np.asarray(sign_B_lower)
+        jet = np.asarray(sign_B_jet)
+        data = disk + upper + lower + jet
+    elif args.region == 'disk':
+        data = np.asarray(sign_B_disk)
+    elif args.region == 'lower_atmos':
+        data = np.asarray(sign_B_lower)
+    elif args.region == 'upper_atmos':
+        data = np.asarray(sign_B_upper)
+    elif args.region == 'jet':
+        data = np.asarray(sign_B_jet)
 
     if problem=='high_res':
         mask = time > 2.e5 #2.e4 (high_beta), 2.e5 (high_res)
@@ -57,47 +101,50 @@ def main(**kwargs):
 
     time = time[mask]
     data = data[mask]
+    data = data[:,0] # choose a hemisphere
 
     #data_fit = savitzky_golay(data_up, 51, 3) # window size 51, polynomial order 3
     #zero_crossings = np.where(np.diff(np.signbit(data_fit)))[0]
 
-    # make data stationary by differencing
-    data_diff = np.diff(data)
-    data_diff2 = np.diff(data_diff)
-
     if args.acf:
+        # make data stationary by differencing
+        data_diff = np.diff(data)
+
         autocorrelation_plot(data)
         plt.xlim(-1)
-        plt.title('ACF of raw flux data')
-        plt.savefig(prob_dir + 'ACF_raw.png', dpi=1200)
+        plt.title('ACF of raw data')
+        plt.savefig(prob_dir + args.component + '_' + args.region + '_ACF_raw.png', dpi=1200)
         plt.close()
 
         autocorrelation_plot(data_diff)
         plt.xlim(-1000)
-        plt.title('ACF of differenced flux data')
-        plt.savefig(prob_dir + 'ACF_diff.png', dpi=1200)
-        plt.close()
-
-        autocorrelation_plot(data_diff2)
-        plt.xlim(-1000)
-        plt.title('ACF of twice differenced flux data')
-        plt.savefig(prob_dir + 'ACF_diff2.png', dpi=1200)
+        plt.title('ACF of differenced data')
+        plt.savefig(prob_dir + args.component + '_' + args.region + '_ACF_diff.png', dpi=1200)
         plt.close()
 
         autocorrelation_plot(data_diff)
         plt.xlim(0,10)
-        plt.title('ACF of differenced flux data (zoomed)')
+        plt.title('ACF of differenced data (zoomed)')
         plt.minorticks_on()
         plt.grid(b=True, which='minor', color='#999999', linestyle='-', alpha=0.2)
-        plt.savefig(prob_dir + 'ACF_diff_zoom.png', dpi=1200)
+        plt.savefig(prob_dir + args.component + '_' + args.region + '_ACF_diff_zoom.png', dpi=1200)
+        plt.close()
+
+    if args.acf2:
+        data_diff2 = np.diff(data_diff)
+
+        autocorrelation_plot(data_diff2)
+        plt.xlim(-1000)
+        plt.title('ACF of twice differenced data')
+        plt.savefig(prob_dir + args.component + '_' + args.region + '_ACF_diff2.png', dpi=1200)
         plt.close()
 
         autocorrelation_plot(data_diff2)
         plt.xlim(0,10)
-        plt.title('ACF of twice differenced flux data (zoomed)')
+        plt.title('ACF of twice differenced data (zoomed)')
         plt.minorticks_on()
         plt.grid(b=True, which='minor', color='#999999', linestyle='-', alpha=0.2)
-        plt.savefig(prob_dir + 'ACF_diff2_zoom.png', dpi=1200)
+        plt.savefig(prob_dir + args.component + '_' + args.region + '_ACF_diff2_zoom.png', dpi=1200)
         plt.close()
 
     if args.stat:
@@ -118,7 +165,7 @@ def main(**kwargs):
         plt.ylabel('Frequency band')
         plt.xlabel('Time window')
         plt.tight_layout()
-        plt.savefig(prob_dir + 'spectrogram.png', dpi=1200)
+        plt.savefig(prob_dir + args.component + '_' + args.region + '_spectrogram.png', dpi=1200)
         plt.close()
 
     if args.psd:
@@ -128,13 +175,12 @@ def main(**kwargs):
         new_freqs = np.linspace(np.nanmin(freqs),np.nanmax(freqs),num=10000)
 
         # fit curve
-        popt, _ = curve_fit(DHO_PSD, freqs, psd)
-        beta0, beta1, alpha1, alpha2 = popt
-        DHO_fit = DHO_PSD(new_freqs, beta0, beta1, alpha1, alpha2)
-
-        popt, _ = curve_fit(DRW_PSD, freqs, psd)
-        beta0, alpha1 = popt
-        DRW_fit = DRW_PSD(new_freqs, beta0, alpha1)
+        #popt, _ = curve_fit(DHO_PSD, freqs, psd)
+        #beta0, beta1, alpha1, alpha2 = popt
+        #DHO_fit = DHO_PSD(new_freqs, beta0, beta1, alpha1, alpha2)
+        #popt, _ = curve_fit(DRW_PSD, freqs, psd)
+        #beta02, alpha12 = popt
+        #DRW_fit = DRW_PSD(new_freqs, beta02, alpha12)
 
         freqs[freqs==0] = np.nan
         nu0 = freqs**0.
@@ -147,19 +193,19 @@ def main(**kwargs):
 
         plt.figure()
         plt.loglog(freqs, psd, label=r'Normalised data')
-        plt.loglog(new_freqs, DHO_fit, 'k', linestyle=':', label=r'DHO with $\beta_0=${b0:.1e}, $\beta_1=${b1:.1e}, $\alpha_1=${a1:.1e}, $\alpha_2=${a2:.1e}'.format(b0=beta0, b1=beta1, a1=alpha1, a2=alpha2))
-        plt.loglog(new_freqs, DRW_fit, 'k', linestyle='-', label=r'DRW with $\beta_0=${b0:.1e}, $\alpha_1=${a1:.1e}'.format(b0=beta02, a1=alpha12))
+        #plt.loglog(new_freqs, DHO_fit, 'k', linestyle=':', label=r'DHO with $\beta_0=${b0:.1e}, $\beta_1=${b1:.1e}, $\alpha_1=${a1:.1e}, $\alpha_2=${a2:.1e}'.format(b0=beta0, b1=beta1, a1=alpha1, a2=alpha2))
+        #plt.loglog(new_freqs, DRW_fit, 'k', linestyle='-', label=r'DRW with $\beta_0=${b0:.1e}, $\alpha_1=${a1:.1e}'.format(b0=beta02, a1=alpha12))
         plt.loglog(freqs, nu0, 'grey', linestyle='--', label=r'$\propto\nu^{0}$')
         plt.loglog(freqs, nu1, 'orange', linestyle='--', label=r'$\propto\nu^{-1.5}$')
         plt.loglog(freqs, nu2, 'r', linestyle='--', label=r'$\propto\nu^{-2}$')
-        plt.title('PSD: power spectral density')
+        plt.title('PSD: power spectral density for component "{c}" in region "{r}"'.format(c=args.component, r=args.region))
         plt.xlabel(r'Frequency $\nu$')
         plt.ylabel('PSD')
-        plt.ylim(1e-4,10)
+        plt.ylim(1e-5,1e1)
         plt.xlim(np.nanmin(freqs),np.nanmax(freqs))
         plt.legend()
         plt.tight_layout()
-        plt.savefig(prob_dir + 'PSD.png', dpi=1200)
+        plt.savefig(prob_dir + args.component + '_' + args.region + '_PSD.png', dpi=1200)
         plt.close()
 
 def DRW_PSD(freq, beta0, alpha1):
@@ -200,18 +246,25 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Calculate average magnetic field values within the midplane at a given radius (r)')
     parser.add_argument('prob_id',
                         help='base name of the data being analysed, e.g. inflow_var or disk_base')
+    parser.add_argument('component',
+                        help='the magnetic field component being studied, e.g. r, theta, phi, or all')
+    parser.add_argument('region',
+                        help='the region being studied, e.g. disk, lower_atmos, upper_atmos, jet, or all')
     parser.add_argument('--acf',
                         action='store_true',
-                        help='whether to plot correlation functions')
+                        help='plot correlation functions to first difference')
+    parser.add_argument('--acf2',
+                        action='store_true',
+                        help='plot correlation function to second difference')
     parser.add_argument('--stat',
                         action='store_true',
-                        help='whether to test for stationarity')
+                        help='test for stationarity')
     parser.add_argument('--spec',
                         action='store_true',
-                        help='whether to plot spectrogram')
+                        help='plot spectrogram')
     parser.add_argument('--psd',
                         action='store_true',
-                        help='whether to plot Power Spectral Density (PSD)')
+                        help='plot Power Spectral Density (PSD)')
     args = parser.parse_args()
 
     main(**vars(args))
