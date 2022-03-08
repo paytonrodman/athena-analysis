@@ -50,9 +50,6 @@ def main(**kwargs):
         quantities.append(kwargs['stream'] + '1')
         quantities.append(kwargs['stream'] + '2')
 
-    # Define grid compression in theta-direction
-    h = 1.0
-
     # Read mesh and input data
     data_input = athena_read.athinput(kwargs['input_file'])
     # Read data
