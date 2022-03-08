@@ -30,12 +30,12 @@ def main(**kwargs):
     #root_dir = "/Users/paytonrodman/athena-sim/"
     root_dir = '/home/per29/rds/rds-accretion-zyNhkonJSR8/'
 
-    prob_dir = root_dir + args.prob_id + '/'
+    prob_dir = root_dir + kwargs['prob_id'] + '/'
     data_dir = prob_dir + 'data/'
     runfile_dir = prob_dir + 'runfiles/'
     os.chdir(data_dir)
 
-    data_input = athena_read.athinput(runfile_dir + 'athinput.' + args.prob_id)
+    data_input = athena_read.athinput(runfile_dir + 'athinput.' + kwargs['prob_id'])
     x1min = data_input['mesh']['x1min'] # bounds of simulation
     x1max = data_input['mesh']['x1max']
     x2min = data_input['mesh']['x2min']
@@ -61,7 +61,7 @@ def main(**kwargs):
         x2_high_min = x2min
         x2_high_max = x2max
 
-    data_init = athena_read.athdf(args.prob_id + '.cons.00000.athdf', quantities=['x1v','x2v'])
+    data_init = athena_read.athdf(kwargs['prob_id'] + '.cons.00000.athdf', quantities=['x1v','x2v'])
     x1v_init = data_init['x1v'] # r
     x2v_init = data_init['x2v'] # theta
 
@@ -96,11 +96,11 @@ def main(**kwargs):
         tu += 1
 
     filename_output = 'qual_with_time_' + str(rl) + '_' + str(ru) + '_' + str(tl) + '_' + str(tu) + '.csv'
-    file_times = AAT.add_time_to_list(args.update, prob_dir, filename_output, args.prob_id)
+    file_times = AAT.add_time_to_list(kwargs['update'], prob_dir, filename_output, kwargs['prob_id'])
     local_times = AAT.distribute_files_to_cores(file_times, size, rank)
 
     if rank==0:
-        if not args.update:
+        if not kwargs['update']:
             with open(prob_dir + filename_output, 'w', newline='') as f:
                 writer = csv.writer(f, delimiter='\t')
                 writer.writerow(["sim_time", "orbit_time", "theta_B", "Q_theta", "Q_phi"])
@@ -110,11 +110,11 @@ def main(**kwargs):
         GM = 1.
 
         #unpack data
-        data_cons = athena_read.athdf(args.prob_id + '.cons.' + str_t + '.athdf',
+        data_cons = athena_read.athdf(kwargs['prob_id'] + '.cons.' + str_t + '.athdf',
                                         quantities=['x1v','x2v','x3v','x1f','x2f','x3f',
                                                     'dens','mom1','mom2','mom3',
                                                     'Bcc1','Bcc2','Bcc3'])
-        data_prim = athena_read.athdf(args.prob_id + '.prim.' + str_t + '.athdf', quantities=['press'])
+        data_prim = athena_read.athdf(kwargs['prob_id'] + '.prim.' + str_t + '.athdf', quantities=['press'])
 
         x1v = data_cons['x1v']
         x2v = data_cons['x2v']

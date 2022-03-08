@@ -29,23 +29,23 @@ def main(**kwargs):
 
     #root_dir = "/Users/paytonrodman/athena-sim/"
     root_dir = '/home/per29/rds/rds-accretion-zyNhkonJSR8/'
-    prob_dir = root_dir + args.prob_id + '/'
+    prob_dir = root_dir + kwargs['prob_id'] + '/'
     data_dir = prob_dir + 'data/'
     runfile_dir = prob_dir + 'runfiles/'
-    filename_output = 'dyn/huber/' + args.average[:3] + '_' + args.hemisphere + '_dyn_with_time.csv'
+    filename_output = 'dyn/huber/' + kwargs['average'][:3] + '_' + kwargs['hemisphere'] + '_dyn_with_time.csv'
     os.chdir(data_dir)
 
-    if args.average not in ['azimuthal','gaussian']:
+    if kwargs['average'] not in ['azimuthal','gaussian']:
         sys.exit('Must select averaging method (azimuthal, gaussian)')
-    if args.hemisphere not in ['upper','lower']:
+    if kwargs['hemisphere'] not in ['upper','lower']:
         sys.exit('Must select hemisphere (upper, lower)')
 
-    file_times = AAT.add_time_to_list(args.update, prob_dir, filename_output, args.prob_id)
+    file_times = AAT.add_time_to_list(kwargs['update'], prob_dir, filename_output, kwargs['prob_id'])
     local_times = AAT.distribute_files_to_cores(file_times, size, rank)
 
-    data_input = athena_read.athinput(runfile_dir + 'athinput.' + args.prob_id)
+    data_input = athena_read.athinput(runfile_dir + 'athinput.' + kwargs['prob_id'])
     scale_height = data_input['problem']['h_r']
-    data_init = athena_read.athdf(args.prob_id + '.cons.00000.athdf', quantities=['x1v','x2v','x3v'])
+    data_init = athena_read.athdf(kwargs['prob_id'] + '.cons.00000.athdf', quantities=['x1v','x2v','x3v'])
     x1v = data_init['x1v']
     x2v = data_init['x2v']
     x3v = data_init['x3v']
@@ -53,13 +53,13 @@ def main(**kwargs):
     r_u = AAT.find_nearest(x1v, 15. + 15.*scale_height)
     r_mid = np.int(r_l + (r_u - r_l)/2.)
     dist = scale_height*x1v[r_mid]
-    if args.hemisphere=='upper':
+    if kwargs['hemisphere']=='upper':
         th_l = AAT.find_nearest(x2v, np.pi/2. - (np.arctan(2.*dist/x1v[r_mid])))
         th_u = AAT.find_nearest(x2v, np.pi/2. - (np.arctan(1.*dist/x1v[r_mid])))
-    elif args.hemisphere=="lower":
+    elif kwargs['hemisphere']=="lower":
         th_l = AAT.find_nearest(x2v, np.pi/2. + (np.arctan(1.*dist/x1v[r_mid])))
         th_u = AAT.find_nearest(x2v, np.pi/2. + (np.arctan(2.*dist/x1v[r_mid])))
-    if args.reduced:
+    if kwargs['reduced']:
         ph_l = AAT.find_nearest(x3v, x3v[0])
         ph_u = AAT.find_nearest(x3v, x3v[int(np.size(x3v)/4.)])
     else:
@@ -67,13 +67,13 @@ def main(**kwargs):
         ph_u = AAT.find_nearest(x3v, x3v[-1])
 
     if rank==0:
-        if not args.update:
+        if not kwargs['update']:
             with open(prob_dir + filename_output, 'w', newline='') as f:
                 writer = csv.writer(f, delimiter='\t')
                 writer.writerow(["sim_time", "orbit_time", "alpha", "C"])
     for t in local_times:
         str_t = str(int(t)).zfill(5)
-        data_cons = athena_read.athdf(args.prob_id + '.cons.' + str_t + '.athdf', quantities=['mom1','mom2','mom3','Bcc1','Bcc2','Bcc3'])
+        data_cons = athena_read.athdf(kwargs['prob_id'] + '.cons.' + str_t + '.athdf', quantities=['mom1','mom2','mom3','Bcc1','Bcc2','Bcc3'])
 
         #unpack data and select points between 1-2 scale heights
         mom1 = data_cons['mom1'][ph_l:ph_u,th_l:th_u,r_l:r_u]
@@ -83,7 +83,7 @@ def main(**kwargs):
         Bcc2 = data_cons['Bcc2'][ph_l:ph_u,th_l:th_u,r_l:r_u]
         Bcc3 = data_cons['Bcc3'][ph_l:ph_u,th_l:th_u,r_l:r_u]
 
-        if args.average=='gaussian':
+        if kwargs['average']=='gaussian':
             s=5
             mom1_av = gaussian_filter(mom1, sigma=s)
             mom2_av = gaussian_filter(mom2, sigma=s)
@@ -92,7 +92,7 @@ def main(**kwargs):
             Bcc2_av = gaussian_filter(Bcc2, sigma=s)
             Bcc3_av = gaussian_filter(Bcc3, sigma=s)
 
-        if args.average=='azimuthal':
+        if kwargs['average']=='azimuthal':
             mom1_av = np.average(mom1[ph_l:ph_u,:,:], axis=0)
             mom2_av = np.average(mom2[ph_l:ph_u,:,:], axis=0)
             mom3_av = np.average(mom3[ph_l:ph_u,:,:], axis=0)
@@ -120,12 +120,12 @@ def main(**kwargs):
         emf2 = -(mom1_fluc*Bcc3_fluc - mom3_fluc*Bcc1_fluc)
         emf3 = mom1_fluc*Bcc2_fluc - mom2_fluc*Bcc1_fluc
 
-        if args.average=='gaussian':
+        if kwargs['average']=='gaussian':
             emf1_av = gaussian_filter(emf1, sigma=s)
             emf2_av = gaussian_filter(emf2, sigma=s)
             emf3_av = gaussian_filter(emf3, sigma=s)
 
-        if args.average=='azimuthal':
+        if kwargs['average']=='azimuthal':
             emf1_av = np.average(emf1, axis=0)
             emf2_av = np.average(emf2, axis=0)
             emf3_av = np.average(emf3, axis=0)

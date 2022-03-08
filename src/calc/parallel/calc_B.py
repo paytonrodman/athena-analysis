@@ -26,27 +26,27 @@ def main(**kwargs):
     rank = comm.Get_rank()
 
     # check user has passed valid --c variable
-    if args.component not in ['r','theta','phi','all']:
+    if kwargs['component'] not in ['r','theta','phi','all']:
         sys.exit('Must specify a valid B component')
 
     #root_dir = "/Users/paytonrodman/athena-sim/"
     root_dir = '/home/per29/rds/rds-accretion-zyNhkonJSR8/'
-    prob_dir = root_dir + args.prob_id + '/'
+    prob_dir = root_dir + kwargs['prob_id'] + '/'
     data_dir = prob_dir + 'data/'
     runfile_dir = prob_dir + 'runfiles/'
-    filename_output = 'B_strength_with_time_' + args.component + '.csv'
+    filename_output = 'B_strength_with_time_' + kwargs['component'] + '.csv'
     os.chdir(data_dir)
 
-    file_times = AAT.add_time_to_list(args.update, prob_dir, filename_output, args.prob_id)
+    file_times = AAT.add_time_to_list(kwargs['update'], prob_dir, filename_output, kwargs['prob_id'])
     local_times = AAT.distribute_files_to_cores(file_times, size, rank)
 
-    data_input = athena_read.athinput(runfile_dir + 'athinput.' + args.prob_id)
+    data_input = athena_read.athinput(runfile_dir + 'athinput.' + kwargs['prob_id'])
     if 'refinement3' not in data_input:
         sys.exit('Simulation must have 3 levels of refinement in mesh. Exiting.')
     x1min = data_input['mesh']['x1min']
     x1max = data_input['refinement3']['x1max']
 
-    data_init = athena_read.athdf(args.prob_id + '.cons.00000.athdf', quantities=['x2v'])
+    data_init = athena_read.athdf(kwargs['prob_id'] + '.cons.00000.athdf', quantities=['x2v'])
     x2v = data_init['x2v']
     th_id = AAT.find_nearest(x2v, np.pi/2.)
 
@@ -60,9 +60,8 @@ def main(**kwargs):
     upatmos_max_u = AAT.find_nearest(x2v, data_input['refinement1']['x2max'])
     jet_max_u = AAT.find_nearest(x2v, np.pi)
 
-
     if rank==0:
-        if not args.update:
+        if not kwargs['update']:
             with open(prob_dir + filename_output, 'w', newline='') as f:
                 writer = csv.writer(f, delimiter='\t')
                 writer.writerow(["sim_time", "orbit_time",
@@ -70,7 +69,7 @@ def main(**kwargs):
                 "sign_B_flux", "sign_B_jet", "sign_B_upatmos", "sign_B_loatmos", "sign_B_disk"])
     for t in local_times:
         str_t = str(int(t)).zfill(5)
-        data_cons = athena_read.athdf(args.prob_id + '.cons.' + str_t + '.athdf',
+        data_cons = athena_read.athdf(kwargs['prob_id'] + '.cons.' + str_t + '.athdf',
                     quantities=['x2v','x3v','x1f','x2f','x3f','Bcc1','Bcc2','Bcc3'])
 
         #unpack data
@@ -84,13 +83,13 @@ def main(**kwargs):
         Bcc3 = data_cons['Bcc3']
 
         _,dx2f,dx3f = AAT.calculate_delta(x1f,x2f,x3f)
-        if args.component=='all':
+        if kwargs['component']=='all':
             B = np.sqrt(Bcc1**2. + Bcc2**2. + Bcc3**2.)
-        elif args.component=='r':
+        elif kwargs['component']=='r':
             B = Bcc1
-        elif args.component=='theta':
+        elif kwargs['component']=='theta':
             B = Bcc2
-        elif args.component=='phi':
+        elif kwargs['component']=='phi':
             B = Bcc3
 
         mf_l = []

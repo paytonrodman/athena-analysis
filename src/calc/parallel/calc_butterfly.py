@@ -28,15 +28,15 @@ def main(**kwargs):
 
     root_dir = "/Users/paytonrodman/athena-sim/"
     #root_dir = '/home/per29/rds/rds-accretion-zyNhkonJSR8/'
-    prob_dir = root_dir + args.prob_id + '/'
+    prob_dir = root_dir + kwargs['prob_id'] + '/'
     data_dir = prob_dir + 'data/'
     filename_output = 'butterfly_with_time.csv'
     os.chdir(data_dir)
 
-    file_times = AAT.add_time_to_list(args.update, prob_dir, filename_output, args.prob_id)
+    file_times = AAT.add_time_to_list(kwargs['update'], prob_dir, filename_output, kwargs['prob_id'])
     local_times = AAT.distribute_files_to_cores(file_times, size, rank)
 
-    data_init = athena_read.athdf(args.prob_id + '.cons.00000.athdf', quantities=['x1v'])
+    data_init = athena_read.athdf(kwargs['prob_id'] + '.cons.00000.athdf', quantities=['x1v'])
     x1v_init = data_init['x1v']
     if kwargs['r'] is not None:
         r_id = AAT.find_nearest(x1v_init, kwargs['r'])
@@ -50,7 +50,7 @@ def main(**kwargs):
                 writer.writerow(["sim_time", "orbit_time", "Bcc1", "Bcc2", "Bcc3"])
     for t in local_times:
         str_t = str(int(t)).zfill(5)
-        data_cons = athena_read.athdf(args.prob_id + '.cons.' + str_t + '.athdf', quantities=['Bcc1','Bcc2','Bcc3'])
+        data_cons = athena_read.athdf(kwargs['prob_id'] + '.cons.' + str_t + '.athdf', quantities=['Bcc1','Bcc2','Bcc3'])
 
         #unpack data
         Bcc1 = data_cons['Bcc1']

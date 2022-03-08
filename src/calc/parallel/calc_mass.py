@@ -26,15 +26,15 @@ def main(**kwargs):
 
     #root_dir = "/Users/paytonrodman/athena-sim/"
     root_dir = '/home/per29/rds/rds-accretion-zyNhkonJSR8/'
-    prob_dir = root_dir + args.prob_id + '/'
+    prob_dir = root_dir + kwargs['prob_id'] + '/'
     data_dir = prob_dir + 'data/'
     filename_output = 'mass_with_time.csv'
     os.chdir(data_dir)
 
-    file_times = AAT.add_time_to_list(args.update, prob_dir, filename_output, args.prob_id)
+    file_times = AAT.add_time_to_list(kwargs['update'], prob_dir, filename_output, kwargs['prob_id'])
     local_times = AAT.distribute_files_to_cores(file_times, size, rank)
 
-    init_data = athena_read.athdf(args.prob_id + '.cons.00000.athdf', quantities=['x1v'])
+    init_data = athena_read.athdf(kwargs['prob_id'] + '.cons.00000.athdf', quantities=['x1v'])
     x1v_init = init_data['x1v'] # r
     r_val = [6.,25.,50.,75.,100.]
     r_id = []
@@ -43,13 +43,13 @@ def main(**kwargs):
         r_id.append(r_id_i)
 
     if rank==0:
-        if not args.update:
+        if not kwargs['update']:
             with open(prob_dir + filename_output, 'w', newline='') as f:
                 writer = csv.writer(f, delimiter='\t')
                 writer.writerow(["sim_time", "orbit_time", "mass_flux"])
     for t in local_times:
         str_t = str(int(t)).zfill(5)
-        data_cons = athena_read.athdf(args.prob_id + '.cons.' + str_t + '.athdf',
+        data_cons = athena_read.athdf(kwargs['prob_id'] + '.cons.' + str_t + '.athdf',
                             quantities=['x2v','x3v','x1f','x2f','x3f','dens','mom1','mom2','mom3'])
 
         #unpack data
