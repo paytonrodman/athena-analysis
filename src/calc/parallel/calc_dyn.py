@@ -10,8 +10,8 @@
 #
 import os
 import sys
-sys.path.insert(0, '/home/per29/rds/rds-accretion-zyNhkonJSR8/athena-analysis/dependencies')
-#sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies')
+#sys.path.insert(0, '/home/per29/rds/rds-accretion-zyNhkonJSR8/athena-analysis/dependencies')
+sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies')
 import athena_read
 import AAT
 import csv
@@ -27,8 +27,8 @@ def main(**kwargs):
     size = comm.Get_size()
     rank = comm.Get_rank()
 
-    #root_dir = "/Users/paytonrodman/athena-sim/"
-    root_dir = '/home/per29/rds/rds-accretion-zyNhkonJSR8/'
+    root_dir = "/Users/paytonrodman/athena-sim/"
+    #root_dir = '/home/per29/rds/rds-accretion-zyNhkonJSR8/'
     prob_dir = root_dir + kwargs['prob_id'] + '/'
     data_dir = prob_dir + 'data/'
     runfile_dir = prob_dir + 'runfiles/'
@@ -175,13 +175,13 @@ if __name__ == '__main__':
     parser.add_argument('-a', '--average',
                         type=str,
                         default='azimuthal',
-                        choices=['azimuthal', 'gaussian', 'scissors'],
+                        choices=['azimuthal', 'gaussian'],
                         help='averaging method')
     parser.add_argument('-H', '--hemisphere',
                         type=str,
                         default='upper',
                         choices=['upper', 'lower'],
-                        help='hemisphere to average in (upper, lower)')
+                        help='hemisphere to average in')
     parser.add_argument('--r',
                         type=float,
                         default=None,
