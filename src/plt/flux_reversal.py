@@ -18,7 +18,6 @@ from matplotlib import colors
 from pandas.plotting import autocorrelation_plot
 from statsmodels.tsa.stattools import adfuller
 from scipy import signal
-from scipy.optimize import curve_fit
 from ast import literal_eval
 
 def main(**kwargs):
@@ -172,16 +171,6 @@ def main(**kwargs):
         freqs, psd = signal.welch(data)
         psd = (psd-np.nanmin(psd))/(np.nanmax(psd)-np.nanmin(psd))
 
-        new_freqs = np.linspace(np.nanmin(freqs),np.nanmax(freqs),num=10000)
-
-        # fit curve
-        #popt, _ = curve_fit(DHO_PSD, freqs, psd)
-        #beta0, beta1, alpha1, alpha2 = popt
-        #DHO_fit = DHO_PSD(new_freqs, beta0, beta1, alpha1, alpha2)
-        #popt, _ = curve_fit(DRW_PSD, freqs, psd)
-        #beta02, alpha12 = popt
-        #DRW_fit = DRW_PSD(new_freqs, beta02, alpha12)
-
         freqs[freqs==0] = np.nan
         nu0 = freqs**0.
         nu1 = freqs**(-1.5)
@@ -193,8 +182,6 @@ def main(**kwargs):
 
         plt.figure()
         plt.loglog(freqs, psd, label=r'Normalised data')
-        #plt.loglog(new_freqs, DHO_fit, 'k', linestyle=':', label=r'DHO with $\beta_0=${b0:.1e}, $\beta_1=${b1:.1e}, $\alpha_1=${a1:.1e}, $\alpha_2=${a2:.1e}'.format(b0=beta0, b1=beta1, a1=alpha1, a2=alpha2))
-        #plt.loglog(new_freqs, DRW_fit, 'k', linestyle='-', label=r'DRW with $\beta_0=${b0:.1e}, $\alpha_1=${a1:.1e}'.format(b0=beta02, a1=alpha12))
         plt.loglog(freqs, nu0, 'grey', linestyle='--', label=r'$\propto\nu^{0}$')
         plt.loglog(freqs, nu1, 'orange', linestyle='--', label=r'$\propto\nu^{-1.5}$')
         plt.loglog(freqs, nu2, 'r', linestyle='--', label=r'$\propto\nu^{-2}$')

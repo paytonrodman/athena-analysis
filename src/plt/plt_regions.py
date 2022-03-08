@@ -53,11 +53,6 @@ def main(**kwargs):
     # Define grid compression in theta-direction
     h = 1.0
 
-    def theta_func(xmin, xmax, _, nf):
-        x2_vals = np.linspace(xmin, xmax, nf)
-        theta_vals = x2_vals + (1.0 - h) / 2.0 * np.sin(2.0 * x2_vals)
-        return theta_vals
-
     # Read mesh and input data
     data_input = athena_read.athinput(kwargs['input_file'])
     # Read data
@@ -98,7 +93,6 @@ def main(**kwargs):
     phi = data['x3v']
     r_face = data['x1f']
     theta_face = data['x2f']
-    phi_face = data['x3f']
     nx1 = len(r)
     nx2 = len(theta)
     nx3 = len(phi)
