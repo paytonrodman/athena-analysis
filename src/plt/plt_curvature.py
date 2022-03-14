@@ -21,15 +21,13 @@ Requires scipy if making a stream plot.
 import argparse
 import warnings
 import sys
+sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies')
 
 # Other Python modules
 import numpy as np
 
-sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies')
 # Athena++ modules
 import athena_read
-import AAT
-
 
 # Main function
 def main(**kwargs):
@@ -55,7 +53,6 @@ def main(**kwargs):
     data_input = athena_read.athinput(kwargs['input_file'])
     # Read data
     data = athena_read.athdf(kwargs['data_file'], quantities=quantities)
-    x1max = data_input['mesh']['x1max']
 
     # Extract boundaries of each SMR level
     if 'refinement3' not in data_input:
@@ -75,13 +72,9 @@ def main(**kwargs):
         resolution = kwargs['dpi']
 
     # Extract basic coordinate information
-    #coordinates = data['Coordinates']
-    theta = data['x2v']
     phi = data['x3v']
     r_face = data['x1f']
     theta_face = data['x2f']
-    #nx1 = len(r)
-    #nx2 = len(theta)
     nx3 = len(phi)
 
     # Create scalar grid
