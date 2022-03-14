@@ -37,7 +37,7 @@ def main(**kwargs):
         sys.exit('Must specify stream')
 
     # Load function for transforming coordinates
-    from scipy.ndimage import map_coordinates
+    #from scipy.ndimage import map_coordinates
 
     # Load Python plotting modules
     if kwargs['output_file'] != 'show':
@@ -75,14 +75,14 @@ def main(**kwargs):
         resolution = kwargs['dpi']
 
     # Extract basic coordinate information
-    coordinates = data['Coordinates']
+    #coordinates = data['Coordinates']
     r = data['x1v']
     theta = data['x2v']
     phi = data['x3v']
     r_face = data['x1f']
     theta_face = data['x2f']
-    nx1 = len(r)
-    nx2 = len(theta)
+    #nx1 = len(r)
+    #nx2 = len(theta)
     nx3 = len(phi)
 
     # Create scalar grid

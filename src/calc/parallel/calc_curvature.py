@@ -27,9 +27,6 @@ def main(**kwargs):
     if kwargs['stream'] is None:
         sys.exit('Must specify stream')
 
-    # Load function for transforming coordinates
-    from scipy.ndimage import map_coordinates
-
     # get number of processors and processor rank
     comm = MPI.COMM_WORLD
     size = comm.Get_size()
@@ -54,12 +51,10 @@ def main(**kwargs):
     data_input = athena_read.athinput(runfile_dir + 'athinput.' + kwargs['prob_id'])
     if 'refinement3' not in data_input:
         sys.exit('Simulation must have 3 levels of refinement in mesh. Exiting.')
-    x1min = data_input['mesh']['x1min']
     x1max = data_input['refinement3']['x1max']
 
     data_init = athena_read.athdf(kwargs['prob_id'] + '.cons.00000.athdf', quantities=['x2v'])
     x2v = data_init['x2v']
-    th_id = AAT.find_nearest(x2v, np.pi/2.)
 
     jet_max_l = AAT.find_nearest(x2v, data_input['refinement1']['x2min'])
     upatmos_max_l = AAT.find_nearest(x2v, data_input['refinement2']['x2min'])
@@ -83,14 +78,11 @@ def main(**kwargs):
                                  quantities=quantities)
 
         # Extract basic coordinate information
-        coordinates = data['Coordinates']
         r = data['x1v']
         theta = data['x2v']
         phi = data['x3v']
         r_face = data['x1f']
         theta_face = data['x2f']
-        nx1 = len(r)
-        nx2 = len(theta)
         nx3 = len(phi)
 
         # Create scalar grid
