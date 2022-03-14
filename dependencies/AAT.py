@@ -20,7 +20,7 @@ def find_nearest(array, value):
     idx = (np.abs(array - value)).argmin();
     return idx;
 
-def add_time_to_list(update_flag, directory, output_filename, problem_id):
+def add_time_to_list(update_flag, output):
     """Compile a unique list of files that have not been analysed before."""
     import glob
     import csv
@@ -30,14 +30,14 @@ def add_time_to_list(update_flag, directory, output_filename, problem_id):
     # check if data file already exists
     csv_times = np.empty(0)
     if update_flag:
-        with open(prob_dir + filename_output, 'r', newline='') as f:
+        with open(output, 'r', newline='') as f:
             csv_reader = csv.reader(f, delimiter='\t')
             next(csv_reader, None) # skip header
             for row in csv_reader:
                 csv_times = np.append(csv_times, float(row[0]))
 
     # compile a list of unique times associated with data files
-    files = glob.glob('./' + problem_id + '.cons.*.athdf')
+    files = glob.glob('./*.cons.*.athdf')
     file_times = np.empty(0)
     for f in files:
         current_time = re.findall(r'\b\d+\b', f)

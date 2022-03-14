@@ -4,18 +4,21 @@
 #
 # A program to calculate the geometric scale height of an Athena++ disk using MPI.
 #
-# To run:
-# mpirun -n [n] python calc_scale.py [options]
-# for [n] cores.
+# Usage: mpirun -n [nprocs] calc_scale.py [options]
 #
-import os
+# Python standard modules
+import argparse
 import sys
+import os
 sys.path.insert(0, '/home/per29/rds/rds-accretion-zyNhkonJSR8/athena-analysis/dependencies')
 #sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies')
-import csv
-import argparse
-from mpi4py import MPI
+
+# Other Python modules
 import numpy as np
+from mpi4py import MPI
+import csv
+
+# Athena++ modules
 import athena_read
 import AAT
 
@@ -24,18 +27,13 @@ def main(**kwargs):
     rank = comm.Get_rank()
     size = comm.Get_size()
 
-    #root_dir = "/Users/paytonrodman/athena-sim/"
-    root_dir = '/home/per29/rds/rds-accretion-zyNhkonJSR8/'
-    prob_dir = root_dir + kwargs['prob_id'] + '/'
-    data_dir = prob_dir + 'data/'
-    filename_output = 'scale_with_time.csv'
-    os.chdir(data_dir)
+    os.chdir(kwargs['data'])
 
-    file_times = AAT.add_time_to_list(kwargs['update'], prob_dir, filename_output, kwargs['prob_id'])
+    file_times = AAT.add_time_to_list(kwargs['update'], kwargs['output'])
     local_times = AAT.distribute_files_to_cores(file_times, size, rank)
 
     # get mesh data for all files (static)
-    data_init = athena_read.athdf(kwargs['prob_id'] + '.cons.00000.athdf',
+    data_init = athena_read.athdf(kwargs['problem_id'] + '.cons.00000.athdf',
                                     quantities=['x1v','x2v','x3v','x1f','x2f','x3f'])
     x1v = data_init['x1v']
     x2v = data_init['x2v']
@@ -51,12 +49,12 @@ def main(**kwargs):
 
     if rank==0:
         if not kwargs['update']:
-            with open(prob_dir + filename_output, 'w', newline='') as f:
+            with open(kwargs['output'], 'w', newline='') as f:
                 writer = csv.writer(f, delimiter='\t')
                 writer.writerow(["sim_time", "orbit_time", "scale_height"])
     for t in local_times:
         str_t = str(int(t)).zfill(5)
-        data_cons = athena_read.athdf(kwargs['prob_id'] + '.cons.' + str_t + '.athdf',
+        data_cons = athena_read.athdf(kwargs['problem_id'] + '.cons.' + str_t + '.athdf',
                                         quantities=['dens'])
         dens = data_cons['dens']
 
@@ -70,7 +68,7 @@ def main(**kwargs):
         sim_t = data_cons['Time']
         orbit_t = AAT.calculate_orbit_time(sim_t)
 
-        with open(prob_dir + filename_output, 'a', newline='') as f:
+        with open(kwargs['output'], 'a', newline='') as f:
             writer = csv.writer(f, delimiter='\t')
             row = [sim_t,orbit_t,scale_h_av]
             writer.writerow(row)
@@ -79,8 +77,12 @@ def main(**kwargs):
 # Execute main function
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Calculates the average geometric scale height over the disk')
-    parser.add_argument('prob_id',
-                        help='base name of the data being analysed, e.g. inflow_var or disk_base')
+    parser.add_argument('problem_id',
+                        help='root name for data files, e.g. high_res')
+    parser.add_argument('data',
+                        help='location of data folder, possibly including path')
+    parser.add_argument('output',
+                        help='name of output to be (over)written, possibly including path')
     parser.add_argument('-u', '--update',
                         action="store_true",
                         help='append new results to an existing data file')

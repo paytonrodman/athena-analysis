@@ -5,21 +5,24 @@
 # A program to calculate the quality factors and magnetic angle within some defined region
 # of an Athena++ disk using MPI
 #
-# To run:
-# mpirun -n [n] python calc_qual.py [options]
-# for [n] cores.
+# Usage: mpirun -n [nprocs] calc_qual.py [options]
 #
-import os
+# Python standard modules
+import argparse
 import sys
+import os
 sys.path.insert(0, '/home/per29/rds/rds-accretion-zyNhkonJSR8/athena-analysis/dependencies')
 #sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies')
-import athena_read
-import AAT
-import csv
-import argparse
+
+# Other Python modules
 import scipy.stats as st
 import numpy as np
 from mpi4py import MPI
+import csv
+
+# Athena++ modules
+import athena_read
+import AAT
 
 def main(**kwargs):
     # get number of processors and processor rank
@@ -27,15 +30,9 @@ def main(**kwargs):
     size = comm.Get_size()
     rank = comm.Get_rank()
 
-    #root_dir = "/Users/paytonrodman/athena-sim/"
-    root_dir = '/home/per29/rds/rds-accretion-zyNhkonJSR8/'
+    os.chdir(kwargs['data'])
 
-    prob_dir = root_dir + kwargs['prob_id'] + '/'
-    data_dir = prob_dir + 'data/'
-    runfile_dir = prob_dir + 'runfiles/'
-    os.chdir(data_dir)
-
-    data_input = athena_read.athinput(runfile_dir + 'athinput.' + kwargs['prob_id'])
+    data_input = athena_read.athinput(kwargs['input'])
     x1min = data_input['mesh']['x1min'] # bounds of simulation
     x1max = data_input['mesh']['x1max']
     x2min = data_input['mesh']['x2min']
@@ -61,7 +58,8 @@ def main(**kwargs):
         x2_high_min = x2min
         x2_high_max = x2max
 
-    data_init = athena_read.athdf(kwargs['prob_id'] + '.cons.00000.athdf', quantities=['x1v','x2v'])
+    data_init = athena_read.athdf(kwargs['problem_id'] + '.cons.00000.athdf',
+                                    quantities=['x1v','x2v'])
     x1v_init = data_init['x1v'] # r
     x2v_init = data_init['x2v'] # theta
 
@@ -95,13 +93,13 @@ def main(**kwargs):
     if tl==tu:
         tu += 1
 
-    filename_output = 'qual_with_time_' + str(rl) + '_' + str(ru) + '_' + str(tl) + '_' + str(tu) + '.csv'
-    file_times = AAT.add_time_to_list(kwargs['update'], prob_dir, filename_output, kwargs['prob_id'])
+    #filename_output = 'qual_with_time_' + str(rl) + '_' + str(ru) + '_' + str(tl) + '_' + str(tu) + '.csv'
+    file_times = AAT.add_time_to_list(kwargs['update'], kwargs['output'])
     local_times = AAT.distribute_files_to_cores(file_times, size, rank)
 
     if rank==0:
         if not kwargs['update']:
-            with open(prob_dir + filename_output, 'w', newline='') as f:
+            with open(kwargs['output'], 'w', newline='') as f:
                 writer = csv.writer(f, delimiter='\t')
                 writer.writerow(["sim_time", "orbit_time", "theta_B", "Q_theta", "Q_phi"])
     for t in local_times:
@@ -110,11 +108,12 @@ def main(**kwargs):
         GM = 1.
 
         #unpack data
-        data_cons = athena_read.athdf(kwargs['prob_id'] + '.cons.' + str_t + '.athdf',
+        data_cons = athena_read.athdf(kwargs['problem_id'] + '.cons.' + str_t + '.athdf',
                                         quantities=['x1v','x2v','x3v','x1f','x2f','x3f',
                                                     'dens','mom1','mom2','mom3',
                                                     'Bcc1','Bcc2','Bcc3'])
-        data_prim = athena_read.athdf(kwargs['prob_id'] + '.prim.' + str_t + '.athdf', quantities=['press'])
+        data_prim = athena_read.athdf(kwargs['problem_id'] + '.prim.' + str_t + '.athdf',
+                                        quantities=['press'])
 
         x1v = data_cons['x1v']
         x2v = data_cons['x2v']
@@ -166,7 +165,7 @@ def main(**kwargs):
         sim_t = data_cons['Time']
         orbit_t = AAT.calculate_orbit_time(sim_t)
 
-        with open(prob_dir + filename_output, 'a', newline='') as f:
+        with open(kwargs['output'], 'a', newline='') as f:
             writer = csv.writer(f, delimiter='\t')
             row = [sim_t,orbit_t,tB_av,Qt_all,Qp_all]
             writer.writerow(row)
@@ -175,8 +174,14 @@ def main(**kwargs):
 # Execute main function
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Calculate various quality factors from raw simulation data.')
-    parser.add_argument('prob_id',
-                        help='base name of the data being analysed, e.g. inflow_var or disk_base')
+    parser.add_argument('problem_id',
+                        help='root name for data files, e.g. high_res')
+    parser.add_argument('data',
+                        help='location of data folder, possibly including path')
+    parser.add_argument('input',
+                        help='location of athinput file, possibly including path')
+    parser.add_argument('output',
+                        help='name of output to be (over)written, possibly including path')
     parser.add_argument('-u', '--update',
                         action="store_true",
                         help='append new results to an existing data file')
