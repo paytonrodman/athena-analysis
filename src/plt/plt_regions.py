@@ -213,9 +213,8 @@ def main(**kwargs):
     plt.ylabel(r'$z$')
     plt.axis('off')
     if kwargs['time']:
-        #plt.title('t='+str(int(data['Time'])))
         plt.title('t={:.2e} GM/c3'.format(data['Time']))
-    #plt.colorbar(im)
+    plt.colorbar(im)
     if kwargs['output_file'] == 'show':
         plt.show()
     else:

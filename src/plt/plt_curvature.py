@@ -236,7 +236,7 @@ def main(**kwargs):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('data_file',
-                        help='name of input file, possibly including path')
+                        help='name of data file, possibly including path')
     parser.add_argument('input_file',
                         help='name of athinput file, possibly including path')
     parser.add_argument('quantity',
