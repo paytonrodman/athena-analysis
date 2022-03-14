@@ -76,7 +76,6 @@ def main(**kwargs):
 
     # Extract basic coordinate information
     #coordinates = data['Coordinates']
-    r = data['x1v']
     theta = data['x2v']
     phi = data['x3v']
     r_face = data['x1f']
@@ -149,83 +148,9 @@ def main(**kwargs):
     cbar = plt.colorbar(im, extend='both')
     cbar.set_label(r'$\kappa$')
 
-
-
-    # Define bounds of each region
-    jet_max_l = AAT.find_nearest(theta, data_input['refinement1']['x2min'])
-    upatmos_max_l = AAT.find_nearest(theta, data_input['refinement2']['x2min'])
-    loatmos_max_l = AAT.find_nearest(theta, data_input['refinement3']['x2min'])
-    disk_max_l = AAT.find_nearest(theta, np.pi/2.)
-
-    disk_max_u = AAT.find_nearest(theta, data_input['refinement3']['x2max'])
-    loatmos_max_u = AAT.find_nearest(theta, data_input['refinement2']['x2max'])
-    upatmos_max_u = AAT.find_nearest(theta, data_input['refinement1']['x2max'])
-    jet_max_u = AAT.find_nearest(theta, np.pi)
-
-
-
-    # Calculate average curvature in each region
-    curve_jet_l = bdivb[:jet_max_l, :x1max]
-    curve_jet_u = bdivb[upatmos_max_u+1:jet_max_u, :x1max]
-    curve_jet = [np.median(curve_jet_l[np.isfinite(curve_jet_l)]), np.median(curve_jet_u[np.isfinite(curve_jet_u)])]
-
-    curve_upatmos_l = bdivb[jet_max_l+1:upatmos_max_l,:x1max]
-    curve_upatmos_u = bdivb[loatmos_max_u+1:upatmos_max_u,:x1max]
-    curve_upatmos = [np.median(curve_upatmos_l[np.isfinite(curve_upatmos_l)]), np.median(curve_upatmos_u[np.isfinite(curve_upatmos_u)])]
-
-    curve_loatmos_l = bdivb[upatmos_max_l+1:loatmos_max_l, :x1max]
-    curve_loatmos_u = bdivb[disk_max_u+1:loatmos_max_u, :x1max]
-    curve_loatmos = [np.median(curve_loatmos_l[np.isfinite(curve_loatmos_l)]), np.median(curve_loatmos_u[np.isfinite(curve_loatmos_u)])]
-
-    curve_disk_l = bdivb[loatmos_max_l+1:disk_max_l, :x1max]
-    curve_disk_u = bdivb[disk_max_l+1:disk_max_u, :x1max]
-    curve_disk = [np.median(curve_disk_l[np.isfinite(curve_disk_l)]), np.median(curve_disk_u[np.isfinite(curve_disk_u)])]
-
-    print('jet region: {jetc}'.format(jetc=np.abs(curve_jet[0])))
-    print('upatmos region: {upc}'.format(upc=np.abs(curve_upatmos[0])))
-    print('lowatmos region: {lowc}'.format(lowc=np.abs(curve_loatmos[0])))
-    print('disk region: {diskc}'.format(diskc=np.abs(curve_disk[0])))
-
-
-    # Determine colormapping properties
-    #cmap = plt.get_cmap(kwargs['colormap'])
-    #vmin = kwargs['vmin']
-    #vmax = kwargs['vmax']
-    #if kwargs['logc']:
-    #    norm = colors.LogNorm(vmin, vmax)
-    #else:
-    #    norm = colors.Normalize(vmin, vmax)
-
-    # Make plot
-    #plt.figure()
-    #im = plt.pcolormesh(x_grid, y_grid, vals, cmap=cmap, norm=norm)
-    #for index in range(len(upper_boundaries)):
-    #    y_limit = x1max*np.tan(upper_boundaries[index])
-    #    plt.plot([-x1max,x1max], [-y_limit,y_limit],'white',linewidth=1)
-    #    y_limit = x1max*np.tan(lower_boundaries[index])
-    #    plt.plot([-x1max,x1max], [-y_limit,y_limit],'white',linewidth=1)
-
-    #if kwargs['stream'] is not None:
-    #    with warnings.catch_warnings():
-    #        warnings.filterwarnings(
-    #            'ignore',
-    #            'invalid value encountered in greater_equal',
-    #            RuntimeWarning,
-    #            'numpy')
-    #        plt.streamplot(x_stream, z_stream, vals_x.T, vals_z.T,
-    #                       density=kwargs['stream_density'], color='k', linewidth=0.5,
-    #                       arrowsize=0.5)
-
-    #plt.gca().set_aspect('equal')
-    #plt.xlim((-r_max, r_max))
-    #plt.ylim((-r_max, r_max))
-    #plt.xlabel(r'$x$')
-    #plt.ylabel(r'$z$')
-    #plt.axis('off')
     if kwargs['time']:
-        #plt.title('t='+str(int(data['Time'])))
         plt.title('t={:.2e} GM/c3'.format(data['Time']))
-    #plt.colorbar(im)
+    plt.colorbar(im)
     if kwargs['output_file'] == 'show':
         plt.show()
     else:

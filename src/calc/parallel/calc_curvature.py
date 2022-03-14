@@ -72,8 +72,6 @@ def main(**kwargs):
                                     quantities=quantities)
 
         # Extract basic coordinate information
-        r = data['x1v']
-        theta = data['x2v']
         phi = data['x3v']
         r_face = data['x1f']
         theta_face = data['x2f']
