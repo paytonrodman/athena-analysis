@@ -139,11 +139,10 @@ def main(**kwargs):
     ax.set_theta_zero_location("N")
     plt.axis('off')
     cbar = plt.colorbar(im, extend='both')
-    cbar.set_label(r'$\kappa$')
+    cbar.set_label(r'$|\kappa|$')
 
     if kwargs['time']:
         plt.title('t={:.2e} GM/c3'.format(data['Time']))
-    plt.colorbar(im)
     if kwargs['output_file'] == 'show':
         plt.show()
     else:
