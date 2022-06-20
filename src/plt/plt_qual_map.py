@@ -28,7 +28,7 @@ def main(**kwargs):
 
     # Set resolution of plot in dots per square inch
     if args.dpi is not None:
-        resolution = kwargs['dpi']
+        resolution = args.dpi
 
     data_input = athena_read.athinput(args.input_file)
     x1min = data_input['mesh']['x1min'] # bounds of simulation
@@ -66,51 +66,58 @@ def main(**kwargs):
     tB = np.load(args.tB_file)
 
     if args.midplane:
-        vals = Q_phi
+        vals_Q = Q_phi
+        vals_T = np.mean(tB, axis=1)
     else:
-        vals = Q_theta
+        vals_Q = Q_theta
+        vals_T = np.mean(tB, axis=0)
 
-    fig = plt.figure()
-    fig.add_subplot(111)
-    if args.vmin is not None:
-        vmin = args.vmin
-    else:
-        if args.logc:
-            vmin = np.nanmin(vals[np.isfinite(vals)])
+    for id in ["Q","T"]:
+        if id=="Q":
+            vals = vals_Q
+            if args.midplane:
+                output = args.output_location + 'Qphi.png'
+            else:
+                output = args.output_location + 'Qtheta.png'
         else:
-            vmin = 0
-    if args.vmax is not None:
-        vmax = args.vmax
-    else:
-        vmax = np.nanmax(vals[np.isfinite(vals)])
+            vals = vals_T
+            output = args.output_location + 'tB.png'
+        fig = plt.figure()
+        fig.add_subplot(111)
+        if args.vmin is not None:
+            vmin = args.vmin
+        else:
+            if args.logc:
+                vmin = np.nanmin(vals[np.isfinite(vals)])
+            else:
+                vmin = 0
+        if args.vmax is not None:
+            vmax = args.vmax
+        else:
+            vmax = np.nanmax(vals[np.isfinite(vals)])
 
-    if args.logc:
-        norm = colors.LogNorm(vmin, vmax)
-    else:
-        norm = colors.Normalize(vmin, vmax)
-    im = plt.pcolormesh(x_grid, y_grid, vals, cmap="magma", norm=norm, shading='auto')
-    cbar = plt.colorbar(im, extend='both')
-    plt.gca().set_aspect('equal')
-    if not args.midplane:
-        plt.xlim((0, r_max))
-    else:
-        plt.xlim((-r_max, r_max))
-    plt.ylim((-r_max, r_max))
-    if args.midplane:
-        cbar.set_label(r'$Q_{\phi}$')
-        plt.xlabel(r'$x$')
-        plt.ylabel(r'$y$')
-    else:
-        cbar.set_label(r'$Q_{\theta}$')
-        plt.xlabel(r'$x$')
-        plt.ylabel(r'$z$')
-    plt.title('Temporally and spatially averaged quality factor')
-
-    if args.midplane:
-        output = args.output_location + 'Qphi.png'
-    else:
-        output = args.output_location + 'Qtheta.png'
-    plt.savefig(output, bbox_inches='tight', dpi=resolution)
+        if args.logc:
+            norm = colors.LogNorm(vmin, vmax)
+        else:
+            norm = colors.Normalize(vmin, vmax)
+        im = plt.pcolormesh(x_grid, y_grid, vals, cmap="magma", norm=norm, shading='auto')
+        cbar = plt.colorbar(im, extend='both')
+        plt.gca().set_aspect('equal')
+        if not args.midplane:
+            plt.xlim((0, r_max))
+        else:
+            plt.xlim((-r_max, r_max))
+        plt.ylim((-r_max, r_max))
+        if args.midplane:
+            cbar.set_label(r'$Q_{\phi}$')
+            plt.xlabel(r'$x$')
+            plt.ylabel(r'$y$')
+        else:
+            cbar.set_label(r'$Q_{\theta}$')
+            plt.xlabel(r'$x$')
+            plt.ylabel(r'$z$')
+        plt.title('Temporally and spatially averaged quality factor')
+        plt.savefig(output, bbox_inches='tight', dpi=resolution)
 
 
 # Execute main function
@@ -120,6 +127,8 @@ if __name__ == '__main__':
                         help='name of data file containing averaged Q_theta values, possibly including path')
     parser.add_argument('Qphi_file',
                         help='name of data file containing averaged Q_phi values, possibly including path')
+    parser.add_argument('tB_file',
+                        help='name of data file containing averaged tB values, possibly including path')
     parser.add_argument('data_file_init',
                         help='name of data file containing initial mesh data, possibly including path')
     parser.add_argument('input_file',
