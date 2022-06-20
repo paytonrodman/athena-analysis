@@ -29,26 +29,26 @@ def main(**kwargs):
     size = comm.Get_size()
     rank = comm.Get_rank()
 
-    os.chdir(kwargs['data'])
+    os.chdir(args.data)
 
-    file_times = AAT.add_time_to_list(kwargs['update'], kwargs['output'])
+    file_times = AAT.add_time_to_list(args.update, args.output)
     local_times = AAT.distribute_files_to_cores(file_times, size, rank)
 
-    data_init = athena_read.athdf(kwargs['problem_id'] + '.cons.00000.athdf', quantities=['x1v'])
+    data_init = athena_read.athdf(args.problem_id + '.cons.00000.athdf', quantities=['x1v'])
     x1v_init = data_init['x1v']
-    if kwargs['r'] is not None:
-        r_id = AAT.find_nearest(x1v_init, kwargs['r'])
+    if args.r is not None:
+        r_id = AAT.find_nearest(x1v_init, args.r)
     else:
         r_id = AAT.find_nearest(x1v_init, 25.) # approx. middle of high res region
 
     if rank==0:
         if not args.update:
-            with open(kwargs['output'], 'w', newline='') as f:
+            with open(kargs.output, 'w', newline='') as f:
                 writer = csv.writer(f, delimiter='\t')
                 writer.writerow(["sim_time", "orbit_time", "Bcc1", "Bcc2", "Bcc3"])
     for t in local_times:
         str_t = str(int(t)).zfill(5)
-        data_cons = athena_read.athdf(kwargs['problem_id'] + '.cons.' + str_t + '.athdf',
+        data_cons = athena_read.athdf(args.problem_id + '.cons.' + str_t + '.athdf',
                                         quantities=['Bcc1','Bcc2','Bcc3'])
 
         #unpack data
@@ -63,7 +63,7 @@ def main(**kwargs):
         sim_t = data_cons['Time']
         orbit_t = AAT.calculate_orbit_time(sim_t)
 
-        with open(kwargs['output'], 'a', newline='') as f:
+        with open(args.output, 'a', newline='') as f:
             writer = csv.writer(f, delimiter='\t')
             writer.writerow([sim_t,orbit_t,Bcc1_theta,Bcc2_theta,Bcc3_theta])
 

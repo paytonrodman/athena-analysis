@@ -28,20 +28,20 @@ def main(**kwargs):
     size = comm.Get_size()
     rank = comm.Get_rank()
 
-    os.chdir(kwargs['data'])
+    os.chdir(args.data)
 
-    file_times = AAT.add_time_to_list(kwargs['update'], kwargs['output'])
+    file_times = AAT.add_time_to_list(args.update, args.output)
     local_times = AAT.distribute_files_to_cores(file_times, size, rank)
 
-    data_init = athena_read.athdf(kwargs['problem_id'] + '.cons.00000.athdf', quantities=['x1v', 'x2v'])
+    data_init = athena_read.athdf(args.problem_id + '.cons.00000.athdf', quantities=['x1v', 'x2v'])
     x1v_init = data_init['x1v']
     x2v_init = data_init['x2v']
     r_id = AAT.find_nearest(x1v_init, 6.)
     th_id = AAT.find_nearest(x2v_init, np.pi/2.)
 
     if rank==0:
-        if not kwargs['update']:
-            with open(kwargs['output'], 'w', newline='') as f:
+        if not args.update:
+            with open(args.output, 'w', newline='') as f:
                 writer = csv.writer(f, delimiter='\t')
                 writer.writerow(["sim_time", "orbit_time",
                                     "mag_flux_u", "mag_flux_l",
@@ -49,7 +49,7 @@ def main(**kwargs):
                                     "mag_flux_u_babs", "mag_flux_l_babs"])
     for t in local_times:
         str_t = str(int(t)).zfill(5)
-        data_cons = athena_read.athdf(kwargs['problem_id'] + '.cons.' + str_t + '.athdf',
+        data_cons = athena_read.athdf(args.problem_id + '.cons.' + str_t + '.athdf',
                                         quantities=['x2v','x3v','x1f','x2f','x3f','dens','mom1','Bcc1'])
 
         #unpack data
@@ -83,7 +83,7 @@ def main(**kwargs):
         sim_t = data_cons['Time']
         orbit_t = AAT.calculate_orbit_time(sim_t)
 
-        with open(kwargs['output'], 'a', newline='') as f:
+        with open(args.output, 'a', newline='') as f:
             writer = csv.writer(f, delimiter='\t')
             row = [sim_t,orbit_t,mag_flux_u,mag_flux_l,mag_flux_u_abs,mag_flux_l_abs]
             writer.writerow(row)

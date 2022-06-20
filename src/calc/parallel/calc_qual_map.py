@@ -30,9 +30,9 @@ def main(**kwargs):
     size = comm.Get_size()
     rank = comm.Get_rank()
 
-    os.chdir(kwargs['data'])
+    os.chdir(args.data)
 
-    data_input = athena_read.athinput(kwargs['input'])
+    data_input = athena_read.athinput(args.input)
     x1min = data_input['mesh']['x1min'] # bounds of simulation
     x1max = data_input['mesh']['x1max']
     x2min = data_input['mesh']['x2min']
@@ -58,28 +58,28 @@ def main(**kwargs):
         x2_high_min = x2min
         x2_high_max = x2max
 
-    data_init = athena_read.athdf(kwargs['problem_id'] + '.cons.00000.athdf',
+    data_init = athena_read.athdf(args.problem_id + '.cons.00000.athdf',
                                     quantities=['x1v','x2v'])
     x1v_init = data_init['x1v'] # r
     x2v_init = data_init['x2v'] # theta
 
-    if kwargs['theta_lower'] is not None:
-        if not x2min <= kwargs['theta_lower'] < x2max:
+    if args.theta_lower is not None:
+        if not x2min <= args.theta_lower < x2max:
             sys.exit('Error: Lower theta value must be between %d and %d' % x2min,x2max)
-        tl = AAT.find_nearest(x2v_init, kwargs['theta_lower'])
+        tl = AAT.find_nearest(x2v_init, args.theta_lower)
     else:
         tl = AAT.find_nearest(x2v_init, x2_high_min)
-    if kwargs['theta_upper'] is not None:
-        if not x2min <= kwargs['theta_upper'] < x2max:
+    if args.theta_upper is not None:
+        if not x2min <= args.theta_upper < x2max:
             sys.exit('Error: Upper theta value must be between %d and %d' % x2min,x2max)
-        tu = AAT.find_nearest(x2v_init, kwargs['theta_upper'])
+        tu = AAT.find_nearest(x2v_init, args.theta_upper)
     else:
         tu = AAT.find_nearest(x2v_init, x2_high_max)
 
-    file_times = AAT.add_time_to_list(kwargs['update'], kwargs['Qtheta_output'])
-    if kwargs['problem_id']=='high_res':
+    file_times = AAT.add_time_to_list(args.update, args.Qtheta_output)
+    if args.problem_id=='high_res':
         file_times = file_times[file_times>2.5e4]
-    elif kwargs['problem_id']=='high_beta' or kwargs['problem_id']=='super_res':
+    elif args.problem_id=='high_beta' or args.problem_id=='super_res':
         file_times = file_times[file_times>1e4]
     local_times = AAT.distribute_files_to_cores(file_times, size, rank)
 
@@ -91,11 +91,11 @@ def main(**kwargs):
         GM = 1.
 
         #unpack data
-        data_cons = athena_read.athdf(kwargs['problem_id'] + '.cons.' + str_t + '.athdf',
+        data_cons = athena_read.athdf(args.problem_id + '.cons.' + str_t + '.athdf',
                                         quantities=['x1v','x2v','x3v','x1f','x2f','x3f',
                                                     'dens','mom1','mom2','mom3',
                                                     'Bcc1','Bcc2','Bcc3'])
-        data_prim = athena_read.athdf(kwargs['problem_id'] + '.prim.' + str_t + '.athdf',
+        data_prim = athena_read.athdf(args.problem_id + '.prim.' + str_t + '.athdf',
                                         quantities=['press'])
 
         x1v = data_cons['x1v']
@@ -144,8 +144,8 @@ def main(**kwargs):
         Qtheta_av = np.mean(Qtheta_all, axis=0)
         Qphi_av = np.mean(Qphi_all, axis=0)
 
-        np.save(kwargs['Qtheta_output'],Qtheta_av)
-        np.save(kwargs['Qphi_output'],Qphi_av)
+        np.save(args.Qtheta_output,Qtheta_av)
+        np.save(args.Qphi_output,Qphi_av)
 
 
 # Execute main function

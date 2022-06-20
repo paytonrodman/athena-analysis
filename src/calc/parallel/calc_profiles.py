@@ -28,16 +28,16 @@ def main(**kwargs):
     size = comm.Get_size()
     rank = comm.Get_rank()
 
-    os.chdir(kwargs['data'])
+    os.chdir(args.data)
 
-    file_times = AAT.add_time_to_list(kwargs['update'], kwargs['output'])
-    if kwargs['problem_id']=='high_res':
+    file_times = AAT.add_time_to_list(args.update, args.output)
+    if args.problem_id=='high_res':
         file_times = file_times[file_times>10000] # t > 5e4
-    elif kwargs['problem_id']=='high_beta':
+    elif args.problem_id=='high_beta':
         file_times = file_times[file_times>4000] # t > 2e4
     local_times = AAT.distribute_files_to_cores(file_times, size, rank)
 
-    data_input = athena_read.athinput(kwargs['input'])
+    data_input = athena_read.athinput(args.input)
     scale_height = data_input['problem']['h_r']
     if 'refinement3' in data_input:
         x1_high_max = data_input['refinement3']['x1max'] # bounds of high resolution region
@@ -48,7 +48,7 @@ def main(**kwargs):
     else:
         x1_high_max = data_input['mesh']['x1max']
 
-    data_init = athena_read.athdf(kwargs['problem_id'] + '.cons.00000.athdf', quantities=['x1v','x2v'])
+    data_init = athena_read.athdf(args.problem_id + '.cons.00000.athdf', quantities=['x1v','x2v'])
     x1v = data_init['x1v']
     x2v = data_init['x2v']
     r_u = AAT.find_nearest(x1v, x1_high_max)
@@ -62,9 +62,9 @@ def main(**kwargs):
     temp_all = []
     for t in local_times:
         str_t = str(int(t)).zfill(5)
-        data_prim = athena_read.athdf(kwargs['problem_id'] + ".prim." + str_t + ".athdf",
+        data_prim = athena_read.athdf(args.problem_id + ".prim." + str_t + ".athdf",
                                         quantities=['press'])
-        data_cons = athena_read.athdf(kwargs['problem_id'] + ".cons." + str_t + ".athdf",
+        data_cons = athena_read.athdf(args.problem_id + ".cons." + str_t + ".athdf",
                                         quantities=['dens','mom1','mom2','mom3'])
 
         #unpack data
@@ -101,11 +101,11 @@ def main(**kwargs):
         mom3_av = np.mean(mom3_all, axis=0)
         temp_av = np.mean(temp_all, axis=0)
 
-        np.save(kwargs['output'] + 'dens_profile.npy', dens_av)
-        np.save(kwargs['output'] + 'mom1_profile.npy', mom1_av)
-        np.save(kwargs['output'] + 'mom2_profile.npy', mom2_av)
-        np.save(kwargs['output'] + 'mom3_profile.npy', mom3_av)
-        np.save(kwargs['output'] + 'temp_profile.npy', temp_av)
+        np.save(args.output + 'dens_profile.npy', dens_av)
+        np.save(args.output + 'mom1_profile.npy', mom1_av)
+        np.save(args.output + 'mom2_profile.npy', mom2_av)
+        np.save(args.output + 'mom3_profile.npy', mom3_av)
+        np.save(args.output + 'temp_profile.npy', temp_av)
 
 # Execute main function
 if __name__ == '__main__':

@@ -31,9 +31,9 @@ def main(**kwargs):
     size = comm.Get_size()
     rank = comm.Get_rank()
 
-    os.chdir(kwargs['data'])
+    os.chdir(args.data)
 
-    data_input = athena_read.athinput(kwargs['input'])
+    data_input = athena_read.athinput(args.input)
     x1min = data_input['mesh']['x1min'] # bounds of simulation
     x1max = data_input['mesh']['x1max']
     x2min = data_input['mesh']['x2min']
@@ -59,33 +59,33 @@ def main(**kwargs):
         x2_high_min = x2min
         x2_high_max = x2max
 
-    data_init = athena_read.athdf(kwargs['problem_id'] + '.cons.00000.athdf',
+    data_init = athena_read.athdf(args.problem_id + '.cons.00000.athdf',
                                     quantities=['x1v','x2v'])
     x1v_init = data_init['x1v'] # r
     x2v_init = data_init['x2v'] # theta
 
-    if kwargs['r_lower'] is not None:
-        if not x1min <= kwargs['r_lower'] < x1max:
+    if args.r_lower is not None:
+        if not x1min <= args.r_lower < x1max:
             sys.exit('Error: Lower r value must be between %d and %d' % x1min,x1max)
-        rl = AAT.find_nearest(x1v_init, kwargs['r_lower'])
+        rl = AAT.find_nearest(x1v_init, args.r_lower)
     else:
         rl = AAT.find_nearest(x1v_init, x1_high_min)
-    if kwargs['r_upper'] is not None:
-        if not x1min <= kwargs['r_upper'] < x1max:
+    if args.r_upper is not None:
+        if not x1min <= args.r_upper < x1max:
             sys.exit('Error: Upper r value must be between %d and %d' % x1min,x1max)
-        ru = AAT.find_nearest(x1v_init, kwargs['r_upper'])
+        ru = AAT.find_nearest(x1v_init, args.r_upper)
     else:
         ru = AAT.find_nearest(x1v_init, x1_high_max)
-    if kwargs['theta_lower'] is not None:
-        if not x2min <= kwargs['theta_lower'] < x2max:
+    if args.theta_lower is not None:
+        if not x2min <= args.theta_lower < x2max:
             sys.exit('Error: Lower theta value must be between %d and %d' % x2min,x2max)
-        tl = AAT.find_nearest(x2v_init, kwargs['theta_lower'])
+        tl = AAT.find_nearest(x2v_init, args.theta_lower)
     else:
         tl = AAT.find_nearest(x2v_init, x2_high_min)
-    if kwargs['theta_upper'] is not None:
-        if not x2min <= kwargs['theta_upper'] < x2max:
+    if args.theta_upper is not None:
+        if not x2min <= args.theta_upper < x2max:
             sys.exit('Error: Upper theta value must be between %d and %d' % x2min,x2max)
-        tu = AAT.find_nearest(x2v_init, kwargs['theta_upper'])
+        tu = AAT.find_nearest(x2v_init, args.theta_upper)
     else:
         tu = AAT.find_nearest(x2v_init, x2_high_max)
 
@@ -94,15 +94,14 @@ def main(**kwargs):
     if tl==tu:
         tu += 1
 
-    #filename_output = 'qual_with_time_' + str(rl) + '_' + str(ru) + '_' + str(tl) + '_' + str(tu) + '.csv'
-    file_times = AAT.add_time_to_list(kwargs['update'], kwargs['output'])
+    file_times = AAT.add_time_to_list(args.update, args.output)
     local_times = AAT.distribute_files_to_cores(file_times, size, rank)
 
     local_times = [20]
 
     if rank==0:
-        if not kwargs['update']:
-            with open(kwargs['output'], 'w', newline='') as f:
+        if not args.update:
+            with open(args.output, 'w', newline='') as f:
                 writer = csv.writer(f, delimiter='\t')
                 writer.writerow(["sim_time", "orbit_time", "theta_B", "Q_theta", "Q_phi"])
     for t in local_times:
@@ -111,11 +110,11 @@ def main(**kwargs):
         GM = 1.
 
         #unpack data
-        data_cons = athena_read.athdf(kwargs['problem_id'] + '.cons.' + str_t + '.athdf',
+        data_cons = athena_read.athdf(args.problem_id + '.cons.' + str_t + '.athdf',
                                         quantities=['x1v','x2v','x3v','x1f','x2f','x3f',
                                                     'dens','mom1','mom2','mom3',
                                                     'Bcc1','Bcc2','Bcc3'])
-        data_prim = athena_read.athdf(kwargs['problem_id'] + '.prim.' + str_t + '.athdf',
+        data_prim = athena_read.athdf(args.problem_id + '.prim.' + str_t + '.athdf',
                                         quantities=['press'])
 
         x1v = data_cons['x1v']
@@ -175,7 +174,7 @@ def main(**kwargs):
         sim_t = data_cons['Time']
         orbit_t = AAT.calculate_orbit_time(sim_t)
 
-        with open(kwargs['output'], 'a', newline='') as f:
+        with open(args.output, 'a', newline='') as f:
             writer = csv.writer(f, delimiter='\t')
             row = [sim_t,orbit_t,tB_av,Qt_all,Qp_all]
             writer.writerow(row)

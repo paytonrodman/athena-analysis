@@ -30,14 +30,14 @@ def main(**kwargs):
     size = comm.Get_size()
     rank = comm.Get_rank()
 
-    os.chdir(kwargs['data'])
+    os.chdir(args.data)
 
-    file_times = AAT.add_time_to_list(kwargs['update'], kwargs['output'])
+    file_times = AAT.add_time_to_list(args.update, args.output)
     local_times = AAT.distribute_files_to_cores(file_times, size, rank)
 
-    data_input = athena_read.athinput(kwargs['input'])
+    data_input = athena_read.athinput(args.input)
     scale_height = data_input['problem']['h_r']
-    data_init = athena_read.athdf(kwargs['problem_id'] + '.cons.00000.athdf', quantities=['x1v','x2v','x3v'])
+    data_init = athena_read.athdf(args.problem_id + '.cons.00000.athdf', quantities=['x1v','x2v','x3v'])
     x1v = data_init['x1v']
     x2v = data_init['x2v']
     x3v = data_init['x3v']
@@ -45,13 +45,13 @@ def main(**kwargs):
     r_u = AAT.find_nearest(x1v, 15. + 15.*scale_height)
     r_mid = np.int(r_l + (r_u - r_l)/2.)
     dist = scale_height*x1v[r_mid]
-    if kwargs['hemisphere']=='upper':
+    if args.hemisphere=='upper':
         th_l = AAT.find_nearest(x2v, np.pi/2. - (np.arctan(2.*dist/x1v[r_mid])))
         th_u = AAT.find_nearest(x2v, np.pi/2. - (np.arctan(1.*dist/x1v[r_mid])))
-    elif kwargs['hemisphere']=="lower":
+    elif args.hemisphere=="lower":
         th_l = AAT.find_nearest(x2v, np.pi/2. + (np.arctan(1.*dist/x1v[r_mid])))
         th_u = AAT.find_nearest(x2v, np.pi/2. + (np.arctan(2.*dist/x1v[r_mid])))
-    if kwargs['reduced']:
+    if args.reduced:
         ph_l = AAT.find_nearest(x3v, x3v[0])
         ph_u = AAT.find_nearest(x3v, x3v[int(np.size(x3v)/4.)])
     else:
@@ -59,13 +59,13 @@ def main(**kwargs):
         ph_u = AAT.find_nearest(x3v, x3v[-1])
 
     if rank==0:
-        if not kwargs['update']:
-            with open(kwargs['output'], 'w', newline='') as f:
+        if not args.update:
+            with open(args.output, 'w', newline='') as f:
                 writer = csv.writer(f, delimiter='\t')
                 writer.writerow(["sim_time", "orbit_time", "alpha", "C"])
     for t in local_times:
         str_t = str(int(t)).zfill(5)
-        data_cons = athena_read.athdf(kwargs['problem_id'] + '.cons.' + str_t + '.athdf',
+        data_cons = athena_read.athdf(args.problem_id + '.cons.' + str_t + '.athdf',
                                         quantities=['mom1','mom2','mom3','Bcc1','Bcc2','Bcc3'])
 
         #unpack data and select points between 1-2 scale heights
@@ -76,7 +76,7 @@ def main(**kwargs):
         Bcc2 = data_cons['Bcc2'][ph_l:ph_u,th_l:th_u,r_l:r_u]
         Bcc3 = data_cons['Bcc3'][ph_l:ph_u,th_l:th_u,r_l:r_u]
 
-        if kwargs['average']=='gaussian':
+        if args.average=='gaussian':
             s=5
             mom1_av = gaussian_filter(mom1, sigma=s)
             mom2_av = gaussian_filter(mom2, sigma=s)
@@ -84,8 +84,7 @@ def main(**kwargs):
             Bcc1_av = gaussian_filter(Bcc1, sigma=s)
             Bcc2_av = gaussian_filter(Bcc2, sigma=s)
             Bcc3_av = gaussian_filter(Bcc3, sigma=s)
-
-        if kwargs['average']=='azimuthal':
+        elif args.average=='azimuthal':
             mom1_av = np.average(mom1[ph_l:ph_u,:,:], axis=0)
             mom2_av = np.average(mom2[ph_l:ph_u,:,:], axis=0)
             mom3_av = np.average(mom3[ph_l:ph_u,:,:], axis=0)
@@ -113,12 +112,12 @@ def main(**kwargs):
         emf2 = -(mom1_fluc*Bcc3_fluc - mom3_fluc*Bcc1_fluc)
         emf3 = mom1_fluc*Bcc2_fluc - mom2_fluc*Bcc1_fluc
 
-        if kwargs['average']=='gaussian':
+        if args.average=='gaussian':
             emf1_av = gaussian_filter(emf1, sigma=s)
             emf2_av = gaussian_filter(emf2, sigma=s)
             emf3_av = gaussian_filter(emf3, sigma=s)
 
-        if kwargs['average']=='azimuthal':
+        if args.average=='azimuthal':
             emf1_av = np.average(emf1, axis=0)
             emf2_av = np.average(emf2, axis=0)
             emf3_av = np.average(emf3, axis=0)
@@ -134,7 +133,6 @@ def main(**kwargs):
         for num in range(0,3):
             x = B_all[num]
             y = emf_all[num]
-
             if t==0:
                 alpha_i,C_i = np.nan, np.nan
             else:
@@ -145,7 +143,7 @@ def main(**kwargs):
         sim_t = data_cons['Time']
         orbit_t = AAT.calculate_orbit_time(sim_t)
 
-        with open(kwargs['output'], 'a', newline='') as f:
+        with open(args.output, 'a', newline='') as f:
             writer = csv.writer(f, delimiter='\t')
             writer.writerow([sim_t,orbit_t,alpha,C])
 

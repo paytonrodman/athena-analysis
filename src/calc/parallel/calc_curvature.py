@@ -24,7 +24,7 @@ import athena_read
 import AAT
 
 def main(**kwargs):
-    if kwargs['stream'] is None:
+    if args.stream is None:
         sys.exit('Must specify stream')
 
     # get number of processors and processor rank
@@ -32,23 +32,23 @@ def main(**kwargs):
     size = comm.Get_size()
     rank = comm.Get_rank()
 
-    os.chdir(kwargs['data'])
+    os.chdir(args.data)
 
-    file_times = AAT.add_time_to_list(kwargs['update'], kwargs['output'])
+    file_times = AAT.add_time_to_list(args.update, args.output)
     local_times = AAT.distribute_files_to_cores(file_times, size, rank)
 
     # Determine if vector quantities should be read
     quantities = []
-    quantities.append(kwargs['stream'] + '1')
-    quantities.append(kwargs['stream'] + '2')
+    quantities.append(args.stream + '1')
+    quantities.append(args.stream + '2')
 
-    data_input = athena_read.athinput(kwargs['input'])
+    data_input = athena_read.athinput(args.input)
     if 'refinement3' not in data_input:
         sys.exit('Simulation must have 3 levels of refinement in mesh. Exiting.')
     x1min = 20. #data_input['refinement3']['x1min']
     x1max = 30. #data_input['refinement3']['x1max']
 
-    data_init = athena_read.athdf(kwargs['problem_id'] + '.cons.00000.athdf', quantities=['x1v','x2v'])
+    data_init = athena_read.athdf(args.problem_id + '.cons.00000.athdf', quantities=['x1v','x2v'])
     x1v = data_init['x1v']
     x2v = data_init['x2v']
 
@@ -66,14 +66,14 @@ def main(**kwargs):
     jet_max_u = AAT.find_nearest(x2v, np.pi)
 
     if rank==0:
-        if not kwargs['update']:
-            with open(kwargs['output'], 'w', newline='') as f:
+        if not args.update:
+            with open(args.output, 'w', newline='') as f:
                 writer = csv.writer(f, delimiter='\t')
                 writer.writerow(["sim_time", "orbit_time",
                 "kappa_jet", "kappa_upatmos", "kappa_lowatmos", "kappa_disk"])
     for t in local_times:
         str_t = str(int(t)).zfill(5)
-        data = athena_read.athdf(kwargs['problem_id'] + '.cons.' + str_t + '.athdf',
+        data = athena_read.athdf(args.problem_id + '.cons.' + str_t + '.athdf',
                                     quantities=quantities)
 
         # Extract basic coordinate information
@@ -89,10 +89,10 @@ def main(**kwargs):
         y_grid = r_grid * np.cos(theta_grid)
 
         # Perform slicing/averaging of vector data
-        vals_r_right = data[kwargs['stream'] + '1'][0, :, :].T
-        vals_r_left = data[kwargs['stream'] + '1'][int(nx3/2), :, :].T
-        vals_theta_right = data[kwargs['stream'] + '2'][0, :, :].T
-        vals_theta_left = -data[kwargs['stream'] + '2'][int(nx3/2), :, :].T
+        vals_r_right = data[args.stream + '1'][0, :, :].T
+        vals_r_left = data[args.stream + '1'][int(nx3/2), :, :].T
+        vals_theta_right = data[args.stream + '2'][0, :, :].T
+        vals_theta_left = -data[args.stream + '2'][int(nx3/2), :, :].T
         # Join vector data through boundaries
         vals_r = np.hstack((vals_r_left[:, :1], vals_r_right[:, :-1],
                             vals_r_left[:, -2::-1], vals_r_right[:, :1]))
@@ -149,7 +149,7 @@ def main(**kwargs):
         sim_t = data['Time']
         orbit_t = AAT.calculate_orbit_time(sim_t)
 
-        with open(kwargs['output'], 'a', newline='') as f:
+        with open(args.output, 'a', newline='') as f:
             writer = csv.writer(f, delimiter='\t')
             row = [sim_t,orbit_t,
                    curve_jet,curve_upatmos,curve_loatmos,curve_disk]

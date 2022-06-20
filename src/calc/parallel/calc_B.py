@@ -30,21 +30,21 @@ def main(**kwargs):
     rank = comm.Get_rank()
 
     # check user has passed valid --c variable
-    if kwargs['component'] not in ['r','theta','phi','all']:
+    if args.component not in ['r','theta','phi','all']:
         sys.exit('Must specify a valid B component')
 
-    os.chdir(kwargs['data'])
+    os.chdir(args.data)
 
-    file_times = AAT.add_time_to_list(kwargs['update'], kwargs['output'])
+    file_times = AAT.add_time_to_list(args.update, args.output)
     local_times = AAT.distribute_files_to_cores(file_times, size, rank)
 
-    data_input = athena_read.athinput(kwargs['input'])
+    data_input = athena_read.athinput(args.input)
     if 'refinement3' not in data_input:
         sys.exit('Simulation must have 3 levels of refinement in mesh. Exiting.')
     x1min = data_input['mesh']['x1min']
     x1max = data_input['refinement3']['x1max']
 
-    data_init = athena_read.athdf(kwargs['problem_id'] + '.cons.00000.athdf', quantities=['x2v'])
+    data_init = athena_read.athdf(args.problem_id + '.cons.00000.athdf', quantities=['x2v'])
     x2v = data_init['x2v']
     th_id = AAT.find_nearest(x2v, np.pi/2.)
 
@@ -59,15 +59,15 @@ def main(**kwargs):
     jet_max_u = AAT.find_nearest(x2v, np.pi)
 
     if rank==0:
-        if not kwargs['update']:
-            with open(kwargs['output'], 'w', newline='') as f:
+        if not args.update:
+            with open(args.output, 'w', newline='') as f:
                 writer = csv.writer(f, delimiter='\t')
                 writer.writerow(["sim_time", "orbit_time",
                 "abs_B_flux", "abs_B_jet", "abs_B_upatmos", "abs_B_loatmos", "abs_B_disk",
                 "sign_B_flux", "sign_B_jet", "sign_B_upatmos", "sign_B_loatmos", "sign_B_disk"])
     for t in local_times:
         str_t = str(int(t)).zfill(5)
-        data_cons = athena_read.athdf(kwargs['problem_id'] + '.cons.' + str_t + '.athdf',
+        data_cons = athena_read.athdf(args.problem_id + '.cons.' + str_t + '.athdf',
                     quantities=['x2v','x3v','x1f','x2f','x3f','Bcc1','Bcc2','Bcc3'])
 
         #unpack data
@@ -81,13 +81,13 @@ def main(**kwargs):
         Bcc3 = data_cons['Bcc3']
 
         _,dx2f,dx3f = AAT.calculate_delta(x1f,x2f,x3f)
-        if kwargs['component']=='all':
+        if args.component=='all':
             B = np.sqrt(Bcc1**2. + Bcc2**2. + Bcc3**2.)
-        elif kwargs['component']=='r':
+        elif args.component=='r':
             B = Bcc1
-        elif kwargs['component']=='theta':
+        elif args.component=='theta':
             B = Bcc2
-        elif kwargs['component']=='phi':
+        elif args.component=='phi':
             B = Bcc3
 
         mf_l = []
@@ -144,7 +144,7 @@ def main(**kwargs):
         sim_t = data_cons['Time']
         orbit_t = AAT.calculate_orbit_time(sim_t)
 
-        with open(kwargs['output'], 'a', newline='') as f:
+        with open(args.output, 'a', newline='') as f:
             writer = csv.writer(f, delimiter='\t')
             row = [sim_t,orbit_t,
                    abs_B_flux,abs_B_jet,abs_B_upatmos,abs_B_loatmos,abs_B_disk,
