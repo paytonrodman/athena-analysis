@@ -11,7 +11,6 @@
 import argparse
 import sys
 import os
-import gc
 sys.path.insert(0, '/home/per29/rds/rds-accretion-zyNhkonJSR8/athena-analysis/dependencies')
 #sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies')
 
@@ -64,18 +63,6 @@ def main(**kwargs):
     x1v_init = data_init['x1v'] # r
     x2v_init = data_init['x2v'] # theta
 
-    if kwargs['r_lower'] is not None:
-        if not x1min <= kwargs['r_lower'] < x1max:
-            sys.exit('Error: Lower r value must be between %d and %d' % x1min,x1max)
-        rl = AAT.find_nearest(x1v_init, kwargs['r_lower'])
-    else:
-        rl = AAT.find_nearest(x1v_init, x1_high_min)
-    if kwargs['r_upper'] is not None:
-        if not x1min <= kwargs['r_upper'] < x1max:
-            sys.exit('Error: Upper r value must be between %d and %d' % x1min,x1max)
-        ru = AAT.find_nearest(x1v_init, kwargs['r_upper'])
-    else:
-        ru = AAT.find_nearest(x1v_init, x1_high_max)
     if kwargs['theta_lower'] is not None:
         if not x2min <= kwargs['theta_lower'] < x2max:
             sys.exit('Error: Lower theta value must be between %d and %d' % x2min,x2max)
@@ -89,22 +76,15 @@ def main(**kwargs):
     else:
         tu = AAT.find_nearest(x2v_init, x2_high_max)
 
-    if rl==ru:
-        ru += 1
-    if tl==tu:
-        tu += 1
-
-    #filename_output = 'qual_with_time_' + str(rl) + '_' + str(ru) + '_' + str(tl) + '_' + str(tu) + '.csv'
-    file_times = AAT.add_time_to_list(kwargs['update'], kwargs['output'])
+    file_times = AAT.add_time_to_list(kwargs['update'], kwargs['Qtheta_output'])
+    if kwargs['problem_id']=='high_res':
+        file_times = file_times[file_times>2.5e4]
+    elif kwargs['problem_id']=='high_beta' or kwargs['problem_id']=='super_res':
+        file_times = file_times[file_times>1e4]
     local_times = AAT.distribute_files_to_cores(file_times, size, rank)
 
-    local_times = [20]
-
-    if rank==0:
-        if not kwargs['update']:
-            with open(kwargs['output'], 'w', newline='') as f:
-                writer = csv.writer(f, delimiter='\t')
-                writer.writerow(["sim_time", "orbit_time", "theta_B", "Q_theta", "Q_phi"])
+    Qphi_all = []
+    Qtheta_all = []
     for t in local_times:
         str_t = str(int(t)).zfill(5)
         gamma = 5./3.
@@ -124,22 +104,13 @@ def main(**kwargs):
         x1f = data_cons['x1f']
         x2f = data_cons['x2f']
         x3f = data_cons['x3f']
-        dens = data_cons['dens'][:, tl:tu, rl:ru]
-        Bcc1 = data_cons['Bcc1'][:, tl:tu, rl:ru]
-        Bcc2 = data_cons['Bcc2'][:, tl:tu, rl:ru]
-        Bcc3 = data_cons['Bcc3'][:, tl:tu, rl:ru]
-        press = data_prim['press'][:, tl:tu, rl:ru]
+        dens = data_cons['dens']
+        Bcc1 = data_cons['Bcc1']
+        Bcc2 = data_cons['Bcc2']
+        Bcc3 = data_cons['Bcc3']
+        press = data_prim['press']
 
-        dx1f,dx2f,dx3f = AAT.calculate_delta(x1f,x2f,x3f)
-        phi,theta,r = np.meshgrid(x3v,x2v,x1v, sparse=False, indexing='ij')
-        dphi,dtheta,_ = np.meshgrid(dx3f,dx2f,dx1f, sparse=False, indexing='ij')
-
-        del data_cons, data_prim
-        del dx1f, dx2f, dx3f
-        del x2v, x3v
-        gc.collect()
-
-        Omega_kep = np.sqrt(GM/(x1v[rl:ru]**3.))
+        Omega_kep = np.sqrt(GM/(x1v**3.))
         Omega_kep = np.broadcast_to(Omega_kep, (np.shape(dens)[0], np.shape(dens)[1], np.shape(dens)[2]))
 
         tB = (-np.arctan(Bcc1/Bcc3)) * (180./np.pi) #magnetic tilt angle in degrees
@@ -152,33 +123,29 @@ def main(**kwargs):
         lambda_MRI_theta = 2.*np.pi*np.sqrt(16./15.)*np.abs(vA_theta)/Omega_kep
         lambda_MRI_phi = 2.*np.pi*np.sqrt(16./15.)*np.abs(vA_phi)/Omega_kep
 
+        dx1f,dx2f,dx3f = AAT.calculate_delta(x1f,x2f,x3f)
+        phi,theta,r = np.meshgrid(x3v,x2v,x1v, sparse=False, indexing='ij')
+        dphi,dtheta,_ = np.meshgrid(dx3f,dx2f,dx1f, sparse=False, indexing='ij')
+
         R = r*np.sin(theta)
-        R = R[:, tl:tu, rl:ru]
-        r = r[:, tl:tu, rl:ru]
-        phi = phi[:, tl:tu, rl:ru]
-        dphi = dphi[:, tl:tu, rl:ru]
-        dtheta = dtheta[:, tl:tu, rl:ru]
 
-        Q_theta = lambda_MRI_theta/(r*dtheta)
+        #Q_theta = lambda_MRI_theta/np.sqrt(r*dtheta)
+        Q_theta = lambda_MRI_theta/(R*dtheta)
+        Q_theta = np.mean(Q_theta, axis=0) #average azimuthally
+        #Q_phi = lambda_MRI_phi/np.sqrt(r*np.abs(np.sin(phi))*dphi)
         Q_phi = lambda_MRI_phi/(R*dphi)
-        Q_theta = np.array(Q_theta.flatten())
-        Q_phi = np.array(Q_phi.flatten())
+        Q_phi = np.mean(Q_phi[:, tl:tu, :], axis=1) #average within high res theta range
 
-        Qt_l,Qt_h = st.t.interval(0.95, len(Q_theta)-1, loc=np.mean(Q_theta), scale=st.sem(Q_theta))
-        Qt_av = np.mean(Q_theta)
-        Qp_l,Qp_h = st.t.interval(0.95, len(Q_phi)-1, loc=np.mean(Q_phi), scale=st.sem(Q_phi))
-        Qp_av = np.mean(Q_phi)
+        Qtheta_all.append(Q_theta)
+        Qphi_all.append(Q_phi)
 
-        Qt_all = [Qt_l,Qt_av,Qt_h]
-        Qp_all = [Qp_l,Qp_av,Qp_h]
+    comm.barrier()
+    if rank == 0:
+        Qtheta_av = np.mean(Qtheta_all, axis=0)
+        Qphi_av = np.mean(Qphi_all, axis=0)
 
-        sim_t = data_cons['Time']
-        orbit_t = AAT.calculate_orbit_time(sim_t)
-
-        with open(kwargs['output'], 'a', newline='') as f:
-            writer = csv.writer(f, delimiter='\t')
-            row = [sim_t,orbit_t,tB_av,Qt_all,Qp_all]
-            writer.writerow(row)
+        np.save(kwargs['Qtheta_output'],Qtheta_av)
+        np.save(kwargs['Qphi_output'],Qphi_av)
 
 
 # Execute main function
@@ -190,8 +157,10 @@ if __name__ == '__main__':
                         help='location of data folder, possibly including path')
     parser.add_argument('input',
                         help='location of athinput file, possibly including path')
-    parser.add_argument('output',
-                        help='name of output to be (over)written, possibly including path')
+    parser.add_argument('Qtheta_output',
+                        help='name of Qtheta output to be (over)written, possibly including path')
+    parser.add_argument('Qphi_output',
+                        help='name of Qphi output to be (over)written, possibly including path')
     parser.add_argument('-u', '--update',
                         action="store_true",
                         help='append new results to an existing data file')
@@ -205,11 +174,11 @@ if __name__ == '__main__':
                         help='value of upper r bound of region being analysed, must be between x1min and x1max (default=100)')
     parser.add_argument('-tl', '--theta_lower',
                         type=float,
-                        default=None,
+                        default=0.982,
                         help='value of lower theta bound of region being analysed, must be between x2min and x2max (default=0.982)')
     parser.add_argument('-tu', '--theta_upper',
                         type=float,
-                        default=None,
+                        default=2.159,
                         help='value of upper theta bound of region being analysed, must be between x2min and x2max (default=2.159)')
     args = parser.parse_args()
 

@@ -11,8 +11,8 @@ import argparse
 import warnings
 import sys
 import os
-sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies')
-#sys.path.insert(0, '/home/per29/rds/rds-accretion-zyNhkonJSR8/athena-analysis/dependencies')
+#sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies')
+sys.path.insert(0, '/home/per29/rds/rds-accretion-zyNhkonJSR8/athena-analysis/dependencies')
 
 # Other Python modules
 import numpy as np
@@ -45,10 +45,15 @@ def main(**kwargs):
     data_input = athena_read.athinput(kwargs['input'])
     if 'refinement3' not in data_input:
         sys.exit('Simulation must have 3 levels of refinement in mesh. Exiting.')
-    x1max = data_input['refinement3']['x1max']
+    x1min = 20. #data_input['refinement3']['x1min']
+    x1max = 30. #data_input['refinement3']['x1max']
 
-    data_init = athena_read.athdf(kwargs['problem_id'] + '.cons.00000.athdf', quantities=['x2v'])
+    data_init = athena_read.athdf(kwargs['problem_id'] + '.cons.00000.athdf', quantities=['x1v','x2v'])
+    x1v = data_init['x1v']
     x2v = data_init['x2v']
+
+    rmin = AAT.find_nearest(x1v, x1min)
+    rmax = AAT.find_nearest(x1v, x1max)
 
     jet_max_l = AAT.find_nearest(x2v, data_input['refinement1']['x2min'])
     upatmos_max_l = AAT.find_nearest(x2v, data_input['refinement2']['x2min'])
@@ -108,39 +113,37 @@ def main(**kwargs):
 
         # curvature kappa = ||b dot nabla b|| where b = B / ||B|| and ||x|| is the modulus of x
         # and nabla is the differential operator, i d/dx + j d/dy + k d/dz
-        bx = vals_x.T / np.sqrt(vals_x.T**2. + vals_z.T**2.)
-        bz = vals_z.T / np.sqrt(vals_x.T**2. + vals_z.T**2.)
-
-        dbx = np.array(np.gradient(bx))
-        dx = np.array(np.gradient(x_grid))
-        dbz = np.array(np.gradient(bz))
-        dz = np.array(np.gradient(y_grid))
-
         with warnings.catch_warnings():
-            warnings.filterwarnings(
-                'ignore',
-                category=RuntimeWarning)
+            warnings.filterwarnings('ignore', category=RuntimeWarning) #silence "divide by zero"
+            bx = vals_x.T / np.sqrt(vals_x.T**2. + vals_z.T**2.)
+            bz = vals_z.T / np.sqrt(vals_x.T**2. + vals_z.T**2.)
+
+            dbx = np.array(np.gradient(bx))
+            dx = np.array(np.gradient(x_grid))
+            dbz = np.array(np.gradient(bz))
+            dz = np.array(np.gradient(y_grid))
+
             divbx = np.true_divide(dbx[1,:,:], dx[1,:-1,:-1])
             divbz = np.true_divide(dbz[0,:,:], dz[0,:-1,:-1])
 
-        bdivb = divbx*bx + divbz*bz
-        bdivb = np.abs(bdivb)
+            bdivb = divbx*bx + divbz*bz
+            bdivb = np.abs(bdivb)
 
         # Calculate average curvature in each region
-        curve_jet_l = bdivb[:jet_max_l, :x1max]
-        curve_jet_u = bdivb[upatmos_max_u+1:jet_max_u, :x1max]
+        curve_jet_l = bdivb[:jet_max_l, rmin:rmax]
+        curve_jet_u = bdivb[upatmos_max_u+1:jet_max_u, rmin:rmax]
         curve_jet = [np.median(curve_jet_l[np.isfinite(curve_jet_l)]), np.median(curve_jet_u[np.isfinite(curve_jet_u)])]
 
-        curve_upatmos_l = bdivb[jet_max_l+1:upatmos_max_l,:x1max]
-        curve_upatmos_u = bdivb[loatmos_max_u+1:upatmos_max_u,:x1max]
+        curve_upatmos_l = bdivb[jet_max_l+1:upatmos_max_l, rmin:rmax]
+        curve_upatmos_u = bdivb[loatmos_max_u+1:upatmos_max_u, rmin:rmax]
         curve_upatmos = [np.median(curve_upatmos_l[np.isfinite(curve_upatmos_l)]), np.median(curve_upatmos_u[np.isfinite(curve_upatmos_u)])]
 
-        curve_loatmos_l = bdivb[upatmos_max_l+1:loatmos_max_l, :x1max]
-        curve_loatmos_u = bdivb[disk_max_u+1:loatmos_max_u, :x1max]
+        curve_loatmos_l = bdivb[upatmos_max_l+1:loatmos_max_l, rmin:rmax]
+        curve_loatmos_u = bdivb[disk_max_u+1:loatmos_max_u, rmin:rmax]
         curve_loatmos = [np.median(curve_loatmos_l[np.isfinite(curve_loatmos_l)]), np.median(curve_loatmos_u[np.isfinite(curve_loatmos_u)])]
 
-        curve_disk_l = bdivb[loatmos_max_l+1:disk_max_l, :x1max]
-        curve_disk_u = bdivb[disk_max_l+1:disk_max_u, :x1max]
+        curve_disk_l = bdivb[loatmos_max_l+1:disk_max_l, rmin:rmax]
+        curve_disk_u = bdivb[disk_max_l+1:disk_max_u, rmin:rmax]
         curve_disk = [np.median(curve_disk_l[np.isfinite(curve_disk_l)]), np.median(curve_disk_u[np.isfinite(curve_disk_u)])]
 
         sim_t = data['Time']

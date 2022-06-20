@@ -35,7 +35,7 @@ def main(**kwargs):
 
     init_data = athena_read.athdf(kwargs['problem_id'] + '.cons.00000.athdf', quantities=['x1v'])
     x1v_init = init_data['x1v'] # r
-    r_val = [6.,25.,50.,75.,100.]
+    r_val = [6.]
     r_id = []
     for r in r_val:
         r_id_i = AAT.find_nearest(x1v_init, r)
@@ -70,8 +70,8 @@ def main(**kwargs):
             mf_i = []
             for j in range(len(x2v)):
                 for k in range(len(x3v)):
-                    dOmega = np.sin(x2f[j]) * dx2f[j] * dx3f[k]
-                    mf_i.append(-dens[k,j,r_id_i] * v1[k,j,r_id_i] * (x1f[r_id_i])**2. * dOmega)
+                    dS = (x1f[r_id_i])**2. * np.sin(x2f[j]) * dx2f[j] * dx3f[k] # r^2 sin(theta) dtheta dphi
+                    mf_i.append(-dens[k,j,r_id_i] * v1[k,j,r_id_i] * dS)
             mf_local.append(np.sum(mf_i))
 
         sim_t = data_cons['Time']

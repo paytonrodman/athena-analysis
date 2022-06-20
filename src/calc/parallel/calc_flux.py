@@ -33,8 +33,10 @@ def main(**kwargs):
     file_times = AAT.add_time_to_list(kwargs['update'], kwargs['output'])
     local_times = AAT.distribute_files_to_cores(file_times, size, rank)
 
-    data_init = athena_read.athdf(kwargs['problem_id'] + '.cons.00000.athdf', quantities=['x2v'])
+    data_init = athena_read.athdf(kwargs['problem_id'] + '.cons.00000.athdf', quantities=['x1v', 'x2v'])
+    x1v_init = data_init['x1v']
     x2v_init = data_init['x2v']
+    r_id = AAT.find_nearest(x1v_init, 6.)
     th_id = AAT.find_nearest(x2v_init, np.pi/2.)
 
     if rank==0:
@@ -43,11 +45,12 @@ def main(**kwargs):
                 writer = csv.writer(f, delimiter='\t')
                 writer.writerow(["sim_time", "orbit_time",
                                     "mag_flux_u", "mag_flux_l",
-                                    "mag_flux_u_abs", "mag_flux_l_abs"])
+                                    "mag_flux_u_abs", "mag_flux_l_abs",
+                                    "mag_flux_u_babs", "mag_flux_l_babs"])
     for t in local_times:
         str_t = str(int(t)).zfill(5)
         data_cons = athena_read.athdf(kwargs['problem_id'] + '.cons.' + str_t + '.athdf',
-                                        quantities=['x2v','x3v','x1f','x2f','x3f','Bcc1'])
+                                        quantities=['x2v','x3v','x1f','x2f','x3f','dens','mom1','Bcc1'])
 
         #unpack data
         x2v = data_cons['x2v']
@@ -55,6 +58,8 @@ def main(**kwargs):
         x1f = data_cons['x1f']
         x2f = data_cons['x2f']
         x3f = data_cons['x3f']
+        dens = data_cons['dens']
+        v1 = data_cons['mom1']
         Bcc1 = data_cons['Bcc1']
 
         _,dx2f,dx3f = AAT.calculate_delta(x1f,x2f,x3f)
@@ -63,17 +68,17 @@ def main(**kwargs):
         mf_u = []
         for j in range(th_id):
             for k in range(len(x3v)):
-                dS = (x1f[0]**2.)*np.sin(x2f[j])*dx2f[j]*dx3f[k] # r^2 * sin(theta) * dtheta * dphi
-                mf_u.append(Bcc1[k,j,0]*dS)
+                dS = (x1f[r_id]**2.) * np.sin(x2f[j]) * dx2f[j] * dx3f[k]
+                mf_u.append(Bcc1[k,j,r_id]*dS)
         for j in range(th_id,len(x2v)):
             for k in range(len(x3v)):
-                dS = (x1f[0]**2.)*np.sin(x2f[j])*dx2f[j]*dx3f[k] # r^2 * sin(theta) * dtheta * dphi
-                mf_l.append(Bcc1[k,j,0]*dS)
+                dS = (x1f[r_id]**2.) * np.sin(x2f[j]) * dx2f[j] * dx3f[k]
+                mf_l.append(Bcc1[k,j,r_id]*dS)
 
-        mag_flux_u = np.sum(mf_u)
-        mag_flux_u_abs = np.sum(np.abs(mf_u))
-        mag_flux_l = np.sum(mf_l)
-        mag_flux_l_abs = np.sum(np.abs(mf_l))
+        mag_flux_u = np.sqrt(4.*np.pi) * np.sum(mf_u)
+        mag_flux_u_abs = np.sqrt(4.*np.pi) * np.sum(np.abs(mf_u))
+        mag_flux_l = np.sqrt(4.*np.pi) * np.sum(mf_l)
+        mag_flux_l_abs = np.sqrt(4.*np.pi) * np.sum(np.abs(mf_l))
 
         sim_t = data_cons['Time']
         orbit_t = AAT.calculate_orbit_time(sim_t)

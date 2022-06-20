@@ -28,27 +28,23 @@ def main(**kwargs):
 
     time, beta = zip(*sorted(zip(time, beta)))
 
-    fig = plt.figure()
+    lw = 1.5
+
+    fig = plt.figure(constrained_layout=True)
     ax = fig.add_subplot(111)
     if args.logy:
-        ax.semilogy(time,beta)
+        ax.semilogy(time, beta, linewidth=lw)
     else:
-        ax.plot(time,beta)
+        ax.plot(time, beta, linewidth=lw)
     ax.set_xlabel(r'time ($GM/c^3$)')
-    ax.set_ylabel(r'$\langle\beta\rangle_{\rm disk}$')
+    ax.set_ylabel(r'$\langle\beta\rangle$')
     plt.ticklabel_format(axis="x", style="sci", scilimits=(0,0))
-    plt.grid(b=True, which='major', color='#666666', linestyle='-', alpha=0.5)
-    plt.minorticks_on()
-    plt.grid(b=True, which='minor', color='#999999', linestyle='-', alpha=0.2)
+    if args.grid:
+        plt.grid(visible=True, which='major', color='#666666', linestyle='-', alpha=0.3)
+        plt.minorticks_on()
+        plt.grid(visible=True, which='minor', color='#999999', linestyle='-', alpha=0.1)
     plt.savefig(data_dir + 'beta' + '.png', dpi=1200)
     plt.close()
-
-def mean_confidence_interval(data, confidence=0.95):
-    a = 1.0 * np.array(data)
-    n = len(a)
-    m, se = np.nanmean(a), scipy.stats.sem(a, nan_policy='omit')
-    h = se * scipy.stats.t.ppf((1 + confidence) / 2., n-1)
-    return m-h, m+h
 
 # Execute main function
 if __name__ == '__main__':
@@ -58,6 +54,9 @@ if __name__ == '__main__':
     parser.add_argument('--logy',
                         action='store_true',
                         help='plot logy version')
+    parser.add_argument('--grid',
+                        action='store_true',
+                        help='plot grid')
     args = parser.parse_args()
 
     main(**vars(args))

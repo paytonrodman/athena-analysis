@@ -14,7 +14,7 @@ def main(**kwargs):
     data_dir = root_dir + problem + '/'
     os.chdir(data_dir)
 
-    filename_csv = args.input + '.csv'
+    filename_csv = args.input
 
     time = []
     theta_B = []
@@ -27,34 +27,32 @@ def main(**kwargs):
             t = float(row[0])
             #t_orb = float(row[1])
             tB_i = float(row[2])
-            Qt_all = np.fromstring(row[3].strip("[]"), sep=',')
-            Qp_all = np.fromstring(row[4].strip("[]"), sep=',')
+            if args.prob_id in ['super_res','inflow','high_beta']:
+                Qt = float(row[3])
+                Qp = float(row[4])
 
-            Qt_lc.append(Qt_all[0])
-            Qt_av.append(Qt_all[1])
-            Qt_uc.append(Qt_all[2])
+                Qt_lc.append(Qt)
+                Qt_av.append(Qt)
+                Qt_uc.append(Qt)
 
-            Qp_lc.append(Qp_all[0])
-            Qp_av.append(Qp_all[1])
-            Qp_uc.append(Qp_all[2])
+                Qp_lc.append(Qp)
+                Qp_av.append(Qp)
+                Qp_uc.append(Qp)
+            else:
+                Qt_all = np.fromstring(row[3].strip("[]"), sep=',')
+                Qp_all = np.fromstring(row[4].strip("[]"), sep=',')
+
+                Qt_lc.append(Qt_all[0])
+                Qt_av.append(Qt_all[1])
+                Qt_uc.append(Qt_all[2])
+
+                Qp_lc.append(Qp_all[0])
+                Qp_av.append(Qp_all[1])
+                Qp_uc.append(Qp_all[2])
 
             time.append(t)
             theta_B.append(tB_i)
 
-
-            # Allow wrapping over 0,pi/2,pi etc to track evolution of theta_B more smoothly
-            #if len(tB)>1:
-            #    prev_tB = tB[-1]
-            #    lower_diff = tB_i - 90.
-            #    upper_diff = tB_i + 90.
-            #    if (np.abs(prev_tB-lower_diff)) < (np.abs(prev_tB-tB_i)):
-            #        theta_B.append(lower_diff)
-            #    elif (np.abs(prev_tB-upper_diff)) < (np.abs(prev_tB-tB_i)):
-            #        theta_B.append(upper_diff)
-            #    else:
-            #        theta_B.append(tB_i)
-            #else:
-            #    theta_B.append(tB_i)
     time,theta_B,Qt_lc,Qt_av,Qt_uc,Qp_lc,Qp_av,Qp_uc = zip(*sorted(zip(time,theta_B,Qt_lc,Qt_av,Qt_uc,Qp_lc,Qp_av,Qp_uc)))
 
     make_plot(time,theta_B,r'$\theta_B$ (degrees)','theta_B',data_dir)
@@ -62,31 +60,35 @@ def main(**kwargs):
     make_plot_CI(time,Qp_av,Qp_lc,Qp_uc,r'$\langle Q_{\phi}\rangle$','Q_phi',data_dir)
 
 def make_plot(x,y,ylabel,yname,data_dir):
-    fig = plt.figure()
+    lw = 1.5
+    fig = plt.figure(constrained_layout=True)
     ax = fig.add_subplot(111)
-    ax.plot(x,y)
+    ax.plot(x,y,linewidth=lw)
     ax.set_xlabel(r'time ($GM/c^3$)')
     ax.set_ylabel(ylabel)
     ax.set_xlim(left=0)
     plt.ticklabel_format(axis="x", style="sci", scilimits=(0,0))
-    plt.grid(b=True, which='major', color='#666666', linestyle='-', alpha=0.5)
-    plt.minorticks_on()
-    plt.grid(b=True, which='minor', color='#999999', linestyle='-', alpha=0.2)
+    if args.grid:
+        plt.grid(visible=True, which='major', color='#666666', linestyle='-', alpha=0.3)
+        plt.minorticks_on()
+        plt.grid(visible=True, which='minor', color='#999999', linestyle='-', alpha=0.1)
     plt.savefig(data_dir + yname + '.png',dpi=1200)
     plt.close()
 
 def make_plot_CI(x,y,y_CI_low,y_CI_high,ylabel,yname,data_dir):
-    fig = plt.figure()
+    lw = 1.5
+    fig = plt.figure(constrained_layout=True)
     ax = fig.add_subplot(111)
-    ax.plot(x,y)
+    ax.plot(x,y,linewidth=lw)
     plt.fill_between(x,y_CI_low,y_CI_high,alpha=0.2)
     ax.set_xlabel(r'time ($GM/c^3$)')
     ax.set_ylabel(ylabel)
     ax.set_xlim(left=0)
     plt.ticklabel_format(axis="x", style="sci", scilimits=(0,0))
-    plt.grid(b=True, which='major', color='#666666', linestyle='-', alpha=0.5)
-    plt.minorticks_on()
-    plt.grid(b=True, which='minor', color='#999999', linestyle='-', alpha=0.2)
+    if args.grid:
+        plt.grid(visible=True, which='major', color='#666666', linestyle='-', alpha=0.3)
+        plt.minorticks_on()
+        plt.grid(visible=True, which='minor', color='#999999', linestyle='-', alpha=0.1)
     plt.savefig(data_dir + yname + '.png',dpi=1200)
     plt.close()
 
@@ -101,12 +103,14 @@ if __name__ == '__main__':
     parser.add_argument('prob_id',
                         help='base name of the data being analysed, e.g. inflow_var or disk_base')
     parser.add_argument('-i','--input',
-                        default='qual_with_time_0_418_80_175',
-                        help='name of the file with quality data to be analysed, including extension, e.g. qual_with_time.csv (default=qual_with_time_0_418_80_175)')
+                        default='qual_with_time.csv',
+                        help='name of the file with quality data to be analysed, including extension, e.g. qual_with_time.csv (default=qual_with_time.csv)')
     parser.add_argument('-s', '--slice',
                         action='store_true',
                         help='plot a vertical slice (phi=0) of phi and/or theta Quality factors')
-
+    parser.add_argument('--grid',
+                        action='store_true',
+                        help='plot grid')
     args = parser.parse_args()
 
     main(**vars(args))

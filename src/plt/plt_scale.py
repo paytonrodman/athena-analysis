@@ -29,18 +29,19 @@ def main(**kwargs):
     time, scale_height = zip(*sorted(zip(time, scale_height)))
 
     y_var_name = 'scale_height'
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    ax.plot(time,scale_height)
+    lw = 1.5
+    fig, ax = plt.subplots(nrows=1, ncols=1, constrained_layout=True)
+    ax.plot(time, scale_height, linewidth=lw)
     ax.set_xlabel(r'time ($GM/c^3$)')
-    ax.set_ylabel(r'geometric scale height, $h/r$')
+    ax.set_ylabel(r'$H$')
     ax.set_xlim(left=0)
-    ax.set_ylim(0,0.5)
-    plt.ticklabel_format(axis='x', style='sci', scilimits=(0,0))
-    plt.grid(b=True, which='major', color='#666666', linestyle='-', alpha=0.5)
-    plt.minorticks_on()
-    plt.grid(b=True, which='minor', color='#999999', linestyle='-', alpha=0.2)
-    plt.savefig(data_dir + y_var_name + '.png',dpi=1200)
+    ax.set_ylim(bottom=0,top=0.5)
+    plt.ticklabel_format(axis='x', style='sci', scilimits=(0,0), useMathText=True)
+    if args.grid:
+        plt.grid(visible=True, which='major', color='#666666', linestyle='-', alpha=0.3)
+        plt.minorticks_on()
+        plt.grid(visible=True, which='minor', color='#999999', linestyle='-', alpha=0.1)
+    plt.savefig(data_dir + y_var_name + '.png')
     plt.close()
 
 
@@ -49,6 +50,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Plot the scale height of the disk over time.')
     parser.add_argument('prob_id',
                         help='base name of the data being analysed, e.g. inflow_var or disk_base')
+    parser.add_argument('--grid',
+                        action='store_true',
+                        help='plot grid')
     args = parser.parse_args()
 
     main(**vars(args))
