@@ -103,9 +103,6 @@ def main(**kwargs):
     data = data[mask]
     data = data[:,0] # choose a hemisphere
 
-    #data_fit = savitzky_golay(data_up, 51, 3) # window size 51, polynomial order 3
-    #zero_crossings = np.where(np.diff(np.signbit(data_fit)))[0]
-
     if args.acf:
         # make data stationary by differencing
         data_diff = np.diff(data)
@@ -206,8 +203,6 @@ def main(**kwargs):
         plt.loglog(freqs, nu2, 'r', linestyle='--', label=r'$\propto\nu^{-2}$')
         plt.axvline(x=f, color='k', label=r'$1/\tau$={f:.3f}'.format(f=f))
         plt.axvspan(f_high, f_low, alpha=0.5, color='grey')
-        #plt.axvline(x=f_high, color='k', linestyle='-.')
-        #plt.axvline(x=f_low, color='k', linestyle='-.')
         plt.title('PSD: power spectral density for component "{c}" in region "{r}"'.format(c=args.component, r=args.region))
         plt.xlabel(r'Frequency $\nu$')
         plt.ylabel('PSD')
@@ -250,15 +245,16 @@ def get_kappa_data():
     k_lowatmos = np.asarray(k_lowatmos)
     k_disk = np.asarray(k_disk)
 
-    #window_size = 100
-    #av_k_jet = [pd.Series(k_jet[:,0]).rolling(window_size).mean(),
-    #            pd.Series(k_jet[:,1]).rolling(window_size).mean()]
-    #av_k_upatmos = [pd.Series(k_upatmos[:,0]).rolling(window_size).mean(),
-    #                pd.Series(k_upatmos[:,1]).rolling(window_size).mean()]
-    #av_k_lowatmos = [pd.Series(k_lowatmos[:,0]).rolling(window_size).mean(),
-    #                 pd.Series(k_lowatmos[:,1]).rolling(window_size).mean()]
-    #av_k_disk = [pd.Series(k_disk[:,0]).rolling(window_size).mean(),
-    #             pd.Series(k_disk[:,1]).rolling(window_size).mean()]
+    if args.smooth_psd:
+        window_size = 100
+        k_jet = [pd.Series(k_jet[:,0]).rolling(window_size).mean(),
+                 pd.Series(k_jet[:,1]).rolling(window_size).mean()]
+        k_upatmos = [pd.Series(k_upatmos[:,0]).rolling(window_size).mean(),
+                     pd.Series(k_upatmos[:,1]).rolling(window_size).mean()]
+        k_lowatmos = [pd.Series(k_lowatmos[:,0]).rolling(window_size).mean(),
+                      pd.Series(k_lowatmos[:,1]).rolling(window_size).mean()]
+        k_disk = [pd.Series(k_disk[:,0]).rolling(window_size).mean(),
+                  pd.Series(k_disk[:,1]).rolling(window_size).mean()]
 
     kappa_dict = {'disk': k_disk.T,
                   'lower_atmos': k_lowatmos.T,
@@ -273,33 +269,7 @@ def DRW_PSD(freq, beta0, alpha1):
 
 def DHO_PSD(freq, beta0, beta1, alpha1, alpha2):
     import numpy as np
-
     return (1. / 2.*np.pi) * ( (beta0**2. + (4.*np.pi**2. * beta1**2. * freq**2.)) / (16.*np.pi**4. * freq**4. + 4.*np.pi**2. * freq**2. *(alpha1**2. - 2.*alpha2) + alpha2**2.) )
-
-def savitzky_golay(y, window_size, order, deriv=0, rate=1):
-    import numpy as np
-    from math import factorial
-    try:
-        window_size = np.abs(np.int(window_size))
-        order = np.abs(np.int(order))
-    except ValueError:
-        raise ValueError("window_size and order have to be of type int")
-    if window_size % 2 != 1 or window_size < 1:
-        raise TypeError("window_size size must be a positive odd number")
-    if window_size < order + 2:
-        raise TypeError("window_size is too small for the polynomials order")
-    order_range = range(order+1)
-    half_window = (window_size -1) // 2
-    # precompute coefficients
-    b = np.mat([[k**i for i in order_range] for k in range(-half_window, half_window+1)])
-    m = np.linalg.pinv(b).A[deriv] * rate**deriv * factorial(deriv)
-    # pad the signal at the extremes with
-    # values taken from the signal itself
-    firstvals = y[0] - np.abs( y[1:half_window+1][::-1] - y[0] )
-    lastvals = y[-1] + np.abs(y[-half_window-1:-1][::-1] - y[-1])
-    y = np.concatenate((firstvals, y, lastvals))
-    return np.convolve( m[::-1], y, mode='valid')
-
 
 # Execute main function
 if __name__ == '__main__':
@@ -325,6 +295,10 @@ if __name__ == '__main__':
     parser.add_argument('--psd',
                         action='store_true',
                         help='plot Power Spectral Density (PSD)')
+    parser.add_argument('--smooth_psd',
+                        action='store_true',
+                        help='smooth the curvature (kappa) data for the PSD (requires --psd)')
+
     args = parser.parse_args()
 
     main(**vars(args))
