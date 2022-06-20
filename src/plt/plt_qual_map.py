@@ -63,8 +63,8 @@ def main(**kwargs):
         vals_Q = Q_theta
         vals_T = np.mean(tB, axis=0)
 
-    for id in ["Q","T"]:
-        if id=="Q":
+    for plt_id in ["Q","T"]:
+        if plt_id=="Q":
             vals = vals_Q
             if args.midplane:
                 output = args.output_location + 'Qphi.png'
