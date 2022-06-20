@@ -2,22 +2,24 @@
 #
 # plt_statistics_B.py
 #
-# A program to calculate the time properties of magnetic flux behaviour
+# A program to plot various statistics of the magnetic field.
 #
-# To run:
-# python plt_statistics_B.py [options]
+# Usage: python plt_statistics_B.py [options]
 #
+# Python standard modules
 import argparse
 import os
 import sys
 sys.path.insert(0, '/Users/paytonrodman/athena/vis/python')
+
+# Other Python modules
+from ast import literal_eval
 import csv
-import matplotlib.pyplot as plt
 from matplotlib import colors
+import matplotlib.pyplot as plt
 from pandas.plotting import autocorrelation_plot
 from statsmodels.tsa.stattools import adfuller
 from scipy import signal
-from ast import literal_eval
 
 def main(**kwargs):
     if args.component not in ['r','theta','phi','all']:

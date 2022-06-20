@@ -1,29 +1,33 @@
 #!/usr/bin/env python3
 #
-# calc_dyn.py
+# plt_emf.py
 #
-# A program to calculate the diagonal dynamo coefficients through the turbulent EMF
+# A program to plot the value of the electromotive force (EMF) for dynamo calculations
+# IN PROGRESS
 #
-# To run:
-# mpirun -n [n] python calc_dyn.py [options]
-# for [n] cores.
+# Usage: python plt_emf.py [options]
 #
-import numpy as np
+# Python standard modules
+import argparse
+import glob
 import os
+import re
 import sys
 #sys.path.insert(0, '/home/per29/rds/rds-accretion-zyNhkonJSR8/athena-analysis/dependencies')
 sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies')
-import athena_read
-import AAT
-import glob
-import re
-import argparse
+
+# Other Python modules
 from math import sqrt
-from scipy.ndimage import gaussian_filter
 import matplotlib.pyplot as plt
-import seaborn as sns
+import numpy as np
 import pandas as pd
 from scipy import optimize
+from scipy.ndimage import gaussian_filter
+import seaborn as sns
+
+# Athena++ modules
+import AAT
+import athena_read
 
 def main(**kwargs):
     problem  = args.prob_id

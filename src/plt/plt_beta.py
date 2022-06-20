@@ -1,10 +1,21 @@
-#!/usr/bin/python
-import matplotlib.pyplot as plt
+#!/usr/bin/env python3
+#
+# plt_beta.py
+#
+# A program to plot the time-series of the average magnetic plasma beta, from data generated
+# by calc_beta.py.
+#
+# Usage: python plt_beta.py [options]
+#
+# Python standard modules
+import argparse
 import os
 import sys
 sys.path.insert(0, '/Users/paytonrodman/athena/vis/python')
+
+# Other Python modules
 import csv
-import argparse
+import matplotlib.pyplot as plt
 
 def main(**kwargs):
     # directory containing data

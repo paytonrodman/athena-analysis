@@ -1,22 +1,11 @@
-#! /usr/bin/env python
-
-"""
-Script for plotting vertical (r,theta) slices of data in
-spherical coordinates.
-
-Run "plot_spherical.py -h" to see description of inputs.
-
-See documentation on athena_read.athdf() for important notes about reading files
-with mesh refinement.
-
-Users are encouraged to make their own versions of this script for improved
-results by adjusting figure size, spacings, tick locations, axes labels, etc.
-The script must also be modified to plot any functions of the quantities in the
-file, including combinations of multiple quantities.
-
-Requires scipy if making a stream plot.
-"""
-
+#!/usr/bin/env python3
+#
+# plt_regions.py
+#
+# A program to plot an r-theta map of the simulation grid. Based on plot_spherical.py
+#
+# Usage: python plt_regions.py [options]
+#
 # Python standard modules
 import argparse
 import warnings
@@ -29,31 +18,30 @@ sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies'
 # Athena++ modules
 import athena_read
 
-
 # Main function
 def main(**kwargs):
 
     # Load function for transforming coordinates
-    if kwargs['stream'] is not None:
+    if args.stream is not None:
         from scipy.ndimage import map_coordinates
 
     # Load Python plotting modules
-    if kwargs['output_file'] != 'show':
+    if args.output_file != 'show':
         import matplotlib
         matplotlib.use('agg')
     import matplotlib.pyplot as plt
     import matplotlib.colors as colors
 
     # Determine if vector quantities should be read
-    quantities = [kwargs['quantity']]
-    if kwargs['stream'] is not None:
-        quantities.append(kwargs['stream'] + '1')
-        quantities.append(kwargs['stream'] + '2')
+    quantities = [args.quantity]
+    if args.stream is not None:
+        quantities.append(args.stream + '1')
+        quantities.append(args.stream + '2')
 
     # Read mesh and input data
-    data_input = athena_read.athinput(kwargs['input_file'])
+    data_input = athena_read.athinput(args.input_file)
     # Read data
-    data = athena_read.athdf(kwargs['data_file'], quantities=quantities)
+    data = athena_read.athdf(args.data_file, quantities=quantities)
     x1max = data_input['mesh']['x1max']
 
     # Extract boundaries of each SMR level
@@ -80,8 +68,8 @@ def main(**kwargs):
     upper_boundaries = -upper_boundaries + np.pi/2
 
     # Set resolution of plot in dots per square inch
-    if kwargs['dpi'] is not None:
-        resolution = kwargs['dpi']
+    if args.dpi is not None:
+        resolution = args.dpi
 
     # Extract basic coordinate information
     coordinates = data['Coordinates']
@@ -95,8 +83,8 @@ def main(**kwargs):
     nx3 = len(phi)
 
     # Set radial extent
-    if kwargs['r_max'] is not None:
-        r_max = kwargs['r_max']
+    if args.r_max is not None:
+        r_max = args.r_max
     else:
         r_max = r_face[-1]
 
@@ -107,9 +95,9 @@ def main(**kwargs):
     y_grid = r_grid * np.cos(theta_grid)
 
     # Create streamline grid
-    if kwargs['stream'] is not None:
-        x_stream = np.linspace(-r_max, r_max, kwargs['stream_samples'])
-        z_stream = np.linspace(-r_max, r_max, kwargs['stream_samples'])
+    if args.stream is not None:
+        x_stream = np.linspace(-r_max, r_max, args.stream_samples)
+        z_stream = np.linspace(-r_max, r_max, args.stream_samples)
         x_grid_stream, z_grid_stream = np.meshgrid(x_stream, z_stream)
         r_grid_stream_coord = (x_grid_stream.T**2 + z_grid_stream.T**2) ** 0.5
         theta_grid_stream_coord = np.pi - \
@@ -128,29 +116,29 @@ def main(**kwargs):
                 r_grid_stream_pix[i, j] = nx1
 
     # Perform slicing/averaging of scalar data
-    if kwargs['average']:
-        vals_right = np.mean(data[kwargs['quantity']], axis=0)
+    if args.average:
+        vals_right = np.mean(data[args.quantity], axis=0)
         vals_left = vals_right
     else:
-        vals_right = 0.5 * (data[kwargs['quantity']][-1, :, :] + data[kwargs['quantity']][0, :, :])
-        vals_left = 0.5 * (data[kwargs['quantity']][int((nx3/2)-1), :, :]
-                           + data[kwargs['quantity']][int(nx3/2), :, :])
+        vals_right = 0.5 * (data[args.quantity][-1, :, :] + data[args.quantity][0, :, :])
+        vals_left = 0.5 * (data[args.quantity][int((nx3/2)-1), :, :]
+                           + data[args.quantity][int(nx3/2), :, :])
 
     # Join scalar data through boundaries
     vals = np.vstack((vals_right, vals_left[::-1, :]))
 
     # Perform slicing/averaging of vector data
-    if kwargs['stream'] is not None:
-        if kwargs['stream_average']:
-            vals_r_right = np.mean(data[kwargs['stream'] + '1'], axis=0).T
+    if args.stream is not None:
+        if args.stream_average:
+            vals_r_right = np.mean(data[args.stream + '1'], axis=0).T
             vals_r_left = vals_r_right
-            vals_theta_right = np.mean(data[kwargs['stream'] + '2'], axis=0).T
+            vals_theta_right = np.mean(data[args.stream + '2'], axis=0).T
             vals_theta_left = -vals_theta_right
         else:
-            vals_r_right = data[kwargs['stream'] + '1'][0, :, :].T
-            vals_r_left = data[kwargs['stream'] + '1'][int(nx3/2), :, :].T
-            vals_theta_right = data[kwargs['stream'] + '2'][0, :, :].T
-            vals_theta_left = -data[kwargs['stream'] + '2'][int(nx3/2), :, :].T
+            vals_r_right = data[args.stream + '1'][0, :, :].T
+            vals_r_left = data[args.stream + '1'][int(nx3/2), :, :].T
+            vals_theta_right = data[args.stream + '2'][0, :, :].T
+            vals_theta_left = -data[args.stream + '2'][int(nx3/2), :, :].T
 
         # Join vector data through boundaries
         vals_r = np.hstack((vals_r_left[:, :1], vals_r_right, vals_r_left[:, ::-1],
@@ -178,10 +166,10 @@ def main(**kwargs):
         vals_z = dz_dr * vals_r + dz_dtheta * vals_theta
 
     # Determine colormapping properties
-    cmap = plt.get_cmap(kwargs['colormap'])
-    vmin = kwargs['vmin']
-    vmax = kwargs['vmax']
-    if kwargs['logc']:
+    cmap = plt.get_cmap(args.colormap)
+    vmin = args.vmin
+    vmax = args.vmax
+    if args.logc:
         norm = colors.LogNorm(vmin, vmax)
     else:
         norm = colors.Normalize(vmin, vmax)
@@ -195,7 +183,7 @@ def main(**kwargs):
         y_limit = x1max*np.tan(lower_boundaries[index])
         plt.plot([-x1max,x1max], [-y_limit,y_limit],'white',linewidth=1)
 
-    if kwargs['stream'] is not None:
+    if args.stream is not None:
         with warnings.catch_warnings():
             warnings.filterwarnings(
                 'ignore',
@@ -203,7 +191,7 @@ def main(**kwargs):
                 RuntimeWarning,
                 'numpy')
             plt.streamplot(x_stream, z_stream, vals_x.T, vals_z.T,
-                           density=kwargs['stream_density'], color='k', linewidth=0.5,
+                           density=args.stream_density, color='k', linewidth=0.5,
                            arrowsize=0.5)
 
     plt.gca().set_aspect('equal')
@@ -212,13 +200,13 @@ def main(**kwargs):
     plt.xlabel(r'$x$')
     plt.ylabel(r'$z$')
     plt.axis('off')
-    if kwargs['time']:
+    if args.time:
         plt.title('t={:.2e} GM/c3'.format(data['Time']))
     plt.colorbar(im)
-    if kwargs['output_file'] == 'show':
+    if args.output_file == 'show':
         plt.show()
     else:
-        plt.savefig(kwargs['output_file'], bbox_inches='tight', dpi=resolution)
+        plt.savefig(args.output_file, bbox_inches='tight', dpi=resolution)
 
 
 # Execute main function

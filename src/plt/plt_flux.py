@@ -1,11 +1,22 @@
-#!/usr/bin/python
-import matplotlib.pyplot as plt
+#!/usr/bin/env python3
+#
+# plt_flux.py
+#
+# A program to plot the time series of the magnetic flux crossing the ISCO, from data generated
+# by calc_flux.py
+#
+# Usage: python plt_flux.py [options]
+#
+# Python standard modules
+import argparse
 import os
 import sys
 sys.path.insert(0, '/Users/paytonrodman/athena/vis/python')
-import csv
-import argparse
+
+# Other Python modules
 from ast import literal_eval
+import csv
+import matplotlib.pyplot as plt
 import numpy as np
 
 def main(**kwargs):
