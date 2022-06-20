@@ -8,7 +8,6 @@
 # python plt_statistics_B.py [options]
 #
 import argparse
-import numpy as np
 import os
 import sys
 sys.path.insert(0, '/Users/paytonrodman/athena/vis/python')
@@ -249,15 +248,15 @@ def get_kappa_data():
     k_lowatmos = np.asarray(k_lowatmos)
     k_disk = np.asarray(k_disk)
 
-    window_size = 100
-    av_k_jet = [pd.Series(k_jet[:,0]).rolling(window_size).mean(),
-                pd.Series(k_jet[:,1]).rolling(window_size).mean()]
-    av_k_upatmos = [pd.Series(k_upatmos[:,0]).rolling(window_size).mean(),
-                    pd.Series(k_upatmos[:,1]).rolling(window_size).mean()]
-    av_k_lowatmos = [pd.Series(k_lowatmos[:,0]).rolling(window_size).mean(),
-                     pd.Series(k_lowatmos[:,1]).rolling(window_size).mean()]
-    av_k_disk = [pd.Series(k_disk[:,0]).rolling(window_size).mean(),
-                 pd.Series(k_disk[:,1]).rolling(window_size).mean()]
+    #window_size = 100
+    #av_k_jet = [pd.Series(k_jet[:,0]).rolling(window_size).mean(),
+    #            pd.Series(k_jet[:,1]).rolling(window_size).mean()]
+    #av_k_upatmos = [pd.Series(k_upatmos[:,0]).rolling(window_size).mean(),
+    #                pd.Series(k_upatmos[:,1]).rolling(window_size).mean()]
+    #av_k_lowatmos = [pd.Series(k_lowatmos[:,0]).rolling(window_size).mean(),
+    #                 pd.Series(k_lowatmos[:,1]).rolling(window_size).mean()]
+    #av_k_disk = [pd.Series(k_disk[:,0]).rolling(window_size).mean(),
+    #             pd.Series(k_disk[:,1]).rolling(window_size).mean()]
 
     kappa_dict = {'disk': k_disk.T,
                   'lower_atmos': k_lowatmos.T,

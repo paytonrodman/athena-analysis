@@ -85,7 +85,7 @@ def main(**kwargs):
                 data_scaled = [data[ii]/(np.sqrt(mass_flux[ii])) for ii,d in enumerate(data)]
                 ylab1 = r'$\sqrt{4\pi} \oint_{r_{\rm{hor}}} B_r \cdot dS / \sqrt{\dot{M}}$'
 
-    fig, ax1 = plt.subplots(nrows=1, ncols=1, constrained_layout=True)
+    _, ax1 = plt.subplots(nrows=1, ncols=1, constrained_layout=True)
     lw=1.5
 
     if args.ratio:

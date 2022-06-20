@@ -30,7 +30,7 @@ def main(**kwargs):
 
     y_var_name = 'scale_height'
     lw = 1.5
-    fig, ax = plt.subplots(nrows=1, ncols=1, constrained_layout=True)
+    _, ax = plt.subplots(nrows=1, ncols=1, constrained_layout=True)
     ax.plot(time, scale_height, linewidth=lw)
     ax.set_xlabel(r'time ($GM/c^3$)')
     ax.set_ylabel(r'$H$')

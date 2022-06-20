@@ -4,8 +4,6 @@ import os
 import sys
 sys.path.insert(0, '/Users/paytonrodman/athena/vis/python')
 import csv
-import numpy as np
-import scipy.stats
 import argparse
 
 def main(**kwargs):

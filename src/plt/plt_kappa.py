@@ -5,7 +5,6 @@ import sys
 sys.path.insert(0, '/Users/paytonrodman/athena/vis/python')
 import csv
 import numpy as np
-import scipy.stats
 import pandas as pd
 import argparse
 
@@ -52,7 +51,7 @@ def main(**kwargs):
         av_k_lowatmos = pd.Series(k_lowatmos[:,0]).rolling(window).mean()
         av_k_disk = pd.Series(k_disk[:,0]).rolling(window).mean()
 
-    fig, ax = plt.subplots(nrows=1, ncols=1, constrained_layout=True, figsize=(12,4))
+    _, ax = plt.subplots(nrows=1, ncols=1, constrained_layout=True, figsize=(12,4))
     colors = ['#00b6ff', '#217aa9', '#1e4258', '#05070a']
     labels = ['jet', 'upper atmos.', 'lower atmos.', 'disk']
     lw = 1.5

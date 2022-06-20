@@ -31,7 +31,7 @@ def main(**kwargs):
 
 
     y_var_name = 'mass_flux'
-    fig, ax = plt.subplots(nrows=1, ncols=1, constrained_layout=True)
+    _, ax = plt.subplots(nrows=1, ncols=1, constrained_layout=True)
     lw = 1.5
 
     if args.logy:

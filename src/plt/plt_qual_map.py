@@ -10,19 +10,14 @@
 # Python standard modules
 import argparse
 import sys
-import os
 #sys.path.insert(0, '/home/per29/rds/rds-accretion-zyNhkonJSR8/athena-analysis/dependencies')
 sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies')
 
 # Other Python modules
-import scipy.stats as st
 import numpy as np
-import csv
-import re
 
 # Athena++ modules
 import athena_read
-import AAT
 
 def main(**kwargs):
     # Load Python plotting modules
@@ -40,38 +35,15 @@ def main(**kwargs):
     x1max = data_input['mesh']['x1max']
     x2min = data_input['mesh']['x2min']
     x2max = data_input['mesh']['x2max']
-    if 'refinement3' in data_input:
-        x1_high_min = data_input['refinement3']['x1min'] # bounds of high resolution region
-        x1_high_max = data_input['refinement3']['x1max']
-        x2_high_min = data_input['refinement3']['x2min']
-        x2_high_max = data_input['refinement3']['x2max']
-    elif 'refinement2' in data_input:
-        x1_high_min = data_input['refinement2']['x1min'] # bounds of high resolution region
-        x1_high_max = data_input['refinement2']['x1max']
-        x2_high_min = data_input['refinement2']['x2min']
-        x2_high_max = data_input['refinement2']['x2max']
-    elif 'refinement1' in data_input:
-        x1_high_min = data_input['refinement1']['x1min'] # bounds of high resolution region
-        x1_high_max = data_input['refinement1']['x1max']
-        x2_high_min = data_input['refinement1']['x2min']
-        x2_high_max = data_input['refinement1']['x2max']
-    else:
-        x1_high_min = x1min
-        x1_high_max = x1max
-        x2_high_min = x2min
-        x2_high_max = x2max
 
-    data_mesh = athena_read.athdf(kwargs['data_file_init'], quantities=['x1v','x2v','x3v',
+    data_mesh = athena_read.athdf(kwargs['data_file_init'], quantities=['x2v','x3v',
                                                                         'x1f','x2f','x3f'])
     # Extract basic coordinate information
-    x1v = data_mesh['x1v']
     x2v = data_mesh['x2v']
     x3v = data_mesh['x3v']
     x1f = data_mesh['x1f']
     x2f = data_mesh['x2f']
     x3f = data_mesh['x3f']
-    nx2 = len(x2v)
-    nx3 = len(x3v)
 
     # Set radial extent
     if kwargs['r_max'] is not None:
@@ -98,7 +70,7 @@ def main(**kwargs):
         vals = Q_theta
 
     fig = plt.figure()
-    ax = fig.add_subplot(111)
+    fig.add_subplot(111)
     if kwargs['vmin'] is not None:
         vmin = kwargs['vmin']
     else:
