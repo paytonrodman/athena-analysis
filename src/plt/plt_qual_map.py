@@ -30,17 +30,8 @@ def main(**kwargs):
     if args.dpi is not None:
         resolution = args.dpi
 
-    data_input = athena_read.athinput(args.input_file)
-    x1min = data_input['mesh']['x1min'] # bounds of simulation
-    x1max = data_input['mesh']['x1max']
-    x2min = data_input['mesh']['x2min']
-    x2max = data_input['mesh']['x2max']
-
-    data_mesh = athena_read.athdf(args.data_file_init, quantities=['x2v','x3v',
-                                                                        'x1f','x2f','x3f'])
+    data_mesh = athena_read.athdf(args.data_file_init, quantities=['x1f','x2f','x3f'])
     # Extract basic coordinate information
-    x2v = data_mesh['x2v']
-    x3v = data_mesh['x3v']
     x1f = data_mesh['x1f']
     x2f = data_mesh['x2f']
     x3f = data_mesh['x3f']
@@ -131,8 +122,6 @@ if __name__ == '__main__':
                         help='name of data file containing averaged tB values, possibly including path')
     parser.add_argument('data_file_init',
                         help='name of data file containing initial mesh data, possibly including path')
-    parser.add_argument('input_file',
-                        help='name of athinput file, possibly including path')
     parser.add_argument('output_location',
                         help='folder to save outputs to, possibly including path')
     parser.add_argument('-a', '--average',
