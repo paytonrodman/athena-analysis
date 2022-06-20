@@ -15,10 +15,8 @@ sys.path.insert(0, '/home/per29/rds/rds-accretion-zyNhkonJSR8/athena-analysis/de
 #sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies')
 
 # Other Python modules
-import scipy.stats as st
 import numpy as np
 from mpi4py import MPI
-import csv
 
 # Athena++ modules
 import athena_read
@@ -33,34 +31,11 @@ def main(**kwargs):
     os.chdir(args.data)
 
     data_input = athena_read.athinput(args.input)
-    x1min = data_input['mesh']['x1min'] # bounds of simulation
-    x1max = data_input['mesh']['x1max']
     x2min = data_input['mesh']['x2min']
     x2max = data_input['mesh']['x2max']
-    if 'refinement3' in data_input:
-        x1_high_min = data_input['refinement3']['x1min'] # bounds of high resolution region
-        x1_high_max = data_input['refinement3']['x1max']
-        x2_high_min = data_input['refinement3']['x2min']
-        x2_high_max = data_input['refinement3']['x2max']
-    elif 'refinement2' in data_input:
-        x1_high_min = data_input['refinement2']['x1min'] # bounds of high resolution region
-        x1_high_max = data_input['refinement2']['x1max']
-        x2_high_min = data_input['refinement2']['x2min']
-        x2_high_max = data_input['refinement2']['x2max']
-    elif 'refinement1' in data_input:
-        x1_high_min = data_input['refinement1']['x1min'] # bounds of high resolution region
-        x1_high_max = data_input['refinement1']['x1max']
-        x2_high_min = data_input['refinement1']['x2min']
-        x2_high_max = data_input['refinement1']['x2max']
-    else:
-        x1_high_min = x1min
-        x1_high_max = x1max
-        x2_high_min = x2min
-        x2_high_max = x2max
 
     data_init = athena_read.athdf(args.problem_id + '.cons.00000.athdf',
-                                    quantities=['x1v','x2v'])
-    x1v_init = data_init['x1v'] # r
+                                    quantities=['x2v'])
     x2v_init = data_init['x2v'] # theta
 
     if args.theta_lower is not None:
@@ -85,6 +60,7 @@ def main(**kwargs):
 
     Qphi_all = []
     Qtheta_all = []
+    tB_all = []
     for t in local_times:
         str_t = str(int(t)).zfill(5)
         gamma = 5./3.
@@ -114,7 +90,7 @@ def main(**kwargs):
         Omega_kep = np.broadcast_to(Omega_kep, (np.shape(dens)[0], np.shape(dens)[1], np.shape(dens)[2]))
 
         tB = (-np.arctan(Bcc1/Bcc3)) * (180./np.pi) #magnetic tilt angle in degrees
-        tB_av = np.average(tB)
+        tB = np.mean(tB[:, tl:tu, :], axis=1) #average azimuthally within high res theta range
 
         w = dens + (gamma/(gamma - 1.))*press
         B2 = Bcc1**2. + Bcc2**2. + Bcc3**2.
@@ -124,28 +100,29 @@ def main(**kwargs):
         lambda_MRI_phi = 2.*np.pi*np.sqrt(16./15.)*np.abs(vA_phi)/Omega_kep
 
         dx1f,dx2f,dx3f = AAT.calculate_delta(x1f,x2f,x3f)
-        phi,theta,r = np.meshgrid(x3v,x2v,x1v, sparse=False, indexing='ij')
+        _,theta,r = np.meshgrid(x3v,x2v,x1v, sparse=False, indexing='ij')
         dphi,dtheta,_ = np.meshgrid(dx3f,dx2f,dx1f, sparse=False, indexing='ij')
 
         R = r*np.sin(theta)
 
-        #Q_theta = lambda_MRI_theta/np.sqrt(r*dtheta)
         Q_theta = lambda_MRI_theta/(R*dtheta)
-        Q_theta = np.mean(Q_theta, axis=0) #average azimuthally
-        #Q_phi = lambda_MRI_phi/np.sqrt(r*np.abs(np.sin(phi))*dphi)
+        Q_theta = np.mean(Q_theta[:, tl:tu, :], axis=1) #average azimuthally within high res theta range
         Q_phi = lambda_MRI_phi/(R*dphi)
-        Q_phi = np.mean(Q_phi[:, tl:tu, :], axis=1) #average within high res theta range
+        Q_phi = np.mean(Q_phi[:, tl:tu, :], axis=1) #average azimuthally within high res theta range
 
         Qtheta_all.append(Q_theta)
         Qphi_all.append(Q_phi)
+        tB_all.append(tB)
 
     comm.barrier()
     if rank == 0:
         Qtheta_av = np.mean(Qtheta_all, axis=0)
         Qphi_av = np.mean(Qphi_all, axis=0)
+        tB_av = np.mean(tB_all, axis=0)
 
         np.save(args.Qtheta_output,Qtheta_av)
         np.save(args.Qphi_output,Qphi_av)
+        np.save(args.tB_output,tB_av)
 
 
 # Execute main function
@@ -161,17 +138,11 @@ if __name__ == '__main__':
                         help='name of Qtheta output to be (over)written, possibly including path')
     parser.add_argument('Qphi_output',
                         help='name of Qphi output to be (over)written, possibly including path')
+    parser.add_argument('tB_output',
+                        help='name oftB output to be (over)written, possibly including path')
     parser.add_argument('-u', '--update',
                         action="store_true",
                         help='append new results to an existing data file')
-    parser.add_argument('-rl', '--r_lower',
-                        type=float,
-                        default=None,
-                        help='value of lower r bound of region being analysed, must be between x1min and x1max (default=5)')
-    parser.add_argument('-ru', '--r_upper',
-                        type=float,
-                        default=None,
-                        help='value of upper r bound of region being analysed, must be between x1min and x1max (default=100)')
     parser.add_argument('-tl', '--theta_lower',
                         type=float,
                         default=0.982,
