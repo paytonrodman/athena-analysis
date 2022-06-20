@@ -58,8 +58,6 @@ def main(**kwargs):
         x1f = data_cons['x1f']
         x2f = data_cons['x2f']
         x3f = data_cons['x3f']
-        dens = data_cons['dens']
-        v1 = data_cons['mom1']
         Bcc1 = data_cons['Bcc1']
 
         _,dx2f,dx3f = AAT.calculate_delta(x1f,x2f,x3f)
