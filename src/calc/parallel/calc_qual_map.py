@@ -90,7 +90,7 @@ def main(**kwargs):
         Omega_kep = np.broadcast_to(Omega_kep, (np.shape(dens)[0], np.shape(dens)[1], np.shape(dens)[2]))
 
         tB = (-np.arctan(Bcc1/Bcc3)) * (180./np.pi) #magnetic tilt angle in degrees
-        tB = np.mean(tB[:, tl:tu, :], axis=1) #average azimuthally within high res theta range
+        tB =  tB[:, tl:tu, :] #select in high res range
 
         w = dens + (gamma/(gamma - 1.))*press
         B2 = Bcc1**2. + Bcc2**2. + Bcc3**2.
@@ -106,7 +106,7 @@ def main(**kwargs):
         R = r*np.sin(theta)
 
         Q_theta = lambda_MRI_theta/(R*dtheta)
-        Q_theta = np.mean(Q_theta[:, tl:tu, :], axis=1) #average azimuthally within high res theta range
+        Q_theta = np.mean(Q_theta[:, tl:tu, :], axis=0) #average azimuthally within high res theta range
         Q_phi = lambda_MRI_phi/(R*dphi)
         Q_phi = np.mean(Q_phi[:, tl:tu, :], axis=1) #average azimuthally within high res theta range
 
