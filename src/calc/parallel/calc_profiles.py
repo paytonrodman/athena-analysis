@@ -38,17 +38,8 @@ def main(**kwargs):
 
     data_input = athena_read.athinput(args.input)
     scale_height = data_input['problem']['h_r']
-    if 'refinement3' in data_input:
-        x1_high_max = data_input['refinement3']['x1max'] # bounds of high resolution region
-    elif 'refinement2' in data_input:
-        x1_high_max = data_input['refinement2']['x1max'] # bounds of high resolution region
-    elif 'refinement1' in data_input:
-        x1_high_max = data_input['refinement1']['x1max'] # bounds of high resolution region
-    else:
-        x1_high_max = data_input['mesh']['x1max']
 
-    data_init = athena_read.athdf(args.problem_id + '.cons.00000.athdf', quantities=['x1v','x2v'])
-    x1v = data_init['x1v']
+    data_init = athena_read.athdf(args.problem_id + '.cons.00000.athdf', quantities=['x2v'])
     x2v = data_init['x2v']
     th_u = AAT.find_nearest(x2v, np.pi/2. + (2.*scale_height))
     th_l = AAT.find_nearest(x2v, np.pi/2. - (2.*scale_height))
