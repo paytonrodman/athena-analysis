@@ -102,9 +102,9 @@ def main(**kwargs):
                 ax1.plot(time, [d[1] for d in data], linewidth=lw)
             ax2 = ax1.twinx()
             mn, mx = ax1.get_ylim()
-            min = mn*rawtoscaled
-            max = mx*rawtoscaled
-            ax2.set_ylim(min, max)
+            min_scale = mn*rawtoscaled
+            max_scale = mx*rawtoscaled
+            ax2.set_ylim(min_scale, max_scale)
             ax2.set_ylabel(ylab2)
         else:
             if args.mag:
