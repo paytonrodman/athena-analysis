@@ -16,7 +16,6 @@ sys.path.insert(0, '/home/per29/rds/rds-accretion-zyNhkonJSR8/athena-analysis/de
 # Other Python modules
 import numpy as np
 from mpi4py import MPI
-import csv
 
 # Athena++ modules
 import athena_read
@@ -51,7 +50,6 @@ def main(**kwargs):
     data_init = athena_read.athdf(args.problem_id + '.cons.00000.athdf', quantities=['x1v','x2v'])
     x1v = data_init['x1v']
     x2v = data_init['x2v']
-    r_u = AAT.find_nearest(x1v, x1_high_max)
     th_u = AAT.find_nearest(x2v, np.pi/2. + (2.*scale_height))
     th_l = AAT.find_nearest(x2v, np.pi/2. - (2.*scale_height))
 
