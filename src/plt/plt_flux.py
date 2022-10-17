@@ -8,13 +8,11 @@ sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies'
 
 # Other Python modules
 from ast import literal_eval
-import csv
 import matplotlib.pyplot as plt
 from matplotlib.ticker import FormatStrFormatter
 import numpy as np
 import pandas as pd
 import re
-import scipy.stats
 
 # Athena++ modules
 import AAT
@@ -46,10 +44,6 @@ def main(**kwargs):
     mfl_lists = [[] for _ in range(n)]
     mfu_abs_lists = [[] for _ in range(n)]
     mfl_abs_lists = [[] for _ in range(n)]
-    mfu_d_lists = [[] for _ in range(n)]
-    mfl_d_lists = [[] for _ in range(n)]
-    mfu_abs_d_lists = [[] for _ in range(n)]
-    mfl_abs_d_lists = [[] for _ in range(n)]
     for count,f in enumerate(args.file):
         filename = f.name
         filename = filename.replace("flux", "mass")
@@ -70,12 +64,18 @@ def main(**kwargs):
         rawtoscaled = 1./(np.sqrt(mass_average))
         scale = np.sqrt(4*np.pi)*rawtoscaled
 
-        df = pd.read_csv(f, delimiter='\t', usecols=['sim_time', 'mag_flux_u', 'mag_flux_l', 'mag_flux_u_abs', 'mag_flux_l_abs'])
+        df = pd.read_csv(f, delimiter='\t')
         t = df['sim_time'].to_list()
-        mfu = df['mag_flux_u'].to_list()
-        mfl = df['mag_flux_l'].to_list()
-        mfu_a = df['mag_flux_u_abs'].to_list()
-        mfl_a = df['mag_flux_l_abs'].to_list()
+        if args.disk:
+            mfu = df['mag_flux_u_d'].to_list()
+            mfl = df['mag_flux_l_d'].to_list()
+            mfu_a = df['mag_flux_u_abs_d'].to_list()
+            mfl_a = df['mag_flux_l_abs_d'].to_list()
+        else:
+            mfu = df['mag_flux_u'].to_list()
+            mfl = df['mag_flux_l'].to_list()
+            mfu_a = df['mag_flux_u_abs'].to_list()
+            mfl_a = df['mag_flux_l_abs'].to_list()
         t_lists[count] = t
         mfu_lists[count] = [x*scale for x in mfu]
         mfl_lists[count] = [x*scale for x in mfl]
@@ -88,7 +88,7 @@ def main(**kwargs):
     mfl_array = [[] for _ in range(n)]
     mfu_abs_array = [[] for _ in range(n)]
     mfl_abs_array = [[] for _ in range(n)]
-    for ii in np.arange(0,n):
+    for ii in range(n):
         mfu_array[ii] = np.array(mfu_lists[ii], dtype=object)
         mfl_array[ii] = np.array(mfl_lists[ii], dtype=object)
         mfu_abs_array[ii] = np.array(mfu_abs_lists[ii], dtype=object)

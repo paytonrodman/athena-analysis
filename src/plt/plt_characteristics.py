@@ -8,11 +8,7 @@ sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies'
 
 # Other Python modules
 from ast import literal_eval
-import csv
 import matplotlib.pyplot as plt
-from matplotlib.offsetbox import AnchoredText
-from mycolorpy import colorlist as mcp
-import numpy as np
 import pandas as pd
 import re
 import scipy.stats

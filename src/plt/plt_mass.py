@@ -8,12 +8,9 @@ sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies'
 
 # Other Python modules
 from ast import literal_eval
-import csv
 import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
 import re
-import scipy.stats
 
 # Athena++ modules
 import AAT
@@ -49,13 +46,13 @@ def main(**kwargs):
         t_lists[count] = t
         #mass[count] = m
 
-    for ii in np.arange(0,n):
+    for ii in range(n):
         t_lists[ii], m_lists[ii] = zip(*sorted(zip(t_lists[ii], m_lists[ii])))
 
     lw = 1.5
     if args.sharex:
         fig, ax = plt.subplots(nrows=1, ncols=1, constrained_layout=True, sharex=True)
-        for ii in np.arange(0,n):
+        for ii in range(n):
             if args.logx:
                 ax.semilogx(t_lists[ii], m_lists[ii], linewidth=lw, color=colors[ii], label=labels[ii])
             elif args.logy:

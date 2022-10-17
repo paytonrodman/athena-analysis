@@ -8,14 +8,12 @@ sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies'
 
 # Other Python modules
 from ast import literal_eval
-import csv
 import matplotlib.ticker
 import matplotlib.pyplot as plt
 from matplotlib.offsetbox import AnchoredText
 import numpy as np
 import pandas as pd
 import re
-from scipy.interpolate import griddata
 
 # Athena++ modules
 import athena_read
@@ -92,9 +90,6 @@ def main(**kwargs):
 
     fig, axs = plt.subplots(nrows=n, ncols=1, constrained_layout=True, figsize=(8,n*2))
     for idx in range(n):
-        t_min = 0
-        t_max = np.max(t_lists[idx])
-
         X = t_lists[idx]
         Y = np.linspace(theta_min,theta_max,theta_N[idx])
         Z = data_b[idx].T

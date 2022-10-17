@@ -7,12 +7,9 @@ sys.path.insert(0, '/Users/paytonrodman/athena/vis/python')
 sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies')
 
 # Other Python modules
-import csv
 import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
 import re
-import scipy.stats
 
 # Athena++ modules
 import AAT
@@ -52,7 +49,7 @@ def main(**kwargs):
     lw = 1.5
     if args.sharex:
         fig, ax1 = plt.subplots(nrows=1, ncols=1, constrained_layout=True, sharex=True)
-        for ii in np.arange(0,n):
+        for ii in range(n):
             if args.logx:
                 ax1.semilogx(t_lists[ii], s_lists[ii], linewidth=lw, color=colors[ii], label=labels[ii])
             elif args.logy:
