@@ -76,3 +76,19 @@ def calculate_orbit_time(simulation_time):
     T_period = 2.*np.pi*np.sqrt(r_ISCO)*(r_ISCO - 2.)
     orbit_time = simulation_time/T_period
     return orbit_time
+
+def problem_dictionary(problem_id):
+    """Return the appropriate plotting label and colour for the given problem ID."""
+
+    prob_dict = {
+    'high_res': {'label': 'b200', 'color': 'tab:blue', 'min_time': 2.5e4},
+    'high_beta': {'label': 'b5', 'color': 'tab:orange', 'min_time': 1e4},
+    'super_res': {'label': 'b5_s', 'color': 'tab:purple', 'min_time': 1.},
+    'b200_super_res': {'label': 'b200_s', 'color': 'tab:red', 'min_time': 1.}
+    }
+
+    l = prob_dict[problem_id]['label']
+    c = prob_dict[problem_id]['color']
+    t = prob_dict[problem_id]['min_time']
+
+    return l,c,t
