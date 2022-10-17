@@ -35,11 +35,7 @@ def main(**kwargs):
 
     init_data = athena_read.athdf(args.problem_id + '.cons.00000.athdf', quantities=['x1v'])
     x1v_init = init_data['x1v'] # r
-    r_val = [6.]
-    r_id = []
-    for r in r_val:
-        r_id_i = AAT.find_nearest(x1v_init, r)
-        r_id.append(r_id_i)
+    r_id = AAT.find_nearest(x1v_init, 6.)
 
     if rank==0:
         if not args.update:
@@ -65,14 +61,12 @@ def main(**kwargs):
         _,dx2f,dx3f = AAT.calculate_delta(x1f,x2f,x3f)
         v1,_,_ = AAT.calculate_velocity(mom1,mom2,mom3,dens)
 
-        mf_local = []
-        for r_id_i in r_id:
-            mf_i = []
-            for j in range(len(x2v)):
-                for k in range(len(x3v)):
-                    dS = (x1f[r_id_i])**2. * np.sin(x2f[j]) * dx2f[j] * dx3f[k] # r^2 sin(theta) dtheta dphi
-                    mf_i.append(-dens[k,j,r_id_i] * v1[k,j,r_id_i] * dS)
-            mf_local.append(np.sum(mf_i))
+        mf_i = []
+        for j in range(len(x2v)):
+            for k in range(len(x3v)):
+                dS = (x1f[r_id])**2. * np.sin(x2f[j]) * dx2f[j] * dx3f[k] # r^2 sin(theta) dtheta dphi
+                mf_i.append(-dens[k,j,r_id] * v1[k,j,r_id] * dS)
+        mf_local = np.sum(mf_i)
 
         sim_t = data_cons['Time']
         orbit_t = AAT.calculate_orbit_time(sim_t)
