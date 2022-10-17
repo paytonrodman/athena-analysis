@@ -1,74 +1,126 @@
-#!/usr/bin/env python3
-#
-# plt_beta.py
-#
-# A program to plot the time-series of the average magnetic plasma beta, from data generated
-# by calc_beta.py.
-#
-# Usage: python plt_beta.py [options]
-#
+#!/usr/bin/python
 # Python standard modules
 import argparse
 import os
 import sys
 sys.path.insert(0, '/Users/paytonrodman/athena/vis/python')
+sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies')
 
 # Other Python modules
 import csv
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import re
+import scipy.stats
+
+# Athena++ modules
+import AAT
 
 def main(**kwargs):
-    # directory containing data
-    problem  = args.prob_id
-    root_dir = '/Users/paytonrodman/athena-sim/'
-    data_dir = root_dir + problem + '/'
-    os.chdir(data_dir)
-    time = []
-    time_orb = []
-    beta = []
-    with open('beta_with_time.csv', newline='\n') as csv_file:
-        csv_reader = csv.reader(csv_file, delimiter='\t')
-        next(csv_reader, None) # skip header
-        for row in csv_reader:
-            #t = float(row[1])
-            #t_orb = float(row[2])
-            #b = float(row[3])
-            t = float(row[0])
-            t_orb = float(row[1])
-            b = float(row[2])
-            time.append(t)
-            time_orb.append(t_orb)
-            beta.append(b)
+    n = len(args.file) # number of data files to read
+    if not args.file:
+        sys.exit('Must specify data files')
+    if not args.output:
+        sys.exit('Must specify output file')
+    if n>2 and args.sharex is False:
+        raise ValueError('Cannot have separate time axes for n>2. Use --sharex')
+    if n==1 and args.sharex is False:
+        args.sharex = True
 
-    time, time_orb, beta = zip(*sorted(zip(time, time_orb, beta)))
+    labels = []
+    colors = []
+    for f in args.file:
+        slash_list = [m.start() for m in re.finditer('/', f.name)]
+        prob_id = f.name[slash_list[-2]+1:slash_list[-1]]
+        l,c,_ = AAT.problem_dictionary(prob_id)
+        labels.append(l)
+        colors.append(c)
+
+    t_lists = [[] for _ in range(n)]
+    b_lists = [[] for _ in range(n)]
+    for count,f in enumerate(args.file):
+        df = pd.read_csv(f, delimiter='\t', usecols=['sim_time', 'plasma_beta'])
+        t = df['sim_time'].to_list()
+        b = df['plasma_beta'].to_list()
+        t_lists[count] = t
+        b_lists[count] = b
+
+    for ii in range(n):
+        t_lists[ii], b_lists[ii] = zip(*sorted(zip(t_lists[ii], b_lists[ii])))
 
     lw = 1.5
+    if args.sharex:
+        fig, ax1 = plt.subplots(nrows=1, ncols=1, constrained_layout=True, sharex=True)
+        for ii in np.arange(0,n):
+            if args.logx:
+                ax1.semilogx(t_lists[ii], b_lists[ii], linewidth=lw, color=colors[ii], label=labels[ii])
+            elif args.logy:
+                ax1.semilogy(t_lists[ii], b_lists[ii], linewidth=lw, color=colors[ii], label=labels[ii])
+            else:
+                ax1.plot(t_lists[ii], b_lists[ii], linewidth=lw, color=colors[ii], label=labels[ii])
+                ax1.ticklabel_format(axis="x", style="sci", scilimits=(0,0), useMathText=True)
+        ax1.set_xlabel(r'time ($GM/c^3$)', x=0.5, y=-0.03)
+        ax1.set_ylabel(r'$\langle\beta\rangle$')
 
-    fig = plt.figure(constrained_layout=True)
-    ax = fig.add_subplot(111)
-    if args.logy:
-        ax.semilogy(time, beta, linewidth=lw)
     else:
-        ax.plot(time, beta, linewidth=lw)
-    ax.set_xlabel(r'time ($GM/c^3$)')
-    ax.set_ylabel(r'$\langle\beta\rangle$')
-    plt.ticklabel_format(axis="x", style="sci", scilimits=(0,0))
+        fig = plt.figure()
+        ax1 = fig.add_subplot(111)
+        ax2 = ax1.twiny()  # instantiate a second axes that shares the same x-axis
+        if args.logx:
+            ax1.semilogx(t_lists[0], b_lists[0], color=colors[0], label=labels[0], linewidth=lw)
+            ax1.semilogx([], [], color=colors[1], label=labels[1]) # ghost plot for color2 label entry
+            ax2.semilogx(t_lists[1], b_lists[1], color=colors[1], label=labels[1], linewidth=lw)
+        elif args.logy:
+            ax1.semilogy(t_lists[0], b_lists[0], color=colors[0], label=labels[0], linewidth=lw)
+            ax1.semilogy([], [], color=colors[1], label=labels[1]) # ghost plot for color2 label entry
+            ax2.semilogy(t_lists[1], b_lists[1], color=colors[1], label=labels[1], linewidth=lw)
+            for ax in [ax1,ax2]:
+                ax.ticklabel_format(axis="x", style="sci", scilimits=(0,0), useMathText=True)
+        else:
+            ax1.plot(t_lists[0], b_lists[0], color=colors[0], label=labels[0], linewidth=lw)
+            ax1.plot([], [], color=colors[1], label=labels[1]) # ghost plot for color2 label entry
+            ax2.plot(t_lists[1], b_lists[1], color=colors[1], label=labels[1], linewidth=lw)
+            for ax in [ax1,ax2]:
+                ax.ticklabel_format(axis="x", style="sci", scilimits=(0,0), useMathText=True)
+
+        ax1.set_xlabel(r'time ($GM/c^3$)', color=colors[0])
+        ax2.set_xlabel(r'time ($GM/c^3$)', color=colors[1])
+        ax1.tick_params(axis='x', labelcolor=colors[0])
+        ax2.tick_params(axis='x', labelcolor=colors[1])
+        ax1.set_ylabel(r'$\langle\beta\rangle$')
+
     if args.grid:
-        plt.grid(visible=True, which='major', color='#666666', linestyle='-', alpha=0.3)
-        plt.minorticks_on()
-        plt.grid(visible=True, which='minor', color='#999999', linestyle='-', alpha=0.1)
-    plt.savefig(data_dir + 'plots/beta' + '.png', dpi=1200)
+        ax1.grid(visible=True, which='major', color='#666666', linestyle='-', alpha=0.3)
+        ax1.minorticks_on()
+        ax1.grid(visible=True, which='minor', color='#999999', linestyle='-', alpha=0.1)
+    leg = ax1.legend(loc='best')
+    for line in leg.get_lines():
+        line.set_linewidth(4.0)
+    plt.savefig(args.output, bbox_inches='tight')
     plt.close()
 
 # Execute main function
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Plot plasma beta over time.')
-    parser.add_argument('prob_id',
-                        help='base name of the data being analysed, e.g. inflow_var or disk_base')
+    parser.add_argument('-f', '--file',
+                        type=argparse.FileType('r'),
+                        nargs='+',
+                        default=None,
+                        help='list of data files to read, including path')
+    parser.add_argument('-o', '--output',
+                        type=str,
+                        default=None,
+                        help='name of plot to be created, including path')
+    parser.add_argument('--logx',
+                        action='store_true',
+                        help='plot logx version')
     parser.add_argument('--logy',
                         action='store_true',
                         help='plot logy version')
+    parser.add_argument('--sharex',
+                        action='store_true',
+                        help='share x (time) axis')
     parser.add_argument('--grid',
                         action='store_true',
                         help='plot grid')
