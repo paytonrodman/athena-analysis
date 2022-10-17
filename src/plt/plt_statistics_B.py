@@ -49,18 +49,18 @@ def main(**kwargs):
         csv_reader = csv.reader(csv_file, delimiter='\t')
         next(csv_reader, None) # skip header
         for row in csv_reader:
-            sim_t_i = float(row[0])
-            #orbit_t_i = float(row[1])
-            abs_b_flux_i = row[2]
-            abs_b_jet_i = row[3]
-            abs_b_up_i = row[4]
-            abs_b_low_i = row[5]
-            abs_b_disk_i = row[6]
-            sign_b_flux_i = row[7]
-            sign_b_jet_i = row[8]
-            sign_b_up_i = row[9]
-            sign_b_low_i = row[10]
-            sign_b_disk_i = row[11]
+            sim_t_i = float(row[1])
+            #orbit_t_i = float(row[2])
+            abs_b_flux_i = row[3]
+            abs_b_jet_i = row[4]
+            abs_b_up_i = row[5]
+            abs_b_low_i = row[6]
+            abs_b_disk_i = row[7]
+            sign_b_flux_i = row[8]
+            sign_b_jet_i = row[9]
+            sign_b_up_i = row[10]
+            sign_b_low_i = row[11]
+            sign_b_disk_i = row[12]
 
             time.append(sim_t_i)
             abs_B_flux.append(literal_eval(abs_b_flux_i))

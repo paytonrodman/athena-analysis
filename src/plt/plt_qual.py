@@ -35,34 +35,23 @@ def main(**kwargs):
         csv_reader = csv.reader(csv_file, delimiter='\t')
         next(csv_reader, None) # skip header
         for row in csv_reader:
-            t = float(row[0])
-            #t_orb = float(row[1])
-            tB_i = float(row[2])
-            if args.prob_id in ['super_res','inflow','high_beta']:
-                Qt = float(row[3])
-                Qp = float(row[4])
+            t = float(row[1])
+            #t_orb = float(row[2])
+            tB_i = float(row[3])
+            Qt = float(row[4])
+            Qp = float(row[5])
 
-                Qt_lc.append(Qt)
-                Qt_av.append(Qt)
-                Qt_uc.append(Qt)
+            Qt_lc.append(Qt)
+            Qt_av.append(Qt)
+            Qt_uc.append(Qt)
 
-                Qp_lc.append(Qp)
-                Qp_av.append(Qp)
-                Qp_uc.append(Qp)
-            else:
-                Qt_all = np.fromstring(row[3].strip("[]"), sep=',')
-                Qp_all = np.fromstring(row[4].strip("[]"), sep=',')
+            Qp_lc.append(Qp)
+            Qp_av.append(Qp)
+            Qp_uc.append(Qp)
 
-                Qt_lc.append(Qt_all[0])
-                Qt_av.append(Qt_all[1])
-                Qt_uc.append(Qt_all[2])
-
-                Qp_lc.append(Qp_all[0])
-                Qp_av.append(Qp_all[1])
-                Qp_uc.append(Qp_all[2])
+            theta_B.append(tB_i)
 
             time.append(t)
-            theta_B.append(tB_i)
 
     time,theta_B,Qt_lc,Qt_av,Qt_uc,Qp_lc,Qp_av,Qp_uc = zip(*sorted(zip(time,theta_B,Qt_lc,Qt_av,Qt_uc,Qp_lc,Qp_av,Qp_uc)))
 
@@ -83,7 +72,7 @@ def make_plot(x,y,ylabel,yname,data_dir):
         plt.grid(visible=True, which='major', color='#666666', linestyle='-', alpha=0.3)
         plt.minorticks_on()
         plt.grid(visible=True, which='minor', color='#999999', linestyle='-', alpha=0.1)
-    plt.savefig(data_dir + yname + '.png',dpi=1200)
+    plt.savefig(data_dir + 'plots/' + yname + '.png',dpi=1200)
     plt.close()
 
 def make_plot_CI(x,y,y_CI_low,y_CI_high,ylabel,yname,data_dir):
@@ -100,7 +89,7 @@ def make_plot_CI(x,y,y_CI_low,y_CI_high,ylabel,yname,data_dir):
         plt.grid(visible=True, which='major', color='#666666', linestyle='-', alpha=0.3)
         plt.minorticks_on()
         plt.grid(visible=True, which='minor', color='#999999', linestyle='-', alpha=0.1)
-    plt.savefig(data_dir + yname + '.png',dpi=1200)
+    plt.savefig(data_dir + 'plots/' + yname + '.png',dpi=1200)
     plt.close()
 
 def find_nearest(array, value):

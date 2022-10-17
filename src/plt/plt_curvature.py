@@ -34,12 +34,12 @@ def main(**kwargs):
         csv_reader = csv.reader(csv_file, delimiter='\t')
         next(csv_reader, None) # skip header
         for row in csv_reader:
-            t = float(row[0])
-            #t_orb = float(row[1])
-            jet = np.fromstring(row[2].strip("[]"), sep=',')
-            upatmos = np.fromstring(row[3].strip("[]"), sep=',')
-            lowatmos = np.fromstring(row[4].strip("[]"), sep=',')
-            disk = np.fromstring(row[5].strip("[]"), sep=',')
+            t = float(row[1])
+            #t_orb = float(row[2])
+            jet = np.fromstring(row[3].strip("[]"), sep=',')
+            upatmos = np.fromstring(row[4].strip("[]"), sep=',')
+            lowatmos = np.fromstring(row[5].strip("[]"), sep=',')
+            disk = np.fromstring(row[6].strip("[]"), sep=',')
 
             time.append(t)
             k_jet.append(jet)

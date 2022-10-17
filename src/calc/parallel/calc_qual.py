@@ -33,6 +33,9 @@ def main(**kwargs):
 
     os.chdir(args.data)
 
+    file_times = AAT.add_time_to_list(args.update, args.output)
+    local_times = AAT.distribute_files_to_cores(file_times, size, rank)
+
     data_input = athena_read.athinput(args.input)
     x1min = data_input['mesh']['x1min'] # bounds of simulation
     x1max = data_input['mesh']['x1max']
@@ -94,16 +97,13 @@ def main(**kwargs):
     if tl==tu:
         tu += 1
 
-    file_times = AAT.add_time_to_list(args.update, args.output)
-    local_times = AAT.distribute_files_to_cores(file_times, size, rank)
-
-    local_times = [20]
+    del x2v_init, x1v_init
 
     if rank==0:
         if not args.update:
             with open(args.output, 'w', newline='') as f:
                 writer = csv.writer(f, delimiter='\t')
-                writer.writerow(["sim_time", "orbit_time", "theta_B", "Q_theta", "Q_phi"])
+                writer.writerow(["file_time", "sim_time", "orbit_time", "theta_B", "Q_theta", "Q_phi"])
     for t in local_times:
         str_t = str(int(t)).zfill(5)
         gamma = 5./3.
@@ -128,14 +128,19 @@ def main(**kwargs):
         Bcc2 = data_cons['Bcc2'][:, tl:tu, rl:ru]
         Bcc3 = data_cons['Bcc3'][:, tl:tu, rl:ru]
         press = data_prim['press'][:, tl:tu, rl:ru]
+        sim_t = data_cons['Time']
+
+        orbit_t = AAT.calculate_orbit_time(sim_t)
+        del data_cons, data_prim
+        gc.collect()
 
         dx1f,dx2f,dx3f = AAT.calculate_delta(x1f,x2f,x3f)
         phi,theta,r = np.meshgrid(x3v,x2v,x1v, sparse=False, indexing='ij')
         dphi,dtheta,_ = np.meshgrid(dx3f,dx2f,dx1f, sparse=False, indexing='ij')
 
-        del data_cons, data_prim
         del dx1f, dx2f, dx3f
         del x2v, x3v
+        del x1f, x2f, x3f
         gc.collect()
 
         Omega_kep = np.sqrt(GM/(x1v[rl:ru]**3.))
@@ -163,21 +168,19 @@ def main(**kwargs):
         Q_theta = np.array(Q_theta.flatten())
         Q_phi = np.array(Q_phi.flatten())
 
-        Qt_l,Qt_h = st.t.interval(0.95, len(Q_theta)-1, loc=np.mean(Q_theta), scale=st.sem(Q_theta))
         Qt_av = np.mean(Q_theta)
-        Qp_l,Qp_h = st.t.interval(0.95, len(Q_phi)-1, loc=np.mean(Q_phi), scale=st.sem(Q_phi))
         Qp_av = np.mean(Q_phi)
-
-        Qt_all = [Qt_l,Qt_av,Qt_h]
-        Qp_all = [Qp_l,Qp_av,Qp_h]
-
-        sim_t = data_cons['Time']
-        orbit_t = AAT.calculate_orbit_time(sim_t)
 
         with open(args.output, 'a', newline='') as f:
             writer = csv.writer(f, delimiter='\t')
-            row = [sim_t,orbit_t,tB_av,Qt_all,Qp_all]
+            row = [t,sim_t,orbit_t,tB_av,Qt_av,Qp_av]
             writer.writerow(row)
+        # cleanup
+        del w, B2, vA_theta, vA_phi, lambda_MRI_theta, lambda_MRI_phi
+        del R, r, phi, dphi, dtheta
+        del Q_theta, Q_phi
+        gc.collect()
+        print("data written for time ", sim_t)
 
 
 # Execute main function

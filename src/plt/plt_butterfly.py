@@ -39,11 +39,11 @@ def main(**kwargs):
         csv_reader = csv.reader(csv_file, delimiter='\t')
         next(csv_reader, None) # skip header
         for row in csv_reader:
-            t = float(row[0])
-            #t_orb = float(row[1])
-            Bcc1_av = row[2]
-            Bcc2_av = row[3]
-            Bcc3_av = row[4]
+            t = float(row[1])
+            #t_orb = float(row[2])
+            Bcc1_av = row[3]
+            Bcc2_av = row[4]
+            Bcc3_av = row[5]
 
             time.append(t)
             Bcc1.append(literal_eval(Bcc1_av))
@@ -66,13 +66,12 @@ def main(**kwargs):
     #make_cyclic_plots(Bcc3)
 
 
-def make_cyclic_plots(data,theta_min,theta_max):
-    theta = np.linspace(theta_min, theta_max, num=np.shape(data)[1], endpoint=False)
-    th_low = AAT.find_nearest(theta,-1.)
-    th_upp = AAT.find_nearest(theta,1.)
-
-    Bcc3_reduc = Bcc[:,th_low:th_upp]
-    print(np.shape(Bcc3_reduc))
+#def make_cyclic_plots(data,theta_min,theta_max):
+#    theta = np.linspace(theta_min, theta_max, num=np.shape(data)[1], endpoint=False)
+#    th_low = AAT.find_nearest(theta,-1.)
+#    th_upp = AAT.find_nearest(theta,1.)
+#    Bcc3_reduc = Bcc[:,th_low:th_upp]
+#    print(np.shape(Bcc3_reduc))
 
 
 def make_butterfly_plots(data,data_dir,xlabel,save_name,x_min,x_max,y_min,y_max,max_extent,logthresh,logstep):
@@ -89,17 +88,17 @@ def make_butterfly_plots(data,data_dir,xlabel,save_name,x_min,x_max,y_min,y_max,
     ax.set_ylabel(r'$\theta - \pi/2$')
     plt.tick_params(axis='both', which='major')
 
-    #generate logarithmic ticks
+    #generate logarithmic ticks on colorbar
     maxlog = int(np.ceil(np.log10(max_extent)))
     minlog = maxlog
     tick_locations=([-(10**x) for x in range(-logthresh+1, minlog+1, logstep)][::-1]
                     +[0.0]
                     +[(10**x) for x in range(-logthresh+1, maxlog+1, logstep)] )
-    cbar = fig.colorbar(pos, ax=ax, extend='both', ticks=tick_locations, format=matplotlib.ticker.LogFormatterMathtext())
-    cbar.ax.set_ylabel(xlabel, rotation=0)
+    #cbar = fig.colorbar(pos, ax=ax, extend='both', ticks=tick_locations, format=matplotlib.ticker.LogFormatterMathtext())
+    #cbar.ax.set_ylabel(xlabel, rotation=0)
 
     #plt.tight_layout()
-    plt.savefig(data_dir + save_name + '.png',dpi=1200)
+    plt.savefig(data_dir + 'plots/' + save_name + '.png',dpi=1200)
     plt.close()
 
 

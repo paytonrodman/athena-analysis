@@ -10,11 +10,11 @@
 import argparse
 import warnings
 import sys
+sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies')
 
 # Other Python modules
 import numpy as np
 
-sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies')
 # Athena++ modules
 import athena_read
 

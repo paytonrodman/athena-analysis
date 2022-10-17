@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 #
-# calc_beta.py
+# calc_alpha.py
 #
-# A program to calculate the plasma beta of an Athena++ disk using MPI.
+# A program to calculate the Shakura-Sunyaev alpha of an Athena++ disk using MPI.
 #
-# Usage: mpirun -n [nprocs] calc_beta.py [options]
+# Usage: mpirun -n [nprocs] calc_alpha.py [options]
+#
+# IN PROGRESS
 #
 # Python standard modules
 import argparse
@@ -33,21 +35,10 @@ def main(**kwargs):
     file_times = AAT.add_time_to_list(args.update, args.output)
     local_times = AAT.distribute_files_to_cores(file_times, size, rank)
 
-    data_input = athena_read.athinput(args.input)
-    scale_height = data_input['problem']['h_r']
-    if 'refinement3' in data_input:
-        x1_high_max = data_input['refinement3']['x1max'] # bounds of high resolution region
-    elif 'refinement2' in data_input:
-        x1_high_max = data_input['refinement2']['x1max'] # bounds of high resolution region
-    elif 'refinement1' in data_input:
-        x1_high_max = data_input['refinement1']['x1max'] # bounds of high resolution region
-    else:
-        x1_high_max = data_input['mesh']['x1max']
+    #data_input = athena_read.athinput(args.input)
 
-    data_init = athena_read.athdf(kargs.problem_id + '.cons.00000.athdf', quantities=['x1v','x2v'])
-    x1v = data_init['x1v']
+    data_init = athena_read.athdf(args.problem_id + '.cons.00000.athdf', quantities=['x2v'])
     x2v = data_init['x2v']
-    r_u = AAT.find_nearest(x1v, x1_high_max)
     th_u = AAT.find_nearest(x2v, np.pi/2. + (3.*scale_height))
     th_l = AAT.find_nearest(x2v, np.pi/2. - (3.*scale_height))
 
@@ -55,67 +46,54 @@ def main(**kwargs):
         if not args.update:
             with open(args.output, 'w', newline='') as f:
                 writer = csv.writer(f, delimiter='\t')
-                writer.writerow(["file_time", "sim_time", "orbit_time", "plasma_beta"])
+                writer.writerow(["sim_time", "orbit_time", "T_rphi", "alpha"])
     for t in local_times:
         str_t = str(int(t)).zfill(5)
         data_prim = athena_read.athdf(args.problem_id + ".prim." + str_t + ".athdf",
                                         quantities=['press'])
         data_cons = athena_read.athdf(args.problem_id + ".cons." + str_t + ".athdf",
-                                        quantities=['x1f','x2f','x3f','dens','Bcc1','Bcc2','Bcc3'])
+                                        quantities=['x1v','x2v','x3v',
+                                                    'dens',
+                                                    'mom1','mom3',
+                                                    'Bcc1','Bcc3'])
 
         #unpack data
-        x1f = data_cons['x1f']
-        x2f = data_cons['x2f']
-        x3f = data_cons['x3f']
         x1v = data_cons['x1v']
         x2v = data_cons['x2v']
         x3v = data_cons['x3v']
         dens = data_cons['dens']
+        mom1 = data_cons['mom1']
+        mom3 = data_cons['mom3']
         Bcc1 = data_cons['Bcc1']
-        Bcc2 = data_cons['Bcc2']
         Bcc3 = data_cons['Bcc3']
         press = data_prim['press']
 
-        r,theta,_ = np.meshgrid(x3v,x2v,x1v, sparse=False, indexing='ij')
-        dx1f,dx2f,dx3f = AAT.calculate_delta(x1f,x2f,x3f)
-        dphi,dtheta,dr = np.meshgrid(dx3f,dx2f,dx1f, sparse=False, indexing='ij')
-        dphi = dphi[:, th_l:th_u, :r_u]
-        dtheta = dtheta[:, th_l:th_u, :r_u]
-        dr = dr[:, th_l:th_u, :r_u]
-        r = r[:, th_l:th_u, :r_u]
-        theta = theta[:, th_l:th_u, :r_u]
-        pressure = press[:, th_l:th_u, :r_u]
-        density = dens[:, th_l:th_u, :r_u]
+        r,_,_ = np.meshgrid(x3v,x2v,x1v, sparse=False, indexing='ij')
+        Omega_kep = np.sqrt(GM/(x1v**3.))
+        Omega_kep = np.broadcast_to(Omega_kep, (np.shape(dens)[0], np.shape(dens)[1], np.shape(dens)[2]))
+        dmom3 = mom3 - r*Omega_kep
 
-        # Density-weighted mean gas pressure
-        sum_p = 0.
-        numWeight_p = 0.
-        sum_b = 0.
-        numWeight_b = 0.
+        press = press[:, th_l:th_u, :]
+        dens = dens[:, th_l:th_u, :]
+        mom1 = mom1[:, th_l:th_u, :]
+        Bcc1 = Bcc1[:, th_l:th_u, :]
+        Bcc3 = Bcc3[:, th_l:th_u, :]
+        dmom3 = dmom3[:, th_l:th_u, :]
 
-        volume = (r**2.)*np.sin(theta)*dr*dtheta*dphi
+        Reynolds_stress = dens*mom1*dmom3
+        Maxwell_stress = -Bcc1*Bcc3/(4.*np.pi)
 
-        # Find volume centred total magnetic field
-        bcc_all = np.square(Bcc1[:, th_l:th_u, :r_u]) + np.square(Bcc2[:, th_l:th_u, :r_u]) + np.square(Bcc3[:, th_l:th_u, :r_u])
-        # Density- and volume weighted pressure/magnetic field
-        numWeight_p = np.sum(pressure*density*volume) #value * weight
-        sum_p       = np.sum(density*volume) # weight
-        numWeight_b = np.sum(bcc_all*density*volume)
-        sum_b       = np.sum(density*volume)
+        T_rphi = Reynolds_stress + Maxwell_stress
+        T_rphi = np.average(T_rphi, axis=(1)) # average over vertical height, theta
 
-        pres_av = numWeight_p/sum_p
-        bcc_av = numWeight_b/sum_b
-        if bcc_av>0:
-            current_beta = 2. * pres_av / bcc_av
-        else:
-            current_beta = np.nan
+        alpha_SS = T_rphi/np.average(press, axis=(1))
 
         sim_t = data_cons['Time']
         orbit_t = AAT.calculate_orbit_time(sim_t)
 
         with open(args.output, 'a', newline='') as f:
             writer = csv.writer(f, delimiter='\t')
-            row = [int(t),sim_t,orbit_t,current_beta]
+            row = [sim_t, orbit_t, T_rphi, alpha_SS]
             writer.writerow(row)
 
 # Execute main function

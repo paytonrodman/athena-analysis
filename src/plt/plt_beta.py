@@ -15,6 +15,7 @@ sys.path.insert(0, '/Users/paytonrodman/athena/vis/python')
 
 # Other Python modules
 import csv
+import numpy as np
 import matplotlib.pyplot as plt
 
 def main(**kwargs):
@@ -24,18 +25,23 @@ def main(**kwargs):
     data_dir = root_dir + problem + '/'
     os.chdir(data_dir)
     time = []
+    time_orb = []
     beta = []
     with open('beta_with_time.csv', newline='\n') as csv_file:
         csv_reader = csv.reader(csv_file, delimiter='\t')
         next(csv_reader, None) # skip header
         for row in csv_reader:
+            #t = float(row[1])
+            #t_orb = float(row[2])
+            #b = float(row[3])
             t = float(row[0])
-            #t_orb = float(row[1])
+            t_orb = float(row[1])
             b = float(row[2])
             time.append(t)
+            time_orb.append(t_orb)
             beta.append(b)
 
-    time, beta = zip(*sorted(zip(time, beta)))
+    time, time_orb, beta = zip(*sorted(zip(time, time_orb, beta)))
 
     lw = 1.5
 
@@ -52,7 +58,7 @@ def main(**kwargs):
         plt.grid(visible=True, which='major', color='#666666', linestyle='-', alpha=0.3)
         plt.minorticks_on()
         plt.grid(visible=True, which='minor', color='#999999', linestyle='-', alpha=0.1)
-    plt.savefig(data_dir + 'beta' + '.png', dpi=1200)
+    plt.savefig(data_dir + 'plots/beta' + '.png', dpi=1200)
     plt.close()
 
 # Execute main function

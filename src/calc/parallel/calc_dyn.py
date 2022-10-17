@@ -10,8 +10,8 @@
 import argparse
 import sys
 import os
-sys.path.insert(0, '/home/per29/rds/rds-accretion-zyNhkonJSR8/athena-analysis/dependencies')
-#sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies')
+#sys.path.insert(0, '/home/per29/rds/rds-accretion-zyNhkonJSR8/athena-analysis/dependencies')
+sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies')
 
 # Other Python modules
 import numpy as np
@@ -35,6 +35,8 @@ def main(**kwargs):
     file_times = AAT.add_time_to_list(args.update, args.output)
     local_times = AAT.distribute_files_to_cores(file_times, size, rank)
 
+    local_times = [25000]
+
     data_input = athena_read.athinput(args.input)
     scale_height = data_input['problem']['h_r']
     data_init = athena_read.athdf(args.problem_id + '.cons.00000.athdf', quantities=['x1v','x2v','x3v'])
@@ -51,6 +53,7 @@ def main(**kwargs):
     elif args.hemisphere=="lower":
         th_l = AAT.find_nearest(x2v, np.pi/2. + (np.arctan(1.*dist/x1v[r_mid])))
         th_u = AAT.find_nearest(x2v, np.pi/2. + (np.arctan(2.*dist/x1v[r_mid])))
+    # analyze phi wedge instead of full disk
     if args.reduced:
         ph_l = AAT.find_nearest(x3v, x3v[0])
         ph_u = AAT.find_nearest(x3v, x3v[int(np.size(x3v)/4.)])
@@ -66,58 +69,62 @@ def main(**kwargs):
     for t in local_times:
         str_t = str(int(t)).zfill(5)
         data_cons = athena_read.athdf(args.problem_id + '.cons.' + str_t + '.athdf',
-                                        quantities=['mom1','mom2','mom3','Bcc1','Bcc2','Bcc3'])
+                                        quantities=['mom1','mom2','mom3','dens','Bcc1','Bcc2','Bcc3'])
 
-        #unpack data and select points between 1-2 scale heights
+        # unpack data and select points between 1-2 scale heights
         mom1 = data_cons['mom1'][ph_l:ph_u,th_l:th_u,r_l:r_u]
         mom2 = data_cons['mom2'][ph_l:ph_u,th_l:th_u,r_l:r_u]
         mom3 = data_cons['mom3'][ph_l:ph_u,th_l:th_u,r_l:r_u]
+        dens = data_cons['dens'][ph_l:ph_u,th_l:th_u,r_l:r_u]
+        v1 = mom1/dens
+        v2 = mom2/dens
+        v3 = mom3/dens
         Bcc1 = data_cons['Bcc1'][ph_l:ph_u,th_l:th_u,r_l:r_u]
         Bcc2 = data_cons['Bcc2'][ph_l:ph_u,th_l:th_u,r_l:r_u]
         Bcc3 = data_cons['Bcc3'][ph_l:ph_u,th_l:th_u,r_l:r_u]
 
         if args.average=='gaussian':
             s=5
-            mom1_av = gaussian_filter(mom1, sigma=s)
-            mom2_av = gaussian_filter(mom2, sigma=s)
-            mom3_av = gaussian_filter(mom3, sigma=s)
+            v1_av = gaussian_filter(v1, sigma=s)
+            v2_av = gaussian_filter(v2, sigma=s)
+            v3_av = gaussian_filter(v3, sigma=s)
             Bcc1_av = gaussian_filter(Bcc1, sigma=s)
             Bcc2_av = gaussian_filter(Bcc2, sigma=s)
             Bcc3_av = gaussian_filter(Bcc3, sigma=s)
         elif args.average=='azimuthal':
-            mom1_av = np.average(mom1[ph_l:ph_u,:,:], axis=0)
-            mom2_av = np.average(mom2[ph_l:ph_u,:,:], axis=0)
-            mom3_av = np.average(mom3[ph_l:ph_u,:,:], axis=0)
-            Bcc1_av = np.average(Bcc1[ph_l:ph_u,:,:], axis=0)
-            Bcc2_av = np.average(Bcc2[ph_l:ph_u,:,:], axis=0)
-            Bcc3_av = np.average(Bcc3[ph_l:ph_u,:,:], axis=0)
-            mom1_av = np.repeat(mom1_av[np.newaxis, :, :], np.shape(mom1[ph_l:ph_u,:,:])[0], axis=0)
-            mom2_av = np.repeat(mom2_av[np.newaxis, :, :], np.shape(mom2[ph_l:ph_u,:,:])[0], axis=0)
-            mom3_av = np.repeat(mom3_av[np.newaxis, :, :], np.shape(mom3[ph_l:ph_u,:,:])[0], axis=0)
-            Bcc1_av = np.repeat(Bcc1_av[np.newaxis, :, :], np.shape(Bcc1[ph_l:ph_u,:,:])[0], axis=0)
-            Bcc2_av = np.repeat(Bcc2_av[np.newaxis, :, :], np.shape(Bcc2[ph_l:ph_u,:,:])[0], axis=0)
-            Bcc3_av = np.repeat(Bcc3_av[np.newaxis, :, :], np.shape(Bcc3[ph_l:ph_u,:,:])[0], axis=0)
+            v1_av = np.average(v1, axis=0)
+            v2_av = np.average(v2, axis=0)
+            v3_av = np.average(v3, axis=0)
+            Bcc1_av = np.average(Bcc1, axis=0)
+            Bcc2_av = np.average(Bcc2, axis=0)
+            Bcc3_av = np.average(Bcc3, axis=0)
+            # expand back out to original mesh
+            v1_av = np.repeat(v1_av[np.newaxis, :, :], np.shape(v1)[0], axis=0)
+            v2_av = np.repeat(v2_av[np.newaxis, :, :], np.shape(v2)[0], axis=0)
+            v3_av = np.repeat(v3_av[np.newaxis, :, :], np.shape(v3)[0], axis=0)
+            Bcc1_av = np.repeat(Bcc1_av[np.newaxis, :, :], np.shape(Bcc1)[0], axis=0)
+            Bcc2_av = np.repeat(Bcc2_av[np.newaxis, :, :], np.shape(Bcc2)[0], axis=0)
+            Bcc3_av = np.repeat(Bcc3_av[np.newaxis, :, :], np.shape(Bcc3)[0], axis=0)
 
 
-        # fluctuating components of momentum and magnetic field
-        mom1_fluc = mom1 - mom1_av
-        mom2_fluc = mom2 - mom2_av
-        mom3_fluc = mom3 - mom3_av
+        # fluctuating components of velocity and magnetic field
+        v1_fluc = v1 - v1_av
+        v2_fluc = v2 - v2_av
+        v3_fluc = v3 - v3_av
         Bcc1_fluc = Bcc1 - Bcc1_av
         Bcc2_fluc = Bcc2 - Bcc2_av
         Bcc3_fluc = Bcc3 - Bcc3_av
 
         # EMF components from cross product components
-        emf1 = mom2_fluc*Bcc3_fluc - mom3_fluc*Bcc2_fluc
-        emf2 = -(mom1_fluc*Bcc3_fluc - mom3_fluc*Bcc1_fluc)
-        emf3 = mom1_fluc*Bcc2_fluc - mom2_fluc*Bcc1_fluc
+        emf1 = v2_fluc*Bcc3_fluc - v3_fluc*Bcc2_fluc
+        emf2 = -(v1_fluc*Bcc3_fluc - v3_fluc*Bcc1_fluc)
+        emf3 = v1_fluc*Bcc2_fluc - v2_fluc*Bcc1_fluc
 
         if args.average=='gaussian':
             emf1_av = gaussian_filter(emf1, sigma=s)
             emf2_av = gaussian_filter(emf2, sigma=s)
             emf3_av = gaussian_filter(emf3, sigma=s)
-
-        if args.average=='azimuthal':
+        elif args.average=='azimuthal':
             emf1_av = np.average(emf1, axis=0)
             emf2_av = np.average(emf2, axis=0)
             emf3_av = np.average(emf3, axis=0)

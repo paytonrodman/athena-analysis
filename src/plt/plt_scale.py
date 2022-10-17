@@ -30,9 +30,9 @@ def main(**kwargs):
         csv_reader = csv.reader(csv_file, delimiter='\t')
         next(csv_reader, None) # skip header
         for row in csv_reader:
-            t = float(row[0])
-            #t_orb = float(row[1])
-            sh = float(row[2])
+            t = float(row[1])
+            #t_orb = float(row[2])
+            sh = float(row[3])
 
             time.append(t)
             scale_height.append(sh)
@@ -52,7 +52,7 @@ def main(**kwargs):
         plt.grid(visible=True, which='major', color='#666666', linestyle='-', alpha=0.3)
         plt.minorticks_on()
         plt.grid(visible=True, which='minor', color='#999999', linestyle='-', alpha=0.1)
-    plt.savefig(data_dir + y_var_name + '.png')
+    plt.savefig(data_dir + 'plots/' + y_var_name + '.png')
     plt.close()
 
 

@@ -11,11 +11,16 @@ import argparse
 import os
 import sys
 sys.path.insert(0, '/Users/paytonrodman/athena/vis/python')
+sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies')
 
 # Other Python modules
 import csv
 import matplotlib.pyplot as plt
+from matplotlib.offsetbox import AnchoredText
+from matplotlib.ticker import FormatStrFormatter
 import numpy as np
+
+import AAT
 
 def main(**kwargs):
     # directory containing data
@@ -32,47 +37,46 @@ def main(**kwargs):
     time_orb = []
     alpha = []
     C = []
-    with open(av[:3]+'_'+hem+'_dyn_with_time.csv', newline='\n') as csv_file:
+    with open(av+'_'+hem+'.csv', newline='\n') as csv_file:
         csv_reader = csv.reader(csv_file, delimiter='\t')
         next(csv_reader, None) # skip header
         for row in csv_reader:
-            t = float(row[0])
-            #t_orb = float(row[1])
-            a = row[2]
-            c = row[3]
+            t = float(row[1])
+            t_orb = float(row[2])
+            a = row[3]
+            c = row[4]
             time.append(t)
             time_orb.append(t_orb)
             alpha.append(np.fromstring(a.strip("[]"), sep=', '))
             C.append(np.fromstring(c.strip("[]"), sep=', '))
 
-    time, alpha, C = zip(*sorted(zip(time, alpha, C)))
+    time, time_orb, alpha, C = zip(*sorted(zip(time, time_orb, alpha, C)))
 
     time = np.asarray(time)
+    time_orb = np.asarray(time_orb)
     alpha = np.asarray(alpha)
     C = np.asarray(C)
 
-    if args.path:
-        time_mask = (time_orb > 350.) & (time_orb < 400.)
+    if args.path: # plot path for last 50 orbits
+        time_mask = (time_orb > (np.max(time_orb) - 100.)) & (time_orb < np.max(time_orb))
     else:
-        time_mask = (time_orb > 50.)
+        time_mask = (time_orb > 50.) # plot all data later than 50 orbits
+
     alpha = alpha[time_mask]
     C = C[time_mask]
+    time_orb = time_orb[time_mask]
+    filetype = ['r','th','ph']
+    math = [r'$r$', r'$\theta$', r'$\phi$']
 
+    fig, axs = plt.subplots(nrows=1, ncols=3, figsize=(12,4), constrained_layout=True)
+    xlab = r'Offset ($C$)'
+    ylab = r'$\alpha_d$'
     for num in range(0,3):
         x = alpha[:,num]
         y = C[:,num]
-        if num==0:
-            xlab = r'Offset ($C$)'
-            ylab = r'$\alpha_d$'
-            f = 'r'
-        elif num==1:
-            xlab = r'Offset ($C$)'
-            ylab = r'$\alpha_d$'
-            f = 'th'
-        elif num==2:
-            xlab = r'Offset ($C$)'
-            ylab = r'$\alpha_d$'
-            f = 'ph'
+        f = filetype[num]
+        m = math[num]
+        t = time_orb
 
         #N = np.size(x)
         #base = plt.cm.get_cmap('viridis')
@@ -85,19 +89,37 @@ def main(**kwargs):
         #x = x[idx]
         #y = y[idx]
         #plt.scatter(x,y,c=c, cmap=cm, s=50)
-        plt.plot(x,y,'k.',markersize=5)
+
+        axs[num].axhline(y=0, color='grey', linestyle='-', linewidth=1)
+        axs[num].axvline(x=0, color='grey', linestyle='-', linewidth=1)
+
+        #axs[num].plot(x,y,'k.',markersize=5,alpha=0.3)
+        axs[num].scatter(x,y,c=t,cmap='viridis',alpha=0.3)
         if args.path:
-            plt.plot(x,y,'r')
-        plt.ylabel(ylab)
-        plt.xlabel(xlab)
-        plt.grid(True)
-        #title_str = "t=" + str(sim_t)
-        #plt.title(title_str)
-        plt.ticklabel_format(axis="both", style="sci", scilimits=(0,0))
-        plt.tight_layout()
-        plt.savefig(data_dir+'/'+av[:3]+'_'+hem+'_'+f+'_fit.png',dpi=300)
-        plt.close()
-        #plt.show()
+            axs[num].plot(x,y,'r')
+        #plt.ylabel(ylab)
+        #plt.xlabel(xlab)
+        #plt.grid(True)
+
+        x_max = np.abs(axs[num].get_xlim()).max()
+        y_max = np.abs(axs[num].get_ylim()).max()
+        axs[num].set_xlim(-x_max, x_max)
+        axs[num].set_ylim(-y_max, y_max)
+
+        at = AnchoredText(m, prop=dict(size=15), frameon=True, loc='upper right')
+        at.patch.set_boxstyle("round,pad=0.,rounding_size=0.2")
+        axs[num].add_artist(at)
+
+    plt.ticklabel_format(axis="both", style="sci", scilimits=(0,0))
+    axs[0].set_ylabel(ylab)
+    axs[1].set_xlabel(xlab)
+    if args.path:
+        #plt.savefig(data_dir+'/path/'+av[:3]+'_'+hem+'_'+f+'_fit.png',dpi=250)
+        plt.savefig(data_dir+'/path/'+av[:3]+'_'+hem+'_path_fit.pdf',dpi=args.dpi)
+    else:
+        plt.savefig(data_dir+'/'+av[:3]+'_'+hem+'_fit.pdf',dpi=args.dpi)
+    plt.close()
+    #plt.show()
 
 # Execute main function
 if __name__ == '__main__':
@@ -115,6 +137,10 @@ if __name__ == '__main__':
                         type=str,
                         default='upper',
                         help='specify which hemisphere to average in (upper, lower)')
+    parser.add_argument('-dpi', '--dpi',
+                        type=int,
+                        default=250,
+                        help='dots per inch')
     parser.add_argument('-p', '--path',
                         action="store_true",
                         help='specify whether to plot the path over time')
