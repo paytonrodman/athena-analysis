@@ -1,7 +1,6 @@
 #!/usr/bin/python
 # Python standard modules
 import argparse
-import os
 import sys
 sys.path.insert(0, '/Users/paytonrodman/athena/vis/python')
 sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies')
