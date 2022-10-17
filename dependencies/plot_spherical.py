@@ -293,6 +293,11 @@ def main(**kwargs):
     plt.figure()
     #im = plt.pcolormesh(x_grid, y_grid, vals, cmap=cmap, vmin=vmin, vmax=vmax, norm=norm)
     im = plt.pcolormesh(x_grid, y_grid, vals, cmap=cmap, norm=norm)
+    if kwargs['midplane']:
+        magnitude = np.sqrt(vals_x.T**2 + vals_y.T**2)
+    else:
+        magnitude = np.sqrt(vals_x.T**2 + vals_z.T**2)
+    lw = 5*magnitude/np.nanmax(magnitude)
     if kwargs['stream'] is not None:
         with warnings.catch_warnings():
             warnings.filterwarnings(
@@ -302,10 +307,10 @@ def main(**kwargs):
                 'numpy')
             if kwargs['midplane']:
                 plt.streamplot(x_stream, y_stream, vals_x.T, vals_y.T,
-                               density=kwargs['stream_density'], color='k')
+                               density=kwargs['stream_density'], linewidth=lw, arrowsize=0.2, color='k')
             else:
                 plt.streamplot(x_stream, z_stream, vals_x.T, vals_z.T,
-                               density=kwargs['stream_density'], color='k')
+                               density=kwargs['stream_density'], linewidth=lw, arrowsize=0.2, color='k')
     plt.gca().set_aspect('equal')
     plt.xlim((-r_max, r_max))
     plt.ylim((-r_max, r_max))
@@ -324,7 +329,8 @@ def main(**kwargs):
             plt.xlabel(r'$x$')
             plt.ylabel(r'$z$')
     if kwargs['time']:
-        plt.title(str(int(data['Time'])))
+        time_title = "{:.2e}".format(int(data['Time']))
+        plt.title(time_title)
     plt.colorbar(im)
     if kwargs['output_file'] == 'show':
         plt.show()
