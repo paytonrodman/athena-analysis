@@ -16,7 +16,6 @@ sys.path.insert(0, '/home/per29/rds/rds-accretion-zyNhkonJSR8/athena-analysis/de
 #sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies')
 
 # Other Python modules
-import scipy.stats as st
 import numpy as np
 from mpi4py import MPI
 import csv

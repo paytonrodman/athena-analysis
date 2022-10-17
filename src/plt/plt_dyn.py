@@ -19,7 +19,9 @@ import matplotlib.pyplot as plt
 from matplotlib.offsetbox import AnchoredText
 from matplotlib.ticker import FormatStrFormatter
 import numpy as np
+import pandas as pd
 
+# Athena++ modules
 import AAT
 
 def main(**kwargs):
@@ -32,23 +34,24 @@ def main(**kwargs):
 
     av = args.average
     hem = args.hemisphere
+    file = av+'_'+hem+'.csv'
 
-    time = []
-    time_orb = []
     alpha = []
     C = []
-    with open(av+'_'+hem+'.csv', newline='\n') as csv_file:
-        csv_reader = csv.reader(csv_file, delimiter='\t')
-        next(csv_reader, None) # skip header
-        for row in csv_reader:
-            t = float(row[1])
-            t_orb = float(row[2])
-            a = row[3]
-            c = row[4]
-            time.append(t)
-            time_orb.append(t_orb)
-            alpha.append(np.fromstring(a.strip("[]"), sep=', '))
-            C.append(np.fromstring(c.strip("[]"), sep=', '))
+
+    df = pd.read_csv(file, delimiter='\t', usecols=['sim_time', 'orbit_time', 'alpha', 'C'])
+    t = df['sim_time'].to_list()
+    t_orb = df['orbit_time'].to_list()
+    a = df['alpha'].to_list()
+    c = df['C'].to_list()
+    for ai in a:
+        a_list = np.fromstring(ai.strip("[]"), sep=', ')
+        alpha.append(a_list)
+    for ci in c:
+        c_list = np.fromstring(ci.strip("[]"), sep=', ')
+        C.append(c_list)
+    time = t
+    time_orb = t_orb
 
     time, time_orb, alpha, C = zip(*sorted(zip(time, time_orb, alpha, C)))
 
@@ -65,7 +68,6 @@ def main(**kwargs):
     alpha = alpha[time_mask]
     C = C[time_mask]
     time_orb = time_orb[time_mask]
-    filetype = ['r','th','ph']
     math = [r'$r$', r'$\theta$', r'$\phi$']
 
     fig, axs = plt.subplots(nrows=1, ncols=3, figsize=(12,4), constrained_layout=True)
@@ -74,7 +76,6 @@ def main(**kwargs):
     for num in range(0,3):
         x = alpha[:,num]
         y = C[:,num]
-        f = filetype[num]
         m = math[num]
         t = time_orb
 

@@ -36,15 +36,9 @@ def main(**kwargs):
         file_times = file_times[file_times>4000] # t > 2e4
     local_times = AAT.distribute_files_to_cores(file_times, size, rank)
 
-    data_input = athena_read.athinput(args.input)
-    scale_height = data_input['problem']['h_r']
-
     data_init = athena_read.athdf(args.problem_id + '.cons.00000.athdf', quantities=['x1v','x2v'])
     x1v = data_init['x1v']
-    x2v = data_init['x2v']
     r = AAT.find_nearest(x1v, 15.)
-    #th_u = AAT.find_nearest(x2v, np.pi/2. + (2.*scale_height))
-    #th_l = AAT.find_nearest(x2v, np.pi/2. - (2.*scale_height))
 
     dens_all = []
     gpres_all = []

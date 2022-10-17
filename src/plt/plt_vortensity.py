@@ -21,7 +21,6 @@ Requires scipy if making a stream plot.
 import argparse
 import warnings
 import sys
-import os
 #sys.path.insert(0, '/home/per29/rds/rds-accretion-zyNhkonJSR8/athena-analysis/dependencies')
 sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies')
 
@@ -312,7 +311,7 @@ def curl(r,theta,phi,vr,vt,vp):
 
     r_s = r[:-1,:-1,:-1]
     theta_s = theta[:-1,:-1,:-1]
-    phi_s = phi[:-1,:-1,:-1]
+    #phi_s = phi[:-1,:-1,:-1]
 
     vpsint = vp*np.sin(theta_s) # only works with --midplane
     rvt = r_s*vt
@@ -323,7 +322,7 @@ def curl(r,theta,phi,vr,vt,vp):
     #_, _, _ = np.gradient (vp, dr, dt, dp, axis=[2,1,0])
     _, dFpsint_dt, _ = np.gradient (vpsint, dr, dt, dp, axis=[2,1,0])
     drFt_dr, _, _ = np.gradient (rvt, dr, dt, dp, axis=[2,1,0])
-    drFp_dr, _, _ = np.gradient (rvt, dr, dt, dp, axis=[2,1,0])
+    drFp_dr, _, _ = np.gradient (rvp, dr, dt, dp, axis=[2,1,0])
 
     rot_r = (1./(r_s*np.sin(theta_s))) * (dFpsint_dt - dFt_dp)
     rot_t = (1./r_s) * ( (1./np.sin(theta_s))*dFr_dt - drFp_dr)

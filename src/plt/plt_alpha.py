@@ -20,8 +20,6 @@ import AAT
 
 def main(**kwargs):
     # Load Python plotting modules
-    import matplotlib
-    #matplotlib.use('agg')
     import matplotlib.pyplot as plt
     import matplotlib.colors as colors
 
@@ -41,7 +39,7 @@ def main(**kwargs):
 
     data_prim = athena_read.athdf(file_prim, quantities=['press'])
     data_cons = athena_read.athdf(file_cons, quantities=['x1v','x2v','x3v',
-                                                        'x1f','x2f','x3f',
+                                                        'x1f','x3f',
                                                         'dens',
                                                         'mom1','mom3',
                                                         'Bcc1','Bcc3'])
@@ -51,7 +49,6 @@ def main(**kwargs):
     x2v = data_cons['x2v']
     x3v = data_cons['x3v']
     x1f = data_cons['x1f']
-    x2f = data_cons['x2f']
     x3f = data_cons['x3f']
     dens = data_cons['dens']
     mom1 = data_cons['mom1']
@@ -69,9 +66,6 @@ def main(**kwargs):
     Omega_kep = np.broadcast_to(Omega_kep, (np.shape(dens)[0], np.shape(dens)[1], np.shape(dens)[2]))
     dmom3 = mom3 - r*Omega_kep
 
-    print(np.shape(r))
-    print(np.shape(Omega_kep))
-
     press = press[:, th_l:th_u, :]
     dens = dens[:, th_l:th_u, :]
     mom1 = mom1[:, th_l:th_u, :]
@@ -79,9 +73,7 @@ def main(**kwargs):
     Bcc3 = Bcc3[:, th_l:th_u, :]
     dmom3 = dmom3[:, th_l:th_u, :]
 
-    plt.pcolormesh(np.average(dmom3, axis=(1)), cmap="viridis", shading='auto')
-    plt.show()
-    print(wjbdjw)
+    #plt.pcolormesh(np.average(dmom3, axis=(1)), cmap="viridis", shading='auto')
 
     Reynolds_stress = dens*mom1*dmom3
     Maxwell_stress = -Bcc1*Bcc3/(4.*np.pi)
@@ -126,9 +118,6 @@ def main(**kwargs):
         im = plt.pcolormesh(x_grid, y_grid, data, cmap="viridis", norm=norm, shading='auto')
         cbar = plt.colorbar(im, extend='both')
         plt.gca().set_aspect('equal')
-        #else:
-            #plt.xlim((-r_max, r_max))
-        #plt.ylim((-r_max, r_max))
         cbar.set_label(labels[num])
         plt.xlabel(r'$x$')
         plt.ylabel(r'$y$')

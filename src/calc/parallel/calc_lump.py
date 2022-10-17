@@ -18,8 +18,6 @@ import numpy as np
 from mpi4py import MPI
 import csv
 
-import matplotlib.pyplot as plt
-
 # Athena++ modules
 import athena_read
 import AAT
@@ -58,12 +56,10 @@ def main(**kwargs):
 
 
         #unpack data
-        x1v = data_cons['x1v']
         dens = data_cons['dens']
         dens_u = np.average(dens[ph_u, th_l:th_u, :], axis=0)
         dens_l = np.average(dens[ph_l, th_l:th_u, :], axis=0)
         dens_all = list(np.concatenate((np.flip(dens_l,0),dens_u), axis=0))
-        #r_all = np.concatenate((x1v,x1v), axis=0)
 
         sim_t = data_cons['Time']
         orbit_t = AAT.calculate_orbit_time(sim_t)
