@@ -29,7 +29,6 @@ import numpy as np
 
 # Athena++ modules
 import athena_read
-import AAT
 
 
 # Main function
@@ -341,7 +340,7 @@ def main(**kwargs):
             lw[lw<0.05] = 0.05
             lw[lw>1.0] = 1.0
         else:
-            lw = 1
+            lw = 0.5
         if kwargs['stream'] is not None:
             with warnings.catch_warnings():
                 warnings.filterwarnings(
