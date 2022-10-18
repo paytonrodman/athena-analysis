@@ -11,7 +11,6 @@ from ast import literal_eval
 import matplotlib.pyplot as plt
 import pandas as pd
 import re
-import scipy.stats
 
 # Athena++ modules
 import AAT

@@ -11,43 +11,26 @@ import argparse
 import os
 import sys
 sys.path.insert(0, '/Users/paytonrodman/athena/vis/python')
-sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies')
 
 # Other Python modules
-import csv
 import matplotlib.pyplot as plt
 from matplotlib.offsetbox import AnchoredText
-from matplotlib.ticker import FormatStrFormatter
 import numpy as np
 import pandas as pd
 
-# Athena++ modules
-import AAT
-
 def main(**kwargs):
-    # directory containing data
-    problem  = args.prob_id
-    root_dir = '/Users/paytonrodman/athena-sim/'
-    prob_dir = root_dir + problem
-    data_dir = prob_dir + '/dyn/average/'
-    os.chdir(data_dir)
-
-    av = args.average
-    hem = args.hemisphere
-    file = av+'_'+hem+'.csv'
-
     alpha = []
     C = []
 
-    df = pd.read_csv(file, delimiter='\t', usecols=['sim_time', 'orbit_time', 'alpha', 'C'])
+    df = pd.read_csv(args.file, delimiter='\t', usecols=['sim_time', 'orbit_time', 'alpha', 'C'])
     t = df['sim_time'].to_list()
     t_orb = df['orbit_time'].to_list()
     a = df['alpha'].to_list()
     c = df['C'].to_list()
-    for ai in a:
+    for ai in a: # alpha given as [a_r,a_theta,a_phi]
         a_list = np.fromstring(ai.strip("[]"), sep=', ')
         alpha.append(a_list)
-    for ci in c:
+    for ci in c: # C given as [c_r,c_theta,c_phi]
         c_list = np.fromstring(ci.strip("[]"), sep=', ')
         C.append(c_list)
     time = t
@@ -79,18 +62,6 @@ def main(**kwargs):
         m = math[num]
         t = time_orb
 
-        #N = np.size(x)
-        #base = plt.cm.get_cmap('viridis')
-        #color_list = base(np.linspace(0, 1, N))
-        #cmap_name = base.name + str(N)
-        #cm = plt.cm.get_cmap('jet', N)
-        #c = np.random.randint(N, size=np.size(x))
-
-        #idx = [randint(0, np.size(x)-1) for p in range(0, 1000)]
-        #x = x[idx]
-        #y = y[idx]
-        #plt.scatter(x,y,c=c, cmap=cm, s=50)
-
         axs[num].axhline(y=0, color='grey', linestyle='-', linewidth=1)
         axs[num].axvline(x=0, color='grey', linestyle='-', linewidth=1)
 
@@ -98,9 +69,6 @@ def main(**kwargs):
         axs[num].scatter(x,y,c=t,cmap='viridis',alpha=0.3)
         if args.path:
             axs[num].plot(x,y,'r')
-        #plt.ylabel(ylab)
-        #plt.xlabel(xlab)
-        #plt.grid(True)
 
         x_max = np.abs(axs[num].get_xlim()).max()
         y_max = np.abs(axs[num].get_ylim()).max()
@@ -114,30 +82,21 @@ def main(**kwargs):
     plt.ticklabel_format(axis="both", style="sci", scilimits=(0,0))
     axs[0].set_ylabel(ylab)
     axs[1].set_xlabel(xlab)
-    if args.path:
-        #plt.savefig(data_dir+'/path/'+av[:3]+'_'+hem+'_'+f+'_fit.png',dpi=250)
-        plt.savefig(data_dir+'/path/'+av[:3]+'_'+hem+'_path_fit.pdf',dpi=args.dpi)
-    else:
-        plt.savefig(data_dir+'/'+av[:3]+'_'+hem+'_fit.pdf',dpi=args.dpi)
+    plt.savefig(args.output,dpi=args.dpi)
     plt.close()
-    #plt.show()
 
 # Execute main function
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Calculate average magnetic field values within the midplane at a given radius (r)')
-    parser.add_argument('prob_id',
-                        help='base name of the data being analysed, e.g. inflow_var or disk_base')
-    parser.add_argument('-u', '--update',
-                        action="store_true",
-                        help='specify whether the results being analysed are from a restart')
-    parser.add_argument('-a', '--average',
+    parser.add_argument('-f', '--file',
+                        type=argparse.FileType('r'),
+                        nargs=1,
+                        default=None,
+                        help='data file to read, including path')
+    parser.add_argument('-o', '--output',
                         type=str,
-                        default='azimuthal',
-                        help='specify averaging method (azimuthal,gaussian)')
-    parser.add_argument('-H', '--hemisphere',
-                        type=str,
-                        default='upper',
-                        help='specify which hemisphere to average in (upper, lower)')
+                        default=None,
+                        help='name of plot to be created, including path')
     parser.add_argument('-dpi', '--dpi',
                         type=int,
                         default=250,

@@ -24,20 +24,8 @@ import pandas as pd
 import athena_read
 
 def main(**kwargs):
-    # directory containing data
-    problem  = args.prob_id
-    root_dir = '/Users/paytonrodman/athena-sim/'
-    data_dir = root_dir + problem + '/'
-
-    os.chdir(data_dir)
-
-    data_init = athena_read.athdf('data/' + args.prob_id + '.cons.00000.athdf', quantities=['x1v'])
-    x1v = data_init['x1v']
-
-    N = 30
-
     dens = []
-    df = pd.read_csv('lump_with_time.csv', delimiter='\t', usecols=['sim_time', 'line_density'])
+    df = pd.read_csv(args.file, delimiter='\t', usecols=['sim_time', 'line_density'])
     t = df['sim_time'].to_list()
     d = df['line_density'].to_list()
     time = t
@@ -69,14 +57,21 @@ def main(**kwargs):
 
     cbar = fig.colorbar(pos, ax=ax, extend='both', format=matplotlib.ticker.LogFormatterMathtext())
     cbar.ax.set_title(r'$\rho$')
-    plt.savefig(data_dir + 'plots/lump' + '.png', dpi=1200)
+    plt.savefig(args.output, dpi=1200)
     plt.close()
 
 # Execute main function
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Plot density lump over time.')
-    parser.add_argument('prob_id',
-                        help='base name of the data being analysed, e.g. inflow_var or disk_base')
+    parser.add_argument('-f', '--file',
+                        type=argparse.FileType('r'),
+                        nargs=1,
+                        default=None,
+                        help='data file to read, including path')
+    parser.add_argument('-o', '--output',
+                        type=str,
+                        default=None,
+                        help='name of plot to be created, including path')
     parser.add_argument('--grid',
                         action='store_true',
                         help='plot grid')
