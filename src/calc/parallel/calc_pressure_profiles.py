@@ -77,6 +77,7 @@ def main(**kwargs):
         np.save(args.output + 'gpres_profile_th.npy', gpres_av)
         np.save(args.output + 'mpres_profile_th.npy', mpres_av)
 
+
 # Execute main function
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Calculate plasma beta from raw simulation data.')

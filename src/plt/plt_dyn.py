@@ -85,6 +85,7 @@ def main(**kwargs):
     plt.savefig(args.output,dpi=args.dpi)
     plt.close()
 
+
 # Execute main function
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Calculate average magnetic field values within the midplane at a given radius (r)')

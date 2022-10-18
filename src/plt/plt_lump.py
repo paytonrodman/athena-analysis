@@ -60,6 +60,7 @@ def main(**kwargs):
     plt.savefig(args.output, dpi=1200)
     plt.close()
 
+
 # Execute main function
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Plot density lump over time.')

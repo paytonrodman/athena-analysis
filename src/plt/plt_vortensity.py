@@ -304,6 +304,7 @@ def main(**kwargs):
     else:
         plt.savefig(kwargs['output_file'], bbox_inches='tight', dpi=resolution)
 
+
 def curl(r,theta,phi,vr,vt,vp):
     dr = r[0,0,:-1]
     dt = theta[0,:-1,0]
@@ -330,24 +331,6 @@ def curl(r,theta,phi,vr,vt,vp):
 
     return rot_r, rot_t, rot_p
 
-# def curl(x,y,z,u,v,w):
-#     dx = x[0,:,0]
-#     dy = y[:,0,0]
-#     dz = z[0,0,:]
-#
-#     dummy, dFx_dy, dFx_dz = np.gradient (u, dx, dy, dz, axis=[1,0,2])
-#     dFy_dx, dummy, dFy_dz = np.gradient (v, dx, dy, dz, axis=[1,0,2])
-#     dFz_dx, dFz_dy, dummy = np.gradient (w, dx, dy, dz, axis=[1,0,2])
-#
-#     rot_x = dFz_dy - dFy_dz
-#     rot_y = dFx_dz - dFz_dx
-#     rot_z = dFy_dx - dFx_dy
-#
-#     m1 = np.multiply(rot_x,u)
-#     m2 = np.multiply(rot_y,v)
-#     m3 = np.multiply(rot_z,w)
-#
-#     return rot_x, rot_y, rot_z
 
 # Execute main function
 if __name__ == '__main__':
