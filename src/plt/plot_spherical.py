@@ -76,9 +76,11 @@ def main(**kwargs):
                 quantities.append(kwargs['stream'] + '2')
 
     n = len(kwargs['data_file'])
-    fig = plt.figure(figsize=(n*4, 4))
-    gs = fig.add_gridspec(nrows=1, ncols=n, wspace=0)
-    axs = gs.subplots(sharex=True, sharey=True)
+    fig, axs = plt.subplots(nrows=1, ncols=n, constrained_layout=True, figsize=(n*4, 4),
+                            sharex=True, sharey=True)
+    #fig = plt.figure(figsize=(n*4, 4))
+    #gs = fig.add_gridspec(nrows=1, ncols=n, wspace=0)
+    #axs = gs.subplots(sharex=True, sharey=True)
     #fig, axs = plt.subplots(nrows=1, ncols=n, constrained_layout=True, figsize=(n*4, 4), sharey=True, sharex=True)
 
     grid_X = [[] for _ in range(n)]
@@ -323,8 +325,14 @@ def main(**kwargs):
 
     # Determine colormapping properties
     cmap = plt.get_cmap(kwargs['colormap'])
-    vmin = np.nanmin(bg)
-    vmax = np.nanmax(bg)
+    if kwargs['vmin'] is None:
+        vmin = np.nanmin(bg)
+    else:
+        vmin = kwargs['vmin']
+    if kwargs['vmax'] is None:
+        vmax = np.nanmax(bg)
+    else:
+        vmax = kwargs['vmax']
     if kwargs['logc']:
         norm = colors.LogNorm(vmin, vmax)
     else:

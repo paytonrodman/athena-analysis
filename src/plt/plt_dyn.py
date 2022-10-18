@@ -8,7 +8,6 @@
 #
 # Python standard modules
 import argparse
-import os
 import sys
 sys.path.insert(0, '/Users/paytonrodman/athena/vis/python')
 
@@ -53,7 +52,7 @@ def main(**kwargs):
     time_orb = time_orb[time_mask]
     math = [r'$r$', r'$\theta$', r'$\phi$']
 
-    fig, axs = plt.subplots(nrows=1, ncols=3, figsize=(12,4), constrained_layout=True)
+    _, axs = plt.subplots(nrows=1, ncols=3, figsize=(12,4), constrained_layout=True)
     xlab = r'Offset ($C$)'
     ylab = r'$\alpha_d$'
     for num in range(0,3):
