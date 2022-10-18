@@ -21,7 +21,6 @@ Requires scipy if making a stream plot.
 import argparse
 import warnings
 import sys
-import os
 #sys.path.insert(0, '/home/per29/rds/rds-accretion-zyNhkonJSR8/athena-analysis/dependencies')
 sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies')
 
@@ -30,6 +29,7 @@ import numpy as np
 
 # Athena++ modules
 import athena_read
+import AAT
 
 
 # Main function
@@ -44,11 +44,22 @@ def main(**kwargs):
     import matplotlib.pyplot as plt
     import matplotlib.colors as colors
     from matplotlib.offsetbox import AnchoredText
-    from mpl_toolkits.axes_grid1 import make_axes_locatable
+    #from mpl_toolkits.axes_grid1 import make_axes_locatable
     matplotlib.use('pdf')
+    plt.rcParams['axes.facecolor'] = 'black'
+
+    if kwargs['quantity']=='dens':
+        cbar_title = r'$\rho$'
+    elif kwargs['quantity']=='beta':
+        cbar_title = r'$\beta$'
 
     # Determine if vector quantities should be read
-    quantities = [kwargs['quantity']]
+    if kwargs['quantity']=='beta':
+        quantities = ['dens','Bcc1','Bcc2','Bcc3'] # quantities needed to calculate beta
+        prim_quantities = ['press']
+    else:
+        quantities = [kwargs['quantity']]
+
     if kwargs['stream'] is not None:
         if kwargs['stream']=='v':
             quantities.append('mom1')
@@ -84,22 +95,25 @@ def main(**kwargs):
     for idx in range(n):
         f = kwargs['data_file'][idx]
         file = f[f.rindex('/'):][1:]
-        id = file[:file.index('.')]
-        if id=='high_res':
+        prob_id = file[:file.index('.')]
+        if prob_id=='high_res':
             id_f = 'b200'
-        elif id=='high_beta':
+        elif prob_id=='high_beta':
             id_f = 'b5'
-        elif id=='super_res':
-            id_f = 'b5_super'
-        elif id=='b200_super_res':
-            id_f = 'b200_super'
+        elif prob_id=='super_res':
+            id_f = 'b5_s'
+        elif prob_id=='b200_super_res':
+            id_f = 'b200_s'
         sim_IDs.append(id_f)
 
-        data = athena_read.athdf(kwargs['data_file'][idx], quantities=quantities)
+        data = athena_read.athdf(f, quantities=quantities)
+        if kwargs['quantity']=='beta':
+            prim_f = f.replace("cons", "prim")
+            data_p = athena_read.athdf(prim_f, quantities=prim_quantities)
 
         # Set resolution of plot in dots per square inch
-        if kwargs['dpi'] is not None:
-            resolution = kwargs['dpi']
+        #if kwargs['dpi'] is not None:
+        #    resolution = kwargs['dpi']
 
         # Extract basic coordinate information
         coordinates = data['Coordinates']
@@ -167,22 +181,27 @@ def main(**kwargs):
                     r_grid_stream_pix[i, j] = nx1
 
         # Perform slicing/averaging of scalar data
+        if kwargs['quantity']=='beta':
+            # beta = P_g / P_b
+            # P_b = B^2 / 2mu0
+            P_b = (data['Bcc1']**2. + data['Bcc3']**2. + data['Bcc3']**2.) / 2.
+            scalar_q = data_p['press']/P_b
+        else:
+            scalar_q = data[kwargs['quantity']]
         if kwargs['midplane']:
             if nx2 % 2 == 0:
-                vals = np.mean(data[kwargs['quantity']][:, int(nx2/2-1):int(nx2/2+1), :], axis=1)
+                vals = np.mean(scalar_q[:, int(nx2/2-1):int(nx2/2+1), :], axis=1)
             else:
-                vals = data[kwargs['quantity']][:, int(nx2/2), :]
+                vals = scalar_q[:, int(nx2/2), :]
             if kwargs['average']:
                 vals = np.repeat(np.mean(vals, axis=0, keepdims=True), nx3, axis=0)
         else:
             if kwargs['average']:
-                vals_right = np.mean(data[kwargs['quantity']], axis=0)
+                vals_right = np.mean(scalar_q, axis=0)
                 vals_left = vals_right
             else:
-                vals_right = 0.5 * (data[kwargs['quantity']]
-                                    [-1, :, :] + data[kwargs['quantity']][0, :, :])
-                vals_left = 0.5 * (data[kwargs['quantity']][int((nx3/2)-1), :, :]
-                                   + data[kwargs['quantity']][int(nx3/2), :, :])
+                vals_right = 0.5 * (scalar_q[-1, :, :] + scalar_q[0, :, :])
+                vals_left = 0.5 * (scalar_q[int((nx3/2)-1), :, :] + scalar_q[int(nx3/2), :, :])
 
         # Join scalar data through boundaries
         if not kwargs['midplane']:
@@ -290,8 +309,6 @@ def main(**kwargs):
                 vals_x = dx_dr * vals_r + dx_dtheta * vals_theta
                 vals_z = dz_dr * vals_r + dz_dtheta * vals_theta
 
-        print(idx)
-
         grid_X[idx].append(x_grid)
         grid_Y[idx].append(y_grid)
         bg[idx].append(vals)
@@ -318,10 +335,13 @@ def main(**kwargs):
     max_mag = np.nanmax(np.sqrt([[num**2 for num in lst] for lst in vals_X] + [[num**2 for num in lst] for lst in vals_Y]))
     for i in range(n):
         PCM = axs[i].pcolormesh(grid_X[i][0], grid_Y[i][0], bg[i][0], cmap=cmap, norm=norm)
-        magnitude = np.sqrt(vals_X[i][0].T**2 + vals_Y[i][0].T**2)
-        lw = 5*magnitude/max_mag
-        lw[lw<0.05] = 0.05
-        lw[lw>1.0] = 1.0
+        if kwargs['streamline_width']:
+            magnitude = np.sqrt(vals_X[i][0].T**2 + vals_Y[i][0].T**2)
+            lw = 5*magnitude/max_mag
+            lw[lw<0.05] = 0.05
+            lw[lw>1.0] = 1.0
+        else:
+            lw = 1
         if kwargs['stream'] is not None:
             with warnings.catch_warnings():
                 warnings.filterwarnings(
@@ -367,12 +387,13 @@ def main(**kwargs):
     #cbar = fig.colorbar(PCM, cax=None)
     cax = axs[n-1].inset_axes([1.04, 0, 0.05, 1.0])
     cbar = fig.colorbar(PCM, ax=axs[n-1], cax=cax)
-    cbar.set_label(r'$\rho$', rotation=0, loc='top')
+    #cbar.set_label(r'$\rho$', rotation=0, loc='top')
+    cbar.ax.set_title(cbar_title)
 
     if kwargs['output_file'] == 'show':
         plt.show()
     else:
-        plt.savefig(kwargs['output_file'], bbox_inches='tight', dpi=resolution)
+        plt.savefig(kwargs['output_file'], bbox_inches='tight', dpi=kwargs['dpi'])
 
 
 # Execute main function
@@ -380,7 +401,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('data_file',
                         nargs='+',
-                        help='name of input files, possibly including path')
+                        help='name of athdf file to be plotted, possibly including path')
     parser.add_argument('-q',
                         '--quantity',
                         help='name of quantity to be plotted in background')
@@ -427,6 +448,9 @@ if __name__ == '__main__':
     parser.add_argument('--stream_average',
                         action='store_true',
                         help='flag indicating phi-averaging on stream plot data')
+    parser.add_argument('--streamline_width',
+                        action='store_true',
+                        help='flag indicating streamlines should vary in width according to magnitude')
     parser.add_argument('--stream_density',
                         type=float,
                         default=1.0,
@@ -441,7 +465,7 @@ if __name__ == '__main__':
                         help=('flag indicating title should be set to time'))
     parser.add_argument('--dpi',
                         type=int,
-                        default=None,
-                        help='resolution of saved image (dots per square inch)')
+                        default=250,
+                        help='resolution of saved image (dots per square inch, default: 250)')
     args = parser.parse_args()
     main(**vars(args))

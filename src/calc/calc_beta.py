@@ -34,12 +34,13 @@ def main(**kwargs):
 
     data_input = athena_read.athinput(args.input)
     scale_height = data_input['problem']['h_r']
+    # find bounds of high resolution region
     if 'refinement3' in data_input:
-        x1_high_max = data_input['refinement3']['x1max'] # bounds of high resolution region
+        x1_high_max = data_input['refinement3']['x1max']
     elif 'refinement2' in data_input:
-        x1_high_max = data_input['refinement2']['x1max'] # bounds of high resolution region
+        x1_high_max = data_input['refinement2']['x1max']
     elif 'refinement1' in data_input:
-        x1_high_max = data_input['refinement1']['x1max'] # bounds of high resolution region
+        x1_high_max = data_input['refinement1']['x1max']
     else:
         x1_high_max = data_input['mesh']['x1max']
 
@@ -116,6 +117,7 @@ def main(**kwargs):
             writer = csv.writer(f, delimiter='\t')
             row = [int(t),sim_t,orbit_t,current_beta]
             writer.writerow(row)
+
 
 # Execute main function
 if __name__ == '__main__':
