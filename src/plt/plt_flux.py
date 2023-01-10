@@ -22,10 +22,6 @@ def main(**kwargs):
         sys.exit('Must specify data files')
     if not args.output:
         sys.exit('Must specify output file')
-    if n>2 and args.sharex is False:
-        raise ValueError('Cannot have separate time axes for n>2. Use --sharex')
-    if n==1 and args.sharex is False:
-        args.sharex = True
 
     min_time = []
     colors = []
@@ -33,7 +29,7 @@ def main(**kwargs):
     for f in args.file:
         slash_list = [m.start() for m in re.finditer('/', f.name)]
         prob_id = f.name[slash_list[-2]+1:slash_list[-1]]
-        l,c,t = AAT.problem_dictionary(prob_id)
+        l,c,t = AAT.problem_dictionary(prob_id, args.pres)
         labels.append(l)
         colors.append(c)
         min_time.append(t)
@@ -51,8 +47,7 @@ def main(**kwargs):
         df = pd.read_csv(filename, delimiter='\t', usecols=['sim_time', 'mass_flux'])
         t = df['sim_time'].to_list()
         m = df['mass_flux'].to_list()
-        for mi in m:
-            mass_flux.append(literal_eval(mi)[0])
+        mass_flux = m
         time_m = t
 
         time_m, mass_flux = zip(*sorted(zip(time_m, mass_flux)))
@@ -66,16 +61,17 @@ def main(**kwargs):
         df = pd.read_csv(f, delimiter='\t')
         t = df['sim_time'].to_list()
         if args.disk:
-            mfu = df['mag_flux_u_d'].to_list()
-            mfl = df['mag_flux_l_d'].to_list()
-            mfu_a = df['mag_flux_u_abs_d'].to_list()
-            mfl_a = df['mag_flux_l_abs_d'].to_list()
+            mfu = df['mag_flux_u_disk'].to_list()
+            mfl = df['mag_flux_l_disk'].to_list()
+            mfu_a = df['mag_flux_u_abs_disk'].to_list()
+            mfl_a = df['mag_flux_l_abs_disk'].to_list()
         else:
             mfu = df['mag_flux_u'].to_list()
             mfl = df['mag_flux_l'].to_list()
             mfu_a = df['mag_flux_u_abs'].to_list()
             mfl_a = df['mag_flux_l_abs'].to_list()
-        t_lists[count] = t
+        t_lists[count] = [ti/1.e5 for ti in t]
+        #t_lists[count] = [ti for ti in t]
         mfu_lists[count] = [x*scale for x in mfu]
         mfl_lists[count] = [x*scale for x in mfl]
         mfu_abs_lists[count] = [x*scale for x in mfu_a]
@@ -92,7 +88,7 @@ def main(**kwargs):
         mfl_array[ii] = np.array(mfl_lists[ii], dtype=object)
         mfu_abs_array[ii] = np.array(mfu_abs_lists[ii], dtype=object)
         mfl_abs_array[ii] = np.array(mfl_abs_lists[ii], dtype=object)
-        t_lists[ii] = t_lists[ii]
+        #t_lists[ii] = t_lists[ii]
 
     data_u_ratio = np.array(mfu_array, dtype=object)/np.array(mfu_abs_lists, dtype=object)
     data_l_ratio = np.array(mfl_array, dtype=object)/np.array(mfl_abs_lists, dtype=object)
@@ -103,16 +99,19 @@ def main(**kwargs):
 
     lw=1.5
     fig, axs = plt.subplots(nrows=2, ncols=1, sharex=True, figsize=(8,4))
-    fig.subplots_adjust(hspace=0.0)
+    fig.subplots_adjust(hspace=0.1)
+    x_label = r'time [$10^5~GM/c^3$]'
+    y1_label = r'$\Phi / \sqrt{\langle\dot{M}\rangle r_g c^2}$'
+    y2_label = r'$\Phi /|\Phi|$'
     for i in range(n):
         axs[0].plot(t_lists[i],data[i],label=labels[i],linewidth=lw,color=colors[i])
         axs[1].plot(t_lists[i],data_ratio[i],label=labels[i],linewidth=lw,color=colors[i])
 
-    axs[0].set_ylabel(r'$\Phi / \sqrt{\dot{M}}$')
-    axs[1].set_ylabel(r'$\Phi /|\Phi|$')
+    axs[0].set_ylabel(y1_label)
+    axs[1].set_ylabel(y2_label)
     axs[0].set_ylim(top=50,bottom=0)
     axs[1].set_ylim(top=1,bottom=0)
-    axs[1].set_xlabel(r'time ($GM/c^3$)')
+    axs[1].set_xlabel(x_label)
 
     for ax in axs:
         ax.set_xlim(left=0)
@@ -149,6 +148,9 @@ if __name__ == '__main__':
     parser.add_argument('--disk',
                         action='store_true',
                         help='use disk flux only')
+    parser.add_argument('--pres',
+                        action='store_true',
+                        help='make presentation-quality image')
     args = parser.parse_args()
 
     main(**vars(args))

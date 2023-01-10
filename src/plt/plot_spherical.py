@@ -45,7 +45,7 @@ def main(**kwargs):
     from matplotlib.offsetbox import AnchoredText
     #from mpl_toolkits.axes_grid1 import make_axes_locatable
     matplotlib.use('pdf')
-    plt.rcParams['axes.facecolor'] = 'black'
+    #plt.rcParams['axes.facecolor'] = 'black'
 
     if kwargs['quantity']=='dens':
         cbar_title = r'$\rho$'
@@ -314,14 +314,15 @@ def main(**kwargs):
         grid_Y[idx].append(y_grid)
         bg[idx].append(vals)
 
-        stream_X[idx].append(x_stream)
-        vals_X[idx].append(vals_x.T)
-        if kwargs['midplane']:
-            stream_Y[idx].append(y_stream)
-            vals_Y[idx].append(vals_y.T)
-        else:
-            stream_Y[idx].append(z_stream)
-            vals_Y[idx].append(vals_z.T)
+        if kwargs['stream'] is not None:
+            stream_X[idx].append(x_stream)
+            vals_X[idx].append(vals_x.T)
+            if kwargs['midplane']:
+                stream_Y[idx].append(y_stream)
+                vals_Y[idx].append(vals_y.T)
+            else:
+                stream_Y[idx].append(z_stream)
+                vals_Y[idx].append(vals_z.T)
 
     # Determine colormapping properties
     cmap = plt.get_cmap(kwargs['colormap'])
@@ -339,7 +340,9 @@ def main(**kwargs):
         norm = colors.Normalize(vmin, vmax)
 
     # Make plot
-    max_mag = np.nanmax(np.sqrt([[num**2 for num in lst] for lst in vals_X] + [[num**2 for num in lst] for lst in vals_Y]))
+    if kwargs['stream'] is not None:
+        max_mag = np.nanmax(np.sqrt([[num**2 for num in lst] for lst in vals_X] + [[num**2 for num in lst] for lst in vals_Y]))
+
     for i in range(n):
         PCM = axs[i].pcolormesh(grid_X[i][0], grid_Y[i][0], bg[i][0], cmap=cmap, norm=norm)
         if kwargs['streamline_width']:

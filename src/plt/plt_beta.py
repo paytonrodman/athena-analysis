@@ -29,7 +29,7 @@ def main(**kwargs):
     for f in args.file:
         slash_list = [m.start() for m in re.finditer('/', f.name)]
         prob_id = f.name[slash_list[-2]+1:slash_list[-1]]
-        l,c,_ = AAT.problem_dictionary(prob_id)
+        l,c,_ = AAT.problem_dictionary(prob_id, args.pres)
         labels.append(l)
         colors.append(c)
 
@@ -39,13 +39,15 @@ def main(**kwargs):
         df = pd.read_csv(f, delimiter='\t', usecols=['sim_time', 'plasma_beta'])
         t = df['sim_time'].to_list()
         b = df['plasma_beta'].to_list()
-        t_lists[count] = t
+        t_lists[count] = [ti/1e5 for ti in t]
         b_lists[count] = b
 
     for ii in range(n):
         t_lists[ii], b_lists[ii] = zip(*sorted(zip(t_lists[ii], b_lists[ii])))
 
     lw = 1.5
+    x_label = r'time [$10^5~GM/c^3$]'
+    y_label = r'$\langle\beta\rangle$'
     if args.sharex:
         fig, ax1 = plt.subplots(nrows=1, ncols=1, constrained_layout=True, sharex=True)
         for ii in range(n):
@@ -53,11 +55,12 @@ def main(**kwargs):
                 ax1.semilogx(t_lists[ii], b_lists[ii], linewidth=lw, color=colors[ii], label=labels[ii])
             elif args.logy:
                 ax1.semilogy(t_lists[ii], b_lists[ii], linewidth=lw, color=colors[ii], label=labels[ii])
+                #ax1.ticklabel_format(axis="x", style="sci", scilimits=(0,0), useMathText=True)
             else:
-                ax1.plot(t_lists[ii], b_lists[ii], linewidth=lw, color=colors[ii], label=labels[ii])
-                ax1.ticklabel_format(axis="x", style="sci", scilimits=(0,0), useMathText=True)
-        ax1.set_xlabel(r'time ($GM/c^3$)', x=0.5, y=-0.03)
-        ax1.set_ylabel(r'$\langle\beta\rangle$')
+                ax1.plot(t_lists[ii], b_lists[ii], '.', linewidth=lw, color=colors[ii], label=labels[ii])
+                #ax1.ticklabel_format(axis="x", style="sci", scilimits=(0,0), useMathText=True)
+        ax1.set_xlabel(x_label)#, x=0.5, y=-0.03)
+        ax1.set_ylabel(y_label)
 
     else:
         fig = plt.figure()
@@ -71,20 +74,20 @@ def main(**kwargs):
             ax1.semilogy(t_lists[0], b_lists[0], color=colors[0], label=labels[0], linewidth=lw)
             ax1.semilogy([], [], color=colors[1], label=labels[1]) # ghost plot for color2 label entry
             ax2.semilogy(t_lists[1], b_lists[1], color=colors[1], label=labels[1], linewidth=lw)
-            for ax in [ax1,ax2]:
-                ax.ticklabel_format(axis="x", style="sci", scilimits=(0,0), useMathText=True)
+            #for ax in [ax1,ax2]:
+            #    ax.ticklabel_format(axis="x", style="sci", scilimits=(0,0), useMathText=True)
         else:
             ax1.plot(t_lists[0], b_lists[0], color=colors[0], label=labels[0], linewidth=lw)
             ax1.plot([], [], color=colors[1], label=labels[1]) # ghost plot for color2 label entry
             ax2.plot(t_lists[1], b_lists[1], color=colors[1], label=labels[1], linewidth=lw)
-            for ax in [ax1,ax2]:
-                ax.ticklabel_format(axis="x", style="sci", scilimits=(0,0), useMathText=True)
+            #for ax in [ax1,ax2]:
+            #    ax.ticklabel_format(axis="x", style="sci", scilimits=(0,0), useMathText=True)
 
-        ax1.set_xlabel(r'time ($GM/c^3$)', color=colors[0])
-        ax2.set_xlabel(r'time ($GM/c^3$)', color=colors[1])
+        ax1.set_xlabel(x_label, color=colors[0])
+        ax2.set_xlabel(x_label, color=colors[1])
         ax1.tick_params(axis='x', labelcolor=colors[0])
         ax2.tick_params(axis='x', labelcolor=colors[1])
-        ax1.set_ylabel(r'$\langle\beta\rangle$')
+        ax1.set_ylabel(y_label)
 
     if args.grid:
         ax1.grid(visible=True, which='major', color='#666666', linestyle='-', alpha=0.3)
@@ -120,6 +123,9 @@ if __name__ == '__main__':
     parser.add_argument('--grid',
                         action='store_true',
                         help='plot grid')
+    parser.add_argument('--pres',
+                        action='store_true',
+                        help='make presentation-quality image')
     args = parser.parse_args()
 
     main(**vars(args))

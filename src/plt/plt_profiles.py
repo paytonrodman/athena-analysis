@@ -13,22 +13,20 @@ import re
 
 # Athena++ modules
 import athena_read
+import AAT
 
 def main(**kwargs):
     n = len(args.prob_id) # number of data files to read
-    print(args.prob_id)
     if not args.prob_id:
         sys.exit('Must specify problem IDs')
     if not args.output:
         sys.exit('Must specify output file')
-    if n>2 and args.sharex is False:
-        raise ValueError('Cannot have separate time axes for n>2. Use --sharex')
-    if n==1 and args.sharex is False:
-        args.sharex = True
 
     dens = [[] for _ in range(n)]
     mom1 = [[] for _ in range(n)]
     temp = [[] for _ in range(n)]
+    if args.rot:
+        rot = [[] for _ in range(n)]
     x1v = [[] for _ in range(n)]
     labels = []
     colors = []
@@ -51,21 +49,33 @@ def main(**kwargs):
         mom1[count] = np.load(mom1_file, mmap_mode='r')
         temp[count] = np.load(temp_file, mmap_mode='r')
 
-    ylabels = [r'$\langle \rho \rangle$', r'$\langle v_r \rangle$', r'$\langle \frac{P}{\rho c^2} \rangle$']
-    lw = 1.5
+        if args.rot:
+            rot_file = f + 'rot_profile.npy'
+            rot[count] = np.load(rot_file, mmap_mode='r')
 
-    fig, axs = plt.subplots(nrows=3, ncols=1, sharex=True, figsize=(4,6))
+    ylabels = [r'$\langle \rho \rangle$', r'$\langle v_r \rangle$', r'$\langle \frac{P}{\rho c^2} \rangle$', r'$\langle \frac{\Omega}{\Omega_K} \rangle$']
+    lw = 1.5
+    if args.rot:
+        n_plots = 4
+    else:
+        n_plots = 3
+
+    fig, axs = plt.subplots(nrows=n_plots, ncols=1, sharex=True, figsize=(4,6))
     fig.subplots_adjust(hspace=0.0)
     for ii in range(n):
         if args.logr:
             axs[0].semilogx(x1v[ii], dens[ii], linewidth=lw, color=colors[ii], label=labels[ii])
             axs[1].semilogx(x1v[ii], mom1[ii], linewidth=lw, color=colors[ii], label=labels[ii])
             axs[2].semilogx(x1v[ii], temp[ii], linewidth=lw, color=colors[ii], label=labels[ii])
+            if args.rot:
+                axs[3].semilogx(x1v[ii], rot[ii], linewidth=lw, color=colors[ii], label=labels[ii])
         else:
             axs[0].plot(x1v[ii], dens[ii], linewidth=lw, color=colors[ii], label=labels[ii])
             axs[1].plot(x1v[ii], mom1[ii], linewidth=lw, color=colors[ii], label=labels[ii])
             axs[2].plot(x1v[ii], temp[ii], linewidth=lw, color=colors[ii], label=labels[ii])
-    for ii in range(3):
+            if args.rot:
+                axs[3].plot(x1v[ii], rot[ii], linewidth=lw, color=colors[ii], label=labels[ii])
+    for ii in range(n_plots):
         axs[ii].set_ylabel(ylabels[ii])
         if not args.logr:
             axs[ii].set_xlim(left=0)
@@ -101,6 +111,9 @@ if __name__ == '__main__':
     parser.add_argument('--logr',
                         action='store_true',
                         help='plot r in log')
+    parser.add_argument('--rot',
+                        action='store_true',
+                        help='plot rotational speed')
     args = parser.parse_args()
 
     main(**vars(args))

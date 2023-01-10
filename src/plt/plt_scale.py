@@ -29,7 +29,7 @@ def main(**kwargs):
     for f in args.file:
         slash_list = [m.start() for m in re.finditer('/', f.name)]
         prob_id = f.name[slash_list[-2]+1:slash_list[-1]]
-        l,c,_ = AAT.problem_dictionary(prob_id)
+        l,c,_ = AAT.problem_dictionary(prob_id, args.pres)
         labels.append(l)
         colors.append(c)
 
@@ -39,13 +39,17 @@ def main(**kwargs):
         df = pd.read_csv(f, delimiter='\t', usecols=['sim_time', 'scale_height'])
         t = df['sim_time'].to_list()
         s = df['scale_height'].to_list()
-        t_lists[count] = t
+        #t_lists[count] = t
+        t_lists[count] = [ti/1e5 for ti in t] # convert time to units of 10^5 GM/c3
         s_lists[count] = s
 
     for ii in range(n):
         t_lists[ii], s_lists[ii] = zip(*sorted(zip(t_lists[ii], s_lists[ii])))
 
     lw = 1.5
+    x_label = r'time [$10^5~GM/c^3$]'
+    y_label = r'$\langle H \rangle$'
+
     if args.sharex:
         fig, ax1 = plt.subplots(nrows=1, ncols=1, constrained_layout=True, sharex=True)
         for ii in range(n):
@@ -58,8 +62,8 @@ def main(**kwargs):
                 ax1.ticklabel_format(axis="x", style="sci", scilimits=(0,0), useMathText=True)
                 ax1.set_ylim(bottom=0, top=0.5)
                 ax1.set_xlim(left=0)
-        ax1.set_xlabel(r'time ($GM/c^3$)', x=0.5, y=-0.03)
-        ax1.set_ylabel(r'$\langle H \rangle$')
+        ax1.set_xlabel(x_label)#, x=0.5, y=-0.03)
+        ax1.set_ylabel(y_label)
 
     else:
         fig = plt.figure()
@@ -82,11 +86,11 @@ def main(**kwargs):
             for ax in [ax1,ax2]:
                 ax.ticklabel_format(axis="x", style="sci", scilimits=(0,0), useMathText=True)
 
-        ax1.set_xlabel(r'time ($GM/c^3$)', color=colors[0])
-        ax2.set_xlabel(r'time ($GM/c^3$)', color=colors[1])
+        ax1.set_xlabel(x_label, color=colors[0])
+        ax2.set_xlabel(color=colors[1])
         ax1.tick_params(axis='x', labelcolor=colors[0])
         ax2.tick_params(axis='x', labelcolor=colors[1])
-        ax1.set_ylabel(r'$\langle\beta\rangle$')
+        ax1.set_ylabel(y_label)
 
     if args.grid:
         ax1.grid(visible=True, which='major', color='#666666', linestyle='-', alpha=0.3)
@@ -122,6 +126,9 @@ if __name__ == '__main__':
     parser.add_argument('--grid',
                         action='store_true',
                         help='plot grid')
+    parser.add_argument('--pres',
+                        action='store_true',
+                        help='make presentation-quality image')
     args = parser.parse_args()
 
     main(**vars(args))

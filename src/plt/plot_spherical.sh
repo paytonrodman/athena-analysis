@@ -32,8 +32,8 @@ for FILE in ./${PROBLEM}.cons.*.athdf; do
       --logc \
       --time \
       --dpi 1200 \
-      --stream Bcc \
-      --output_file show \
+      #--stream Bcc \
+      #--output_file show \
       #--midplane
       #fi
     fi

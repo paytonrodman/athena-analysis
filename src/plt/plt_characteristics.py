@@ -7,8 +7,8 @@ sys.path.insert(0, '/Users/paytonrodman/athena/vis/python')
 sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies')
 
 # Other Python modules
-from ast import literal_eval
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 import re
 
@@ -49,7 +49,9 @@ def main(**kwargs):
         t = df['sim_time'].to_list()
         m = df['mass_flux'].to_list()
         for mi in m:
-            mass[count].append(literal_eval(mi)[0])
+            if type(mi) is str:
+                mi = np.fromstring(mi.strip("[]"), sep=', ')
+            mass[count].append(mi)
         t1[count] = t
         #mass[count] = m
 

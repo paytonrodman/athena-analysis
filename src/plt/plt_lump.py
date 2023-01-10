@@ -21,7 +21,7 @@ import pandas as pd
 
 def main(**kwargs):
     dens = []
-    df = pd.read_csv(args.file, delimiter='\t', usecols=['sim_time', 'line_density'])
+    df = pd.read_csv(args.file[0], delimiter='\t', usecols=['sim_time', 'line_density'])
     t = df['sim_time'].to_list()
     d = df['line_density'].to_list()
     time = t
@@ -36,6 +36,7 @@ def main(**kwargs):
     r_max = 290
     t_min = 0
     t_max = time[-1]
+    N = 50
 
     zl, zr = np.split(dens, 2, axis=1)
     z_nan = np.nan*np.ones((np.size(time),N))
