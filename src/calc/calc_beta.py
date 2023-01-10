@@ -17,7 +17,7 @@ import numpy as np
 from mpi4py import MPI
 import csv
 
-# Athena++ modules
+# Athena++ modules (require sys.path.insert above)
 import athena_read
 import AAT
 
@@ -29,11 +29,14 @@ def main(**kwargs):
 
     os.chdir(args.data)
 
+    # make list of files/times to analyse, distribute to cores
     file_times = AAT.add_time_to_list(args.update, args.output)
     local_times = AAT.distribute_files_to_cores(file_times, size, rank)
 
+    # read from input file
     data_input = athena_read.athinput(args.input)
     scale_height = data_input['problem']['h_r']
+
     # find bounds of high resolution region
     if 'refinement3' in data_input:
         x1_high_max = data_input['refinement3']['x1max']
@@ -44,20 +47,25 @@ def main(**kwargs):
     else:
         x1_high_max = data_input['mesh']['x1max']
 
+    # read an example file to get grid data
     data_init = athena_read.athdf(args.problem_id + '.cons.00000.athdf', quantities=['x1v','x2v'])
     x1v = data_init['x1v']
     x2v = data_init['x2v']
+    # define bounds of region to average over
     r_u = AAT.find_nearest(x1v, x1_high_max)
     th_u = AAT.find_nearest(x2v, np.pi/2. + (3.*scale_height))
     th_l = AAT.find_nearest(x2v, np.pi/2. - (3.*scale_height))
 
+    # assign one core the job of creating output file with header
     if rank==0:
         if not args.update:
             with open(args.output, 'w', newline='') as f:
                 writer = csv.writer(f, delimiter='\t')
                 writer.writerow(["file_time", "sim_time", "orbit_time", "plasma_beta"])
+    # cores loop through their assigned list of times
     for t in local_times:
         str_t = str(int(t)).zfill(5)
+        # read in conservative and primitive data
         data_prim = athena_read.athdf(args.problem_id + ".prim." + str_t + ".athdf",
                                         quantities=['press'])
         data_cons = athena_read.athdf(args.problem_id + ".cons." + str_t + ".athdf",
@@ -76,9 +84,12 @@ def main(**kwargs):
         Bcc3 = data_cons['Bcc3']
         press = data_prim['press']
 
+        # create 3D meshes
         r,theta,_ = np.meshgrid(x3v,x2v,x1v, sparse=False, indexing='ij')
         dx1f,dx2f,dx3f = AAT.calculate_delta(x1f,x2f,x3f)
         dphi,dtheta,dr = np.meshgrid(dx3f,dx2f,dx1f, sparse=False, indexing='ij')
+
+        # restrict range (arrays ordered by [phi,theta,r]!)
         dphi = dphi[:, th_l:th_u, :r_u]
         dtheta = dtheta[:, th_l:th_u, :r_u]
         dr = dr[:, th_l:th_u, :r_u]
@@ -87,32 +98,34 @@ def main(**kwargs):
         pressure = press[:, th_l:th_u, :r_u]
         density = dens[:, th_l:th_u, :r_u]
 
-        # Density-weighted mean gas pressure
+        volume = (r**2.)*np.sin(theta)*dr*dtheta*dphi
+
+        # initialise weights for averaging
         sum_p = 0.
         numWeight_p = 0.
         sum_b = 0.
         numWeight_b = 0.
 
-        volume = (r**2.)*np.sin(theta)*dr*dtheta*dphi
-
         # Find volume centred total magnetic field
         bcc_all = np.square(Bcc1[:, th_l:th_u, :r_u]) + np.square(Bcc2[:, th_l:th_u, :r_u]) + np.square(Bcc3[:, th_l:th_u, :r_u])
         # Density- and volume weighted pressure/magnetic field
-        numWeight_p = np.sum(pressure*density*volume) #value * weight
+        numWeight_p = np.sum(pressure*density*volume) # value * weight
         sum_p       = np.sum(density*volume) # weight
-        numWeight_b = np.sum(bcc_all*density*volume)
-        sum_b       = np.sum(density*volume)
+        numWeight_b = np.sum(bcc_all*density*volume) # value * weight
+        sum_b       = np.sum(density*volume) # weight
 
         pres_av = numWeight_p/sum_p
         bcc_av = numWeight_b/sum_b
-        if bcc_av>0:
+        if bcc_av>0: # if B is zero, beta is undefined
             current_beta = 2. * pres_av / bcc_av
         else:
             current_beta = np.nan
 
+        # determine orbital time at ISCO
         sim_t = data_cons['Time']
         orbit_t = AAT.calculate_orbit_time(sim_t)
 
+        # append result to output file
         with open(args.output, 'a', newline='') as f:
             writer = csv.writer(f, delimiter='\t')
             row = [int(t),sim_t,orbit_t,current_beta]
@@ -127,7 +140,7 @@ if __name__ == '__main__':
     parser.add_argument('data',
                         help='location of data folder, possibly including path')
     parser.add_argument('input',
-                        help='location of athinput file, possibly including path')
+                        help='location of .athinput file, possibly including path')
     parser.add_argument('output',
                         help='name of output to be (over)written, possibly including path')
     parser.add_argument('-u', '--update',

@@ -32,7 +32,7 @@ def main(**kwargs):
     file_times = AAT.add_time_to_list(args.update, args.output)
     if args.problem_id=='high_res':
         file_times = file_times[file_times>10000] # t > 5e4
-    elif args.problem_id=='high_beta' or args.problem_id=='super_res':
+    elif args.problem_id=='high_beta':
         file_times = file_times[file_times>4000] # t > 2e4
     local_times = AAT.distribute_files_to_cores(file_times, size, rank)
 
@@ -40,7 +40,6 @@ def main(**kwargs):
     x1v = data_init['x1v']
     r = AAT.find_nearest(x1v, 15.)
 
-    dens_all = []
     gpres_all = []
     mpres_all = []
     for t in local_times:
@@ -48,32 +47,26 @@ def main(**kwargs):
         data_prim = athena_read.athdf(args.problem_id + ".prim." + str_t + ".athdf",
                                         quantities=['press'])
         data_cons = athena_read.athdf(args.problem_id + ".cons." + str_t + ".athdf",
-                                        quantities=['dens','mom1','mom2','mom3','Bcc1','Bcc2','Bcc3'])
+                                        quantities=['Bcc1','Bcc2','Bcc3'])
 
         #unpack data
-        dens = data_cons['dens']
         gpres = data_prim['press']
         mpres = (data_cons['Bcc1']**2. + data_cons['Bcc2']**2. + data_cons['Bcc3']**2.)/2.0
 
-        dens = dens[:, :, r]
         gpres = gpres[:, :, r]
         mpres = mpres[:, :, r]
 
-        dens_profile = np.average(dens, axis=(0))
         gpres_profile = np.average(gpres, axis=(0))
         mpres_profile = np.average(mpres, axis=(0))
 
-        dens_all.append(dens_profile)
         gpres_all.append(gpres_profile)
         mpres_all.append(mpres_profile)
 
     comm.barrier()
     if rank == 0:
-        dens_av = np.mean(dens_all, axis=0)
         gpres_av = np.mean(gpres_all, axis=0)
         mpres_av = np.mean(mpres_all, axis=0)
 
-        np.save(args.output + 'dens_profile_th.npy', dens_av)
         np.save(args.output + 'gpres_profile_th.npy', gpres_av)
         np.save(args.output + 'mpres_profile_th.npy', mpres_av)
 
