@@ -23,18 +23,16 @@ def find_nearest(array, value):
 def add_time_to_list(update_flag, output):
     """Compile a unique list of files that have not been analysed before."""
     import glob
-    import csv
+    import pandas as pd
+    import sys
     import re
     import numpy as np
 
     # check if data file already exists
-    csv_times = np.empty(0)
     if update_flag:
-        with open(output, 'r', newline='') as f:
-            csv_reader = csv.reader(f, delimiter='\t')
-            next(csv_reader, None) # skip header
-            for row in csv_reader:
-                csv_times = np.append(csv_times, float(row[0]))
+        df = pd.read_csv(output, delimiter='\t', usecols=['file_time'])
+        t = df['file_time'].to_list()
+        csv_times = t
 
     # compile a list of unique times associated with data files
     files = glob.glob('./*.cons.*.athdf')
@@ -42,11 +40,11 @@ def add_time_to_list(update_flag, output):
     for f in files:
         current_time = re.findall(r'\b\d+\b', f)
         if update_flag:
-            if float(current_time[0]) not in file_times and float(current_time[0]) not in csv_times:
-                file_times = np.append(file_times, float(current_time[0]))
+            if int(current_time[0]) not in file_times and int(current_time[0]) not in csv_times:
+                file_times = np.append(file_times, int(current_time[0]))
         else:
-            if float(current_time[0]) not in file_times:
-                file_times = np.append(file_times, float(current_time[0]))
+            if int(current_time[0]) not in file_times:
+                file_times = np.append(file_times, int(current_time[0]))
     if len(file_times)==0:
         sys.exit('No new timesteps to analyse in the given directory. Exiting.')
 
@@ -77,14 +75,21 @@ def calculate_orbit_time(simulation_time):
     orbit_time = simulation_time/T_period
     return orbit_time
 
-def problem_dictionary(problem_id):
+def problem_dictionary(problem_id,pres):
     """Return the appropriate plotting label and colour for the given problem ID."""
 
+    if pres:
+        label_list = ['weak','strong','strong_hi','weak_hi']
+    else:
+        label_list = ['b200','b5','b5_hi','b200_hi']
+    color_list = ['tab:blue', 'tab:orange', 'tab:purple', 'tab:red']
+    time_list = [2.5e4, 1e4, 1e4, 2.5e4]
+
     prob_dict = {
-    'high_res': {'label': 'b200', 'color': 'tab:blue', 'min_time': 2.5e4},
-    'high_beta': {'label': 'b5', 'color': 'tab:orange', 'min_time': 1e4},
-    'super_res': {'label': 'b5_s', 'color': 'tab:purple', 'min_time': 1.},
-    'b200_super_res': {'label': 'b200_s', 'color': 'tab:red', 'min_time': 1.}
+    'high_res': {'label': label_list[0], 'color': color_list[0], 'min_time': time_list[0]},
+    'high_beta': {'label': label_list[1], 'color': color_list[1], 'min_time': time_list[1]},
+    'super_res': {'label': label_list[2], 'color': color_list[2], 'min_time': time_list[2]},
+    'b200_super_res': {'label': label_list[3], 'color': color_list[3], 'min_time': time_list[3]}
     }
 
     l = prob_dict[problem_id]['label']
