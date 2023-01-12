@@ -46,7 +46,7 @@ def main(**kwargs):
     x_label = r'time [$10^5~GM/c^3$]'
     y_label = r'$\langle H \rangle$'
 
-    fig, ax1 = plt.subplots(nrows=1, ncols=1, constrained_layout=True, sharex=True)
+    _, ax1 = plt.subplots(nrows=1, ncols=1, constrained_layout=True, sharex=True)
     for ii in range(n):
         if args.logx:
             ax1.semilogx(t_lists[ii], s_lists[ii], linewidth=lw, color=colors[ii], label=labels[ii])
