@@ -6,7 +6,6 @@ sys.path.insert(0, '/Users/paytonrodman/athena/vis/python')
 sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies')
 
 # Other Python modules
-from ast import literal_eval
 import matplotlib.pyplot as plt
 from matplotlib.ticker import FormatStrFormatter
 import numpy as np

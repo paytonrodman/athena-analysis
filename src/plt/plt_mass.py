@@ -7,7 +7,6 @@ sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies'
 
 # Other Python modules
 import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
 import re
 
