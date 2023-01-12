@@ -45,7 +45,7 @@ def main(**kwargs):
         t = df['sim_time'].to_list()
         m = df['mass_flux'].to_list()
         for mi in m:
-            if type(mi) is str:
+            if isinstance(mi, str):
                 mi = np.fromstring(mi.strip("[]"), sep=', ')
             mass[count].append(mi)
         t1[count] = t
