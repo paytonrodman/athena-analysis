@@ -81,6 +81,7 @@ def main(**kwargs):
     plt.savefig(args.output, bbox_inches='tight')
     plt.close()
 
+
 # Execute main function
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Plot magnetic field curvature, kappa, over time for different disk regions.')

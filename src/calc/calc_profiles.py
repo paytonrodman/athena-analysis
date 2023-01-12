@@ -199,6 +199,7 @@ def main(**kwargs):
         np.save(args.output + 'Bcc3_profile.npy', Bcc3_av)
         np.save(args.output + 'rot_profile.npy', rot_av)
 
+
 # Execute main function
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Calculate plasma beta from raw simulation data.')

@@ -76,6 +76,7 @@ def main(**kwargs):
             row = [sim_t,orbit_t,mf_local]
             writer.writerow(row)
 
+
 # Execute main function
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Calculate instantaneous mass flux across inner radial boundary')

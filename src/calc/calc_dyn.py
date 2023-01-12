@@ -154,6 +154,7 @@ def main(**kwargs):
             writer = csv.writer(f, delimiter='\t')
             writer.writerow([sim_t,orbit_t,alpha,C])
 
+
 def func(x, a, b):
     y = a*x + b
     return y

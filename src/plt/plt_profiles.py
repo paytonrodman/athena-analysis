@@ -90,11 +90,13 @@ def main(**kwargs):
     plt.savefig(args.output, bbox_inches='tight')
     plt.close()
 
+
 def dir_path(path):
     if os.path.isdir(path):
         return path
     else:
         raise argparse.ArgumentTypeError(f"readable_dir:{path} is not a valid path")
+
 
 # Execute main function
 if __name__ == '__main__':

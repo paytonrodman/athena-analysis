@@ -109,6 +109,7 @@ def main(**kwargs):
                     mag_flux_u_abs_disk, mag_flux_l_abs_disk]
             writer.writerow(row)
 
+
 # Execute main function
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Calculate various quality factors from raw simulation data.')

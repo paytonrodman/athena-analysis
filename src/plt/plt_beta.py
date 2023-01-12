@@ -67,6 +67,7 @@ def main(**kwargs):
         line.set_linewidth(4.0)
     plt.savefig(args.output, bbox_inches='tight')
     plt.close()
+    
 
 # Execute main function
 if __name__ == '__main__':

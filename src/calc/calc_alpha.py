@@ -96,6 +96,7 @@ def main(**kwargs):
             row = [sim_t, orbit_t, T_rphi, alpha_SS]
             writer.writerow(row)
 
+
 # Execute main function
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Calculate plasma beta from raw simulation data.')
