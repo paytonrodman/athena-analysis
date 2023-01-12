@@ -21,10 +21,6 @@ def main(**kwargs):
         raise ValueError('Must specify problem directories with -p')
     if not args.output:
         raise ValueError('Must specify output file with -o')
-    if n>2 and args.sharex is False:
-        raise ValueError('Cannot have separate time axes for n>2. Use --sharex')
-    if n==1 and args.sharex is False:
-        args.sharex = True
 
     t1 = [[] for _ in range(n)]
     t2 = [[] for _ in range(n)]
@@ -37,7 +33,7 @@ def main(**kwargs):
     for count,f in enumerate(args.prob_id):
         slash_list = [m.start() for m in re.finditer('/', f)]
         prob_id = f[slash_list[-2]+1:slash_list[-1]]
-        l,c,_ = AAT.problem_dictionary(prob_id)
+        l,c,_ = AAT.problem_dictionary(prob_id, args.pres)
         labels.append(l)
         colors.append(c)
 
@@ -75,61 +71,24 @@ def main(**kwargs):
     ylabels = [r'$\langle \dot{M} \rangle$', r'$\langle \beta \rangle$', r'$\langle H \rangle$']
     lw = 1.5
 
-    if args.sharex:
-        fig, axs = plt.subplots(nrows=3, ncols=1, sharex=True, figsize=(4,6))
-        fig.subplots_adjust(hspace=0.0)
-        for ii in range(n):
-            axs[0].plot(t1[ii], mass[ii], linewidth=lw, color=colors[ii], label=labels[ii])
-            axs[1].semilogy(t2[ii], beta[ii], linewidth=lw, color=colors[ii], label=labels[ii])
-            axs[2].plot(t3[ii], scale[ii], linewidth=lw, color=colors[ii], label=labels[ii])
+    fig, axs = plt.subplots(nrows=3, ncols=1, sharex=True, figsize=(4,6))
+    fig.subplots_adjust(hspace=0.0)
+    for ii in range(n):
+        axs[0].plot(t1[ii], mass[ii], linewidth=lw, color=colors[ii], label=labels[ii])
+        axs[1].semilogy(t2[ii], beta[ii], linewidth=lw, color=colors[ii], label=labels[ii])
+        axs[2].plot(t3[ii], scale[ii], linewidth=lw, color=colors[ii], label=labels[ii])
 
-        for ii in range(3):
-            axs[ii].set_ylabel(ylabels[ii])
-        for ax in axs:
-            ax.ticklabel_format(axis="x", style="sci", scilimits=(0,0), useMathText=True)
-            ax.set_xlim(left=0)
+    for ii in range(3):
+        axs[ii].set_ylabel(ylabels[ii])
+    for ax in axs:
+        ax.ticklabel_format(axis="x", style="sci", scilimits=(0,0), useMathText=True)
+        ax.set_xlim(left=0)
 
-        axs[0].set_ylim(bottom=0, top=2)
-        axs[1].set_ylim(bottom=1e0)
-        axs[2].set_ylim(bottom=0.2, top=0.37)
+    axs[0].set_ylim(bottom=0, top=2)
+    axs[1].set_ylim(bottom=1e0)
+    axs[2].set_ylim(bottom=0.2, top=0.37)
 
-        axs[-1].set_xlabel(r'time ($GM/c^3$)')
-    else:
-        fig, axs = plt.subplots(nrows=3, ncols=1, sharex=True, figsize=(4,6))
-        fig.subplots_adjust(hspace=0.0)  # adjust space between axes
-        ax0_add = axs[0].twiny()  # instantiate a second axes that shares the same x-axis
-        ax1_add = axs[1].twiny()
-        ax2_add = axs[2].twiny()
-
-        axs[0].plot(t1[0], mass[0], color=colors[0], label=labels[0], linewidth=lw)
-        axs[0].plot([], [], color=colors[1], label=labels[1]) # ghost plot for color2 label entry
-        ax0_add.plot(t1[1], mass[1], color=colors[1], label=labels[1], linewidth=lw)
-
-        axs[1].semilogy(t2[0], beta[0], color=colors[0], label=labels[0], linewidth=lw)
-        axs[1].semilogy([], [], color=colors[1], label=labels[1]) # ghost plot for color2 label entry
-        ax1_add.semilogy(t2[1], beta[1], color=colors[1], label=labels[1], linewidth=lw)
-
-        axs[2].plot(t3[0], scale[0], color=colors[0], label=labels[0], linewidth=lw)
-        axs[2].plot([], [], color=colors[1], label=labels[1]) # ghost plot for color2 label entry
-        ax2_add.plot(t3[1], scale[1], color=colors[1], label=labels[1], linewidth=lw)
-
-        ax0_add.set_xlabel(r'time ($GM/c^3$)', color=colors[1])
-        ax0_add.tick_params(axis='x', labelcolor=colors[1])
-        axs[2].set_xlabel(r'time ($GM/c^3$)', color=colors[0])
-        axs[2].tick_params(axis='x', labelcolor=colors[0])
-        for ii in range(3):
-            axs[ii].set_ylabel(ylabels[ii])
-        for ax in [axs[0],axs[1],axs[2],ax0_add,ax1_add,ax2_add]: # for all plots
-            ax.ticklabel_format(axis="x", style="sci", scilimits=(0,0), useMathText=True)
-            ax.set_xlim(left=0)
-        for ax in [axs[0],ax0_add]: # for top (mass) plot
-            ax.set_ylim(bottom=0, top=2)
-        for ax in [axs[1],ax1_add]: # for middle (beta) plot
-            ax.set_ylim(bottom=1e0)
-        for ax in [axs[2],ax2_add]: # for bottom (scale height) plot
-            ax.set_ylim(bottom=0.2, top=0.37)
-        ax1_add.set_xticks([])
-        ax2_add.set_xticks([])
+    axs[-1].set_xlabel(r'time ($GM/c^3$)')
 
     leg = axs[0].legend(loc='best')
     for line in leg.get_lines():
@@ -156,9 +115,9 @@ if __name__ == '__main__':
                         type=str,
                         default=None,
                         help='name of plot to be created, including path')
-    parser.add_argument('--sharex',
+    parser.add_argument('--pres',
                         action='store_true',
-                        help='share x (time) axis')
+                        help='make presentation-quality image')
     args = parser.parse_args()
 
     main(**vars(args))
