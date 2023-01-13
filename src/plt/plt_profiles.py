@@ -33,7 +33,7 @@ def main(**kwargs):
     for count,f in enumerate(args.prob_id):
         slash_list = [m.start() for m in re.finditer('/', f)]
         prob_id = f[slash_list[-2]+1:slash_list[-1]]
-        l,c,_ = AAT.problem_dictionary(prob_id)
+        l,c,_ = AAT.problem_dictionary(prob_id, args.pres)
         labels.append(l)
         colors.append(c)
 
@@ -116,6 +116,9 @@ if __name__ == '__main__':
     parser.add_argument('--rot',
                         action='store_true',
                         help='plot rotational speed')
+    parser.add_argument('--pres',
+                        action='store_true',
+                        help='make presentation-quality image')
     args = parser.parse_args()
 
     main(**vars(args))
