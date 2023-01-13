@@ -68,8 +68,7 @@ def main(**kwargs):
 
         #unpack data
         data_cons = athena_read.athdf(args.problem_id + '.cons.' + str_t + '.athdf',
-                                        quantities=['x1v','x2v','x3v','x1f','x2f','x3f',
-                                                    'dens','mom1','mom2','mom3',
+                                        quantities=['dens','mom1','mom2','mom3',
                                                     'Bcc1','Bcc2','Bcc3'])
         data_prim = athena_read.athdf(args.problem_id + '.prim.' + str_t + '.athdf',
                                         quantities=['press'])

@@ -52,7 +52,7 @@ def main(**kwargs):
     for t in local_times:
         str_t = str(int(t)).zfill(5)
         data_cons = athena_read.athdf(args.problem_id + ".cons." + str_t + ".athdf",
-                                        quantities=['x1v','x2v','x3v','dens'])
+                                        quantities=['dens'])
 
 
         #unpack data

@@ -33,8 +33,7 @@ def main(**kwargs):
     local_times = AAT.distribute_files_to_cores(file_times, size, rank)
 
     # get mesh data for all files (static)
-    data_init = athena_read.athdf(args.problem_id + '.cons.00000.athdf',
-                                    quantities=['x1v','x2v','x3v','x1f','x2f','x3f'])
+    data_init = athena_read.athdf(args.problem_id + '.cons.00000.athdf')
     x1v = data_init['x1v']
     x2v = data_init['x2v']
     x3v = data_init['x3v']

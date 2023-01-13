@@ -10,8 +10,8 @@
 import argparse
 import sys
 import os
-sys.path.insert(0, '/home/per29/rds/rds-accretion-zyNhkonJSR8/athena-analysis/dependencies')
-#sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies')
+#sys.path.insert(0, '/home/per29/rds/rds-accretion-zyNhkonJSR8/athena-analysis/dependencies')
+sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies')
 
 # Other Python modules
 import csv
@@ -32,10 +32,21 @@ def main(**kwargs):
     os.chdir(args.data)
 
     file_times = AAT.add_time_to_list(args.update, args.output1)
-    if args.problem_id=='high_res':
-        file_times = file_times[file_times>39341] # t > 2e5
-    elif args.problem_id=='high_beta':
-        file_times = file_times[file_times>4000] # t > 2e4
+    file_times.sort()
+    if rank==0:
+        for f in file_times:
+            str_f = str(int(f)).zfill(5)
+            data_check = athena_read.athdf(args.problem_id + '.cons.' + str_f + '.athdf')
+            sim_t = data_check['Time']
+            t_max = AAT.problem_dictionary(args.problem_id, False)
+            print(t_max)
+            #if sim_t >=
+
+    print(jwbdjwbw)
+    #if args.problem_id=='high_res':
+    #    file_times = file_times[file_times>39341] # t > 2e5
+    #elif args.problem_id=='high_beta':
+    #    file_times = file_times[file_times>4000] # t > 2e4
     local_times = AAT.distribute_files_to_cores(file_times, size, rank)
 
     data_input = athena_read.athinput(args.input)
@@ -46,15 +57,6 @@ def main(**kwargs):
     th_u = AAT.find_nearest(x2v, np.pi/2. + (2.*scale_height))
     th_l = AAT.find_nearest(x2v, np.pi/2. - (2.*scale_height))
 
-    #dens_all = []
-    #mom1_all = []
-    #mom2_all = []
-    #mom3_all = []
-    #temp_all = []
-    #Bcc1_all = []
-    #Bcc2_all = []
-    #Bcc3_all = []
-    #rot_all = []
     if rank==0:
         if not args.update:
             with open(args.output1, 'w', newline='') as f:
@@ -66,8 +68,7 @@ def main(**kwargs):
         data_prim = athena_read.athdf(args.problem_id + ".prim." + str_t + ".athdf",
                                         quantities=['press'])
         data_cons = athena_read.athdf(args.problem_id + ".cons." + str_t + ".athdf",
-                                        quantities=['x1v','x2v','x3v',
-                                                    'dens','mom1','mom2','mom3',
+                                        quantities=['dens','mom1','mom2','mom3',
                                                     'Bcc1','Bcc2','Bcc3'])
 
         #unpack data
@@ -128,16 +129,6 @@ def main(**kwargs):
             writer = csv.writer(f, delimiter='\t')
             writer.writerow([sim_t,orbit_t,dens_profile,mom1_profile,mom2_profile,mom3_profile,
                                 temp_profile,Bcc1_profile,Bcc2_profile,Bcc3_profile,ratio_profile])
-
-        #dens_all.append(dens_profile)
-        #mom1_all.append(mom1_profile)
-        #mom2_all.append(mom2_profile)
-        #mom3_all.append(mom3_profile)
-        #temp_all.append(temp_profile)
-        #Bcc1_all.append(Bcc1_profile)
-        #Bcc2_all.append(Bcc2_profile)
-        #Bcc3_all.append(Bcc3_profile)
-        #rot_all.append(ratio)
 
     comm.barrier()
     if rank == 0:
