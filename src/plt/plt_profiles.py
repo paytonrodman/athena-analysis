@@ -33,7 +33,7 @@ def main(**kwargs):
     for count,f in enumerate(args.prob_id):
         slash_list = [m.start() for m in re.finditer('/', f)]
         prob_id = f[slash_list[-2]+1:slash_list[-1]]
-        l,c,_ = AAT.problem_dictionary(prob_id, args.pres)
+        l,c,_ = AAT.problem_dictionary(args.prob_id, args.pres)
         labels.append(l)
         colors.append(c)
 
