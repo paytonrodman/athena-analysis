@@ -10,8 +10,8 @@
 import argparse
 import sys
 import os
-#sys.path.insert(0, '/home/per29/rds/rds-accretion-zyNhkonJSR8/athena-analysis/dependencies')
-sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies')
+sys.path.insert(0, '/home/per29/rds/rds-accretion-zyNhkonJSR8/athena-analysis/dependencies')
+#sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies')
 
 # Other Python modules
 import csv
@@ -33,21 +33,23 @@ def main(**kwargs):
 
     file_times = AAT.add_time_to_list(args.update, args.output1)
     file_times.sort()
+    _,_,t_min = AAT.problem_dictionary(args.problem_id, False) # get minimum time
+    file_times_restricted = []
     if rank==0:
         for f in file_times:
             str_f = str(int(f)).zfill(5)
-            data_check = athena_read.athdf(args.problem_id + '.cons.' + str_f + '.athdf')
+            # read in some small slice of the file to check the time
+            data_check = athena_read.athdf(args.problem_id + '.cons.' + str_f + '.athdf',
+                                           x1_min=5,x1_max=6,x2_min=0,x2_max=0.1,x3_min=0,x3_max=0.1)
             sim_t = data_check['Time']
-            t_max = AAT.problem_dictionary(args.problem_id, False)
-            print(t_max)
-            #if sim_t >=
+            if sim_t >= t_min:
+                file_times_restricted.append(f)
 
-    print(jwbdjwbw)
     #if args.problem_id=='high_res':
     #    file_times = file_times[file_times>39341] # t > 2e5
     #elif args.problem_id=='high_beta':
     #    file_times = file_times[file_times>4000] # t > 2e4
-    local_times = AAT.distribute_files_to_cores(file_times, size, rank)
+    local_times = AAT.distribute_files_to_cores(file_times_restricted, size, rank)
 
     data_input = athena_read.athinput(args.input)
     scale_height = data_input['problem']['h_r']
