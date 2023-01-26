@@ -80,7 +80,7 @@ def main(**kwargs):
         dmom3 = dmom3[:, th_l:th_u, :]
 
         Reynolds_stress = dens*mom1*dmom3
-        Maxwell_stress = -Bcc1*Bcc3/(4.*np.pi)
+        Maxwell_stress = -Bcc1*Bcc3
 
         T_rphi = Reynolds_stress + Maxwell_stress
         T_rphi = np.average(T_rphi, axis=(1)) # average over vertical height, theta
