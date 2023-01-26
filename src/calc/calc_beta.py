@@ -9,12 +9,14 @@
 # Python standard modules
 import argparse
 import sys
+import os
 sys.path.insert(0, '/home/per29/rds/rds-accretion-zyNhkonJSR8/athena-analysis/dependencies')
 #sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies')
 
 # Other Python modules
 import numpy as np
 from mpi4py import MPI
+import pandas as pd
 import csv
 
 # Athena++ modules (require sys.path.insert above)
@@ -35,8 +37,6 @@ def main(**kwargs):
 
     # read from input file
     data_input = athena_read.athinput(args.input)
-    scale_height = data_input['problem']['h_r']
-
     # find bounds of high resolution region
     if 'refinement3' in data_input:
         x1_high_max = data_input['refinement3']['x1max']
@@ -47,14 +47,17 @@ def main(**kwargs):
     else:
         x1_high_max = data_input['mesh']['x1max']
 
-    # read an example file to get grid data
-    data_init = athena_read.athdf(args.problem_id + '.cons.00000.athdf', quantities=['x1v','x2v'])
-    x1v = data_init['x1v']
-    x2v = data_init['x2v']
-    # define bounds of region to average over
-    r_u = AAT.find_nearest(x1v, x1_high_max)
-    th_u = AAT.find_nearest(x2v, np.pi/2. + (3.*scale_height))
-    th_l = AAT.find_nearest(x2v, np.pi/2. - (3.*scale_height))
+    # retrieve lists of scale height with time
+    if rank==0:
+        df = pd.read_csv(args.scale, delimiter='\t', usecols=['sim_time', 'scale_height'])
+        scale_time_list = df['sim_time'].to_list()
+        scale_height_list = df['scale_height'].to_list()
+    else:
+        scale_time_list = None
+        scale_height_list = None
+
+    scale_height_list = comm.bcast(scale_height_list, root=0)
+    scale_time_list = comm.bcast(scale_time_list, root=0)
 
     # assign one core the job of creating output file with header
     if rank==0:
@@ -65,11 +68,16 @@ def main(**kwargs):
     # cores loop through their assigned list of times
     for t in local_times:
         str_t = str(int(t)).zfill(5)
+
         # read in conservative and primitive data
         data_prim = athena_read.athdf(args.problem_id + ".prim." + str_t + ".athdf",
                                         quantities=['press'])
         data_cons = athena_read.athdf(args.problem_id + ".cons." + str_t + ".athdf",
                                         quantities=['dens','Bcc1','Bcc2','Bcc3'])
+
+        # find corresponding entry in scale height data
+        scale_index = AAT.find_nearest(scale_time_list,data_cons['Time'])
+        scale_height = scale_height_list[scale_index]
 
         #unpack data
         x1f = data_cons['x1f']
@@ -83,6 +91,11 @@ def main(**kwargs):
         Bcc2 = data_cons['Bcc2']
         Bcc3 = data_cons['Bcc3']
         press = data_prim['press']
+
+        # define bounds of region to average over
+        r_u = AAT.find_nearest(x1v, x1_high_max)
+        th_u = AAT.find_nearest(x2v, np.pi/2. + (3.*scale_height))
+        th_l = AAT.find_nearest(x2v, np.pi/2. - (3.*scale_height))
 
         # create 3D meshes
         r,theta,_ = np.meshgrid(x3v,x2v,x1v, sparse=False, indexing='ij')
@@ -141,6 +154,8 @@ if __name__ == '__main__':
                         help='location of data folder, possibly including path')
     parser.add_argument('input',
                         help='location of .athinput file, possibly including path')
+    parser.add_argument('scale',
+                        help='location of scale height file, possibly including path')
     parser.add_argument('output',
                         help='name of output to be (over)written, possibly including path')
     parser.add_argument('-u', '--update',
