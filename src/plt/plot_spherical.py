@@ -344,7 +344,11 @@ def main(**kwargs):
         max_mag = np.nanmax(np.sqrt([[num**2 for num in lst] for lst in vals_X] + [[num**2 for num in lst] for lst in vals_Y]))
 
     for i in range(n):
-        PCM = axs[i].pcolormesh(grid_X[i][0], grid_Y[i][0], bg[i][0], cmap=cmap, norm=norm)
+        if n>1:
+            ax = axs[i]
+        else:
+            ax = axs
+        PCM = ax.pcolormesh(grid_X[i][0], grid_Y[i][0], bg[i][0], cmap=cmap, norm=norm)
         if kwargs['streamline_width']:
             magnitude = np.sqrt(vals_X[i][0].T**2 + vals_Y[i][0].T**2)
             lw = 5*magnitude/max_mag
@@ -359,44 +363,49 @@ def main(**kwargs):
                     'invalid value encountered in greater_equal',
                     RuntimeWarning,
                     'numpy')
-                axs[i].streamplot(stream_X[i][0], stream_Y[i][0], vals_X[i][0], vals_Y[i][0],
+                ax.streamplot(stream_X[i][0], stream_Y[i][0], vals_X[i][0], vals_Y[i][0],
                                density=kwargs['stream_density'], broken_streamlines=False,
                                linewidth=lw, arrowsize=0.2, color='w')
-        axs[i].set_xlim((-r_max, r_max))
-        axs[i].set_ylim((-r_max, r_max))
+        ax.set_xlim((-r_max, r_max))
+        ax.set_ylim((-r_max, r_max))
         #plt.gca().set_aspect('equal')
         if kwargs['logr']:
             if kwargs['midplane']:
-                axs[i].set_xlabel(r'$\log_{10}(r)\ x / r$')
-                axs[i].set_ylabel(r'$\log_{10}(r)\ y / r$')
+                ax.set_xlabel(r'$\log_{10}(r)\ x / r$')
+                ax.set_ylabel(r'$\log_{10}(r)\ y / r$')
             else:
-                axs[i].set_xlabel(r'$\log_{10}(r)\ x / r$')
-                axs[i].set_ylabel(r'$\log_{10}(r)\ z / r$')
+                ax.set_xlabel(r'$\log_{10}(r)\ x / r$')
+                ax.set_ylabel(r'$\log_{10}(r)\ z / r$')
         else:
             if kwargs['midplane']:
-                axs[i].set_xlabel(r'$x$')
-                axs[i].set_ylabel(r'$y$')
+                ax.set_xlabel(r'$x$')
+                ax.set_ylabel(r'$y$')
             else:
-                axs[i].set_xlabel(r'$x$')
-                axs[i].set_ylabel(r'$z$')
+                ax.set_xlabel(r'$x$')
+                ax.set_ylabel(r'$z$')
         if kwargs['time']:
-            axs[i].set_title(titles[i])
-        axs[i].set_aspect('equal')
+            ax.set_title(titles[i])
+        ax.set_aspect('equal')
 
-        for ax in axs.flat:
-            ax.label_outer()
+        if n>1:
+            for ax_f in axs.flat:
+                ax_f.label_outer()
 
         at = AnchoredText(sim_IDs[i], prop=dict(size=15), frameon=True, loc='upper left')
         at.patch.set_boxstyle("round,pad=0.,rounding_size=0.2")
-        axs[i].add_artist(at)
+        ax.add_artist(at)
 
     # make colorbar
     #divider = make_axes_locatable(axs[n-1])
     #cax = divider.append_axes("right", size="7%", pad="2%")
     #cbar = fig.colorbar(PCM, cax=cax, orientation='vertical')
     #cbar = fig.colorbar(PCM, cax=None)
-    cax = axs[n-1].inset_axes([1.04, 0, 0.05, 1.0])
-    cbar = fig.colorbar(PCM, ax=axs[n-1], cax=cax)
+    if n>1:
+        ax = axs[n-1]
+    else:
+        ax = axs
+    cax = ax.inset_axes([1.04, 0, 0.05, 1.0])
+    cbar = fig.colorbar(PCM, ax=ax, cax=cax)
     #cbar.set_label(r'$\rho$', rotation=0, loc='top')
     cbar.ax.set_title(cbar_title)
 

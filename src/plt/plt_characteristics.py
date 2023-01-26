@@ -68,7 +68,7 @@ def main(**kwargs):
         t2[ii],beta[ii] = zip(*sorted(zip(t2[ii],beta[ii])))
         t3[ii],scale[ii] = zip(*sorted(zip(t3[ii],scale[ii])))
 
-    ylabels = [r'$\langle \dot{M} \rangle$', r'$\langle \beta \rangle$', r'$\langle H \rangle$']
+    ylabels = [r'$\dot{M}$', r'$\langle \beta \rangle$', r'$\langle H \rangle$']
     lw = 1.5
 
     fig, axs = plt.subplots(nrows=3, ncols=1, sharex=True, figsize=(4,6))

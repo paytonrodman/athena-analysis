@@ -100,7 +100,7 @@ def main(**kwargs):
     fig, axs = plt.subplots(nrows=2, ncols=1, sharex=True, figsize=(8,4))
     fig.subplots_adjust(hspace=0.1)
     x_label = r'time [$10^5~GM/c^3$]'
-    y1_label = r'$\Phi / \sqrt{\langle\dot{M}\rangle r_g c^2}$'
+    y1_label = r'$\Phi / \sqrt{\langle\langle\dot{M}\rangle\rangle r_g c^2}$'
     y2_label = r'$\Phi /|\Phi|$'
     for i in range(n):
         axs[0].plot(t_lists[i],data[i],label=labels[i],linewidth=lw,color=colors[i])

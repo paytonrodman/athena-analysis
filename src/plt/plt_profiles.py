@@ -53,7 +53,7 @@ def main(**kwargs):
             rot_file = f + 'rot_profile.npy'
             rot[count] = np.load(rot_file, mmap_mode='r')
 
-    ylabels = [r'$\langle \rho \rangle$', r'$\langle v_r \rangle$', r'$\langle \frac{P}{\rho c^2} \rangle$', r'$\langle \frac{\Omega}{\Omega_K} \rangle$']
+    ylabels = [r'$\langle \rho \rangle^*$', r'$\langle v_r \rangle^*$', r'$\langle \frac{P}{\rho c^2} \rangle^*$', r'$\langle \frac{\Omega}{\Omega_K} \rangle^*$']
     lw = 1.5
     if args.rot:
         n_plots = 4
