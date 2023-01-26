@@ -75,10 +75,10 @@ def calculate_orbit_time(simulation_time):
     orbit_time = simulation_time/T_period
     return orbit_time
 
-def problem_dictionary(problem_id,pres):
+def problem_dictionary(problem_id, presentation_quality_flag):
     """Return the appropriate plotting label and colour for the given problem ID."""
 
-    if pres:
+    if presentation_quality_flag:
         label_list = ['weak','strong','strong_hi','weak_hi']
     else:
         label_list = ['b200','b5','b5_hi','b200_hi']
