@@ -53,7 +53,7 @@ def main(**kwargs):
             ax1.semilogy(t_lists[ii], b_lists[ii], linewidth=lw, color=colors[ii], label=labels[ii])
             #ax1.ticklabel_format(axis="x", style="sci", scilimits=(0,0), useMathText=True)
         else:
-            ax1.plot(t_lists[ii], b_lists[ii], '.', linewidth=lw, color=colors[ii], label=labels[ii])
+            ax1.plot(t_lists[ii], b_lists[ii], linewidth=lw, color=colors[ii], label=labels[ii])
             #ax1.ticklabel_format(axis="x", style="sci", scilimits=(0,0), useMathText=True)
     ax1.set_xlabel(x_label)#, x=0.5, y=-0.03)
     ax1.set_ylabel(y_label)
