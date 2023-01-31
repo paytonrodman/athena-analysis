@@ -81,21 +81,6 @@ def main(**kwargs):
     data_b = np.empty_like(b_lists)
     data_s = np.empty_like(s_lists)
 
-    #if args.log:
-    #    case = []
-    #    for idx in range(n):
-    #        data_b[idx] = np.asarray(b_lists[idx])
-    #        data_s[idx] = np.asarray(s_lists[idx])
-    #        case.append(np.max(np.abs(data_b[idx])))
-    #    max_extent = max(case)
-        #logthresh = 4
-    #    logthresh = abs(int(np.ceil(np.log10(max_extent)))) + 3
-    #    norm = matplotlib.colors.SymLogNorm(linthresh=10**-logthresh, linscale=10**-logthresh, vmin=-max_extent, vmax=max_extent, base=10)
-    #else:
-    #    for idx in range(n):
-    #        data_b[idx] = np.asarray(b_lists[idx])
-    #        data_s[idx] = np.asarray(s_lists[idx])
-    #    norm = matplotlib.colors.CenteredNorm()
     for idx in range(n):
         data_b[idx] = np.asarray(b_lists[idx])
         data_s[idx] = np.asarray(s_lists[idx])
@@ -111,44 +96,27 @@ def main(**kwargs):
     x_label = r'time [$10^5~GM/c^3$]'
     for idx in range(n):
         X = t_lists[idx]
-        #if args.pres:
-        #    X = [x/(1e5) for x in X]
         Y = np.linspace(theta_min,theta_max,theta_N[idx])
         Z = data_b[idx].T*1000.
-
         max_extent = np.max(np.abs(Z))
+
         if args.log:
             logthresh = abs(int(np.ceil(np.log10(max_extent)))) + 2
             norm = matplotlib.colors.SymLogNorm(linthresh=10**-logthresh, linscale=10**-logthresh, vmin=-max_extent, vmax=max_extent, base=10)
-        #else:
-            #norm = matplotlib.colors.CenteredNorm()
-        #    norm = matplotlib.colors.NoNorm(vmin=-max_extent, vmax=max_extent)
 
         if n==1:
-            if args.log:
-                pos = axs.pcolorfast(X, Y, Z[:-1,:-1], cmap=cm, norm=norm)
-            else:
-                pos = axs.pcolorfast(X, Y, Z[:-1,:-1], cmap=cm, vmin=-0.5*max_extent, vmax=0.5*max_extent)
-            axs.plot(t_redundant[idx],3.*data_s[idx],'k--')
-            axs.plot(t_redundant[idx],-3.*data_s[idx],'k--')
-            axs.set_ylabel(ylab)
-            at = AnchoredText(labels[idx], prop=dict(size=15), frameon=True, loc='upper left')
-            at.patch.set_boxstyle("round,pad=0.,rounding_size=0.2")
-            axs.add_artist(at)
-            axs.ticklabel_format(axis="x", style="sci", scilimits=(0,0), useMathText=True)
+            ax = axs
         else:
-            if args.log:
-                pos = axs[idx].pcolorfast(X, Y, Z[:-1,:-1], cmap=cm, norm=norm)
-            else:
-                pos = axs[idx].pcolorfast(X, Y, Z[:-1,:-1], cmap=cm, vmin=-0.5*max_extent, vmax=0.5*max_extent)
-            axs[idx].plot(t_redundant[idx],3.*data_s[idx],'k--')
-            axs[idx].plot(t_redundant[idx],-3.*data_s[idx],'k--')
-            axs[idx].set_ylabel(ylab)
-            at = AnchoredText(labels[idx], prop=dict(size=15), frameon=True, loc='upper left')
-            at.patch.set_boxstyle("round,pad=0.,rounding_size=0.2")
-            axs[idx].add_artist(at)
-            #for ax in axs:
-            #    ax.ticklabel_format(axis="x", style="sci", scilimits=(0,0), useMathText=True)
+            ax = axs[idx]
+
+        pos = ax.pcolorfast(X, Y, Z[:-1,:-1], cmap=cm, vmin=-0.5*max_extent, vmax=0.5*max_extent)
+        ax.plot(t_redundant[idx],3.*data_s[idx],'k--')
+        ax.plot(t_redundant[idx],-3.*data_s[idx],'k--')
+        ax.set_ylabel(ylab)
+        at = AnchoredText(labels[idx], prop=dict(size=15), frameon=True, loc='upper left')
+        at.patch.set_boxstyle("round,pad=0.,rounding_size=0.2")
+        ax.add_artist(at)
+        ax.ticklabel_format(axis="x", style="sci", scilimits=(0,0), useMathText=True)
 
         if args.log:
             maxlog = int(np.ceil(np.log10(max_extent)))
@@ -167,24 +135,9 @@ def main(**kwargs):
             else:
                 cbar = fig.colorbar(pos, ax=axs[idx], extend='both')
         cbar.set_label(cbar_label, rotation=0)
-        #cbar.ax.set_title(cbar_label)
 
     fig.supxlabel(x_label)#, x=0.45, y=-0.03)
     plt.tick_params(axis='both', which='major')
-
-    #if args.log:
-        #generate cbar logarithmic ticks
-    #    maxlog = int(np.ceil(np.log10(max_extent)))
-    #    minlog = maxlog
-    #    logstep = 1
-    #    tick_locations=([-(10**x) for x in range(-logthresh+1, minlog+1, logstep)][::-1]
-    #                    +[0.0]
-    #                    +[(10**x) for x in range(-logthresh+1, maxlog+1, logstep)] )
-    #    cbar = fig.colorbar(pos, ax=axs, extend='both', shrink=0.5, ticks=tick_locations, format=matplotlib.ticker.LogFormatterMathtext())
-    #else:
-    #    cbar = fig.colorbar(pos, ax=axs, extend='both', shrink=0.5)
-    #cbar.set_label(cbar_label, rotation=0)
-    #cbar.ax.set_title(cbar_label)
 
     plt.savefig(args.output, bbox_inches='tight')
     plt.close()
@@ -197,22 +150,22 @@ if __name__ == '__main__':
                         type=argparse.FileType('r'),
                         nargs='+',
                         default=None,
-                        help='list of data files to read, including path')
+                        help='List of data files to read, including path')
     parser.add_argument('-c', '--component',
                         type=str,
                         default='phi',
                         choices=['r','theta','phi'],
-                        help='magnetic field component to be plotted')
+                        help='Magnetic field component to be plotted')
     parser.add_argument('-o', '--output',
                         type=str,
                         default=None,
-                        help='name of plot to be created, including path')
+                        help='Name of plot to be created, including path')
     parser.add_argument('--log',
-                        action="store_true",
-                        help='plot log values of B')
+                        action='store_true',
+                        help='Use logarithmic colour scale')
     parser.add_argument('--pres',
                         action='store_true',
-                        help='make presentation-quality image')
+                        help='Make presentation-quality image')
     args = parser.parse_args()
 
     main(**vars(args))
