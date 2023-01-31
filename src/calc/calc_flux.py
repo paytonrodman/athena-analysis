@@ -33,17 +33,16 @@ def main(**kwargs):
     file_times = AAT.add_time_to_list(args.update, args.output)
     local_times = AAT.distribute_files_to_cores(file_times, size, rank)
 
-    data_input = athena_read.athinput(args.input)
-    scale_height = data_input['problem']['h_r']
-
-    data_init = athena_read.athdf(args.problem_id + '.cons.00000.athdf', quantities=['x1v', 'x2v'])
-    x1v_init = data_init['x1v']
-    x2v_init = data_init['x2v']
-    r_id = AAT.find_nearest(x1v_init, 6.)
-    th_id = AAT.find_nearest(x2v_init, np.pi/2.)
-
-    th_l = AAT.find_nearest(x2v_init, np.pi/2. - (2.*scale_height))
-    th_u = AAT.find_nearest(x2v_init, np.pi/2. + (2.*scale_height))
+    # retrieve lists of scale height with time
+    if rank==0:
+        df = pd.read_csv(args.scale, delimiter='\t', usecols=['sim_time', 'scale_height'])
+        scale_time_list = df['sim_time'].to_list()
+        scale_height_list = df['scale_height'].to_list()
+    else:
+        scale_time_list = None
+        scale_height_list = None
+    scale_height_list = comm.bcast(scale_height_list, root=0)
+    scale_time_list = comm.bcast(scale_time_list, root=0)
 
     if rank==0:
         if not args.update:
@@ -59,7 +58,12 @@ def main(**kwargs):
         data_cons = athena_read.athdf(args.problem_id + '.cons.' + str_t + '.athdf',
                                         quantities=['dens','mom1','Bcc1'])
 
+        # find corresponding entry in scale height data
+        scale_index = AAT.find_nearest(scale_time_list,data_cons['Time'])
+        scale_height = scale_height_list[scale_index]
+
         #unpack data
+        x1v = data_cons['x1v']
         x2v = data_cons['x2v']
         x3v = data_cons['x3v']
         x1f = data_cons['x1f']
@@ -67,12 +71,19 @@ def main(**kwargs):
         x3f = data_cons['x3f']
         Bcc1 = data_cons['Bcc1']
 
+        # define bounds of region to average over
+        r_id = AAT.find_nearest(x1v, 6.)
+        th_id = AAT.find_nearest(x2v, np.pi/2.)
+        th_l = AAT.find_nearest(x2v, np.pi/2. - (2.*scale_height))
+        th_u = AAT.find_nearest(x2v, np.pi/2. + (2.*scale_height))
+
         _,dx2f,dx3f = AAT.calculate_delta(x1f,x2f,x3f)
 
         mf_l = []
         mf_u = []
         mf_l_d = []
         mf_u_d = []
+        # calculate flux at each point on the surface x1f[r_id]
         for j in range(th_id):
             for k in range(len(x3v)):
                 dS = (x1f[r_id]**2.) * np.sin(x2f[j]) * dx2f[j] * dx3f[k]
@@ -86,7 +97,7 @@ def main(**kwargs):
                 if j>th_u:
                     mf_l_d.append(Bcc1[k,j,r_id]*dS)
 
-
+        # integrate fluxes over surface
         mag_flux_u = np.sqrt(4.*np.pi) * np.sum(mf_u)
         mag_flux_u_abs = np.sqrt(4.*np.pi) * np.sum(np.abs(mf_u))
         mag_flux_l = np.sqrt(4.*np.pi) * np.sum(mf_l)
@@ -119,6 +130,8 @@ if __name__ == '__main__':
                         help='location of data folder, possibly including path')
     parser.add_argument('input',
                         help='location of athinput file, possibly including path')
+    parser.add_argument('scale',
+                        help='location of scale height file, possibly including path')
     parser.add_argument('output',
                         help='name of output to be (over)written, possibly including path')
     parser.add_argument('-u', '--update',

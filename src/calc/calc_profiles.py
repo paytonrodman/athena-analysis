@@ -49,13 +49,24 @@ def main(**kwargs):
 
     local_times = AAT.distribute_files_to_cores(file_times_restricted, size, rank)
 
-    data_input = athena_read.athinput(args.input)
-    scale_height = data_input['problem']['h_r']
+    # retrieve lists of scale height with time
+    if rank==0:
+        df = pd.read_csv(args.scale, delimiter='\t', usecols=['sim_time', 'scale_height'])
+        scale_time_list = df['sim_time'].to_list()
+        scale_height_list = df['scale_height'].to_list()
+    else:
+        scale_time_list = None
+        scale_height_list = None
+    scale_height_list = comm.bcast(scale_height_list, root=0)
+    scale_time_list = comm.bcast(scale_time_list, root=0)
 
-    data_init = athena_read.athdf(args.problem_id + '.cons.00000.athdf', quantities=['x2v'])
-    x2v = data_init['x2v']
-    th_u = AAT.find_nearest(x2v, np.pi/2. + (2.*scale_height))
-    th_l = AAT.find_nearest(x2v, np.pi/2. - (2.*scale_height))
+    #data_input = athena_read.athinput(args.input)
+    #scale_height = data_input['problem']['h_r']
+
+    #data_init = athena_read.athdf(args.problem_id + '.cons.00000.athdf', quantities=['x2v'])
+    #x2v = data_init['x2v']
+    #th_u = AAT.find_nearest(x2v, np.pi/2. + (2.*scale_height))
+    #th_l = AAT.find_nearest(x2v, np.pi/2. - (2.*scale_height))
 
     if rank==0:
         if not args.update:
@@ -72,6 +83,10 @@ def main(**kwargs):
                                         quantities=['dens','mom1','mom2','mom3',
                                                     'Bcc1','Bcc2','Bcc3'])
 
+        # find corresponding entry in scale height data
+        scale_index = AAT.find_nearest(scale_time_list, data_cons['Time'])
+        scale_height = scale_height_list[scale_index]
+
         #unpack data
         x1v = data_cons['x1v']
         x2v = data_cons['x2v']
@@ -84,18 +99,22 @@ def main(**kwargs):
         Bcc2 = data_cons['Bcc2']
         Bcc3 = data_cons['Bcc3']
         press = data_prim['press']
-
         temp = press/density
         v3 = mom3/density
         GM = 1.
 
+        # define bounds of region to average over
+        th_u = AAT.find_nearest(x2v, np.pi/2. + (2.*scale_height))
+        th_l = AAT.find_nearest(x2v, np.pi/2. - (2.*scale_height))
+
+        # calculate rotational velocity
         r,_,_ = np.meshgrid(x3v,x2v,x1v, sparse=False, indexing='ij')
         orbital_rotation = v3**2./r**2.
         Omega_kep = np.sqrt(GM/(x1v**3.))
         Omega_kep = np.broadcast_to(Omega_kep, (np.shape(density)[0], np.shape(density)[1], np.shape(density)[2]))
-
         dmom3 = mom3 - r*Omega_kep
 
+        # restrict range (arrays ordered by [phi,theta,r]!)
         dens = density[:, th_l:th_u, :]
         mom1 = mom1[:, th_l:th_u, :]
         mom2 = mom2[:, th_l:th_u, :]
@@ -107,6 +126,7 @@ def main(**kwargs):
         press = press[:, th_l:th_u, :]
         dmom3 = dmom3[:, th_l:th_u, :]
 
+        # calculate Shakura-Sunyaev alpha from stresses
         stress_Rey = dens*mom1*dmom3
         stress_Max = -Bcc1*Bcc3
         T_rphi = stress_Rey + stress_Max
@@ -144,6 +164,7 @@ def main(**kwargs):
                                 temp_profile,Bcc1_profile,Bcc2_profile,Bcc3_profile,orbit_v_ratio_profile,
                                 stress_Rey_profile, stress_Max_profile, alpha_SS_profile])
 
+    # now take average over time
     comm.barrier()
     if rank == 0:
         df = pd.read_csv(args.output1, delimiter='\t', usecols=['sim_time', 'dens', 'mom1', 'mom2', 'mom3',
@@ -158,7 +179,7 @@ def main(**kwargs):
         b1 = df['Bcc1'].to_list()
         b2 = df['Bcc2'].to_list()
         b3 = df['Bcc3'].to_list()
-        #r = df['rotational_speed'].to_list()
+        r = df['rotational_speed'].to_list()
         alp = df['alpha_SS'].to_list()
 
         len_r = len(np.fromstring(d[0].strip("[]"), sep=' '))
@@ -171,7 +192,7 @@ def main(**kwargs):
         b1_arr = np.empty([len(time), len_r])
         b2_arr = np.empty([len(time), len_r])
         b3_arr = np.empty([len(time), len_r])
-        #r_arr = np.empty([len(time), len_r])
+        r_arr = np.empty([len(time), len_r])
         alp_arr = np.empty([len(time), len_r])
 
         for ii in range(len(time)):
@@ -183,7 +204,7 @@ def main(**kwargs):
             b1_arr[ii] = np.fromstring(b1[ii].strip("[]"), sep=' ')
             b2_arr[ii] = np.fromstring(b2[ii].strip("[]"), sep=' ')
             b3_arr[ii] = np.fromstring(b3[ii].strip("[]"), sep=' ')
-            #r_arr[ii] = np.fromstring(r[ii].strip("[]"), sep=' ')
+            r_arr[ii] = np.fromstring(r[ii].strip("[]"), sep=' ')
             alp_arr[ii] = np.fromstring(alp[ii].strip("[]"), sep=' ')
 
         # average over time
@@ -195,7 +216,7 @@ def main(**kwargs):
         Bcc1_av = np.mean(b1_arr, axis=0)
         Bcc2_av = np.mean(b2_arr, axis=0)
         Bcc3_av = np.mean(b3_arr, axis=0)
-        #rot_av = np.mean(r_arr, axis=0)
+        rot_av = np.mean(r_arr, axis=0)
         alp_av = np.mean(alp_arr, axis=0)
 
         np.save(args.output + 'dens_profile.npy', dens_av)
@@ -206,7 +227,7 @@ def main(**kwargs):
         np.save(args.output + 'Bcc1_profile.npy', Bcc1_av)
         np.save(args.output + 'Bcc2_profile.npy', Bcc2_av)
         np.save(args.output + 'Bcc3_profile.npy', Bcc3_av)
-        #np.save(args.output + 'rot_profile.npy', rot_av)
+        np.save(args.output + 'rot_profile.npy', rot_av)
         np.save(args.output + 'alpha_profile.npy', alp_av)
 
 
@@ -219,6 +240,8 @@ if __name__ == '__main__':
                         help='location of data folder, including path')
     parser.add_argument('input',
                         help='location of athinput file, including path')
+    parser.add_argument('scale',
+                        help='location of scale height file, possibly including path')
     parser.add_argument('output1',
                         help='output file for intermediate results, including path')
     parser.add_argument('output',

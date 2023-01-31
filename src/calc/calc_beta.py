@@ -55,7 +55,6 @@ def main(**kwargs):
     else:
         scale_time_list = None
         scale_height_list = None
-
     scale_height_list = comm.bcast(scale_height_list, root=0)
     scale_time_list = comm.bcast(scale_time_list, root=0)
 

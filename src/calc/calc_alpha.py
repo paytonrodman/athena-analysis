@@ -35,12 +35,16 @@ def main(**kwargs):
     file_times = AAT.add_time_to_list(args.update, args.output)
     local_times = AAT.distribute_files_to_cores(file_times, size, rank)
 
-    #data_input = athena_read.athinput(args.input)
-
-    data_init = athena_read.athdf(args.problem_id + '.cons.00000.athdf', quantities=['x2v'])
-    x2v = data_init['x2v']
-    th_u = AAT.find_nearest(x2v, np.pi/2. + (3.*scale_height))
-    th_l = AAT.find_nearest(x2v, np.pi/2. - (3.*scale_height))
+    # retrieve lists of scale height with time
+    if rank==0:
+        df = pd.read_csv(args.scale, delimiter='\t', usecols=['sim_time', 'scale_height'])
+        scale_time_list = df['sim_time'].to_list()
+        scale_height_list = df['scale_height'].to_list()
+    else:
+        scale_time_list = None
+        scale_height_list = None
+    scale_height_list = comm.bcast(scale_height_list, root=0)
+    scale_time_list = comm.bcast(scale_time_list, root=0)
 
     if rank==0:
         if not args.update:
@@ -56,6 +60,10 @@ def main(**kwargs):
                                                     'mom1','mom3',
                                                     'Bcc1','Bcc3'])
 
+        # find corresponding entry in scale height data
+        scale_index = AAT.find_nearest(scale_time_list,data_cons['Time'])
+        scale_height = scale_height_list[scale_index]
+
         #unpack data
         x1v = data_cons['x1v']
         x2v = data_cons['x2v']
@@ -67,11 +75,17 @@ def main(**kwargs):
         Bcc3 = data_cons['Bcc3']
         press = data_prim['press']
 
+        # define bounds of region to average over
+        th_u = AAT.find_nearest(x2v, np.pi/2. + (3.*scale_height))
+        th_l = AAT.find_nearest(x2v, np.pi/2. - (3.*scale_height))
+
+        # calculate rotational velocity
         r,_,_ = np.meshgrid(x3v,x2v,x1v, sparse=False, indexing='ij')
         Omega_kep = np.sqrt(GM/(x1v**3.))
         Omega_kep = np.broadcast_to(Omega_kep, (np.shape(dens)[0], np.shape(dens)[1], np.shape(dens)[2]))
         dmom3 = mom3 - r*Omega_kep
 
+        # restrict range (arrays ordered by [phi,theta,r]!)
         press = press[:, th_l:th_u, :]
         dens = dens[:, th_l:th_u, :]
         mom1 = mom1[:, th_l:th_u, :]
@@ -79,12 +93,11 @@ def main(**kwargs):
         Bcc3 = Bcc3[:, th_l:th_u, :]
         dmom3 = dmom3[:, th_l:th_u, :]
 
+        # calculate Shakura-Sunyaev alpha from stresses
         Reynolds_stress = dens*mom1*dmom3
         Maxwell_stress = -Bcc1*Bcc3
-
         T_rphi = Reynolds_stress + Maxwell_stress
         T_rphi = np.average(T_rphi, axis=(1)) # average over vertical height, theta
-
         alpha_SS = T_rphi/np.average(press, axis=(1))
 
         sim_t = data_cons['Time']
@@ -105,6 +118,8 @@ if __name__ == '__main__':
                         help='location of data folder, possibly including path')
     parser.add_argument('input',
                         help='location of athinput file, possibly including path')
+    parser.add_argument('scale',
+                        help='location of scale height file, possibly including path')
     parser.add_argument('output',
                         help='name of output to be (over)written, possibly including path')
     parser.add_argument('-u', '--update',

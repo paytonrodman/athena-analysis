@@ -33,16 +33,27 @@ def main(**kwargs):
     file_times = AAT.add_time_to_list(args.update, args.output)
     local_times = AAT.distribute_files_to_cores(file_times, size, rank)
 
-    data_input = athena_read.athinput(args.input)
-    scale_height = data_input['problem']['h_r']
+    # retrieve lists of scale height with time
+    if rank==0:
+        df = pd.read_csv(args.scale, delimiter='\t', usecols=['sim_time', 'scale_height'])
+        scale_time_list = df['sim_time'].to_list()
+        scale_height_list = df['scale_height'].to_list()
+    else:
+        scale_time_list = None
+        scale_height_list = None
+    scale_height_list = comm.bcast(scale_height_list, root=0)
+    scale_time_list = comm.bcast(scale_time_list, root=0)
 
-    data_init = athena_read.athdf(args.problem_id + '.cons.00000.athdf', quantities=['x2v','x3v'])
-    x2v = data_init['x2v']
-    x3v = data_init['x3v']
-    th_u = AAT.find_nearest(x2v, np.pi/2. + (2.*scale_height))
-    th_l = AAT.find_nearest(x2v, np.pi/2. - (2.*scale_height))
-    ph_u = AAT.find_nearest(x3v, np.pi)
-    ph_l = AAT.find_nearest(x3v, 0)
+    #data_input = athena_read.athinput(args.input)
+    #scale_height = data_input['problem']['h_r']
+
+    #data_init = athena_read.athdf(args.problem_id + '.cons.00000.athdf', quantities=['x2v','x3v'])
+    #x2v = data_init['x2v']
+    #x3v = data_init['x3v']
+    #th_u = AAT.find_nearest(x2v, np.pi/2. + (2.*scale_height))
+    #th_l = AAT.find_nearest(x2v, np.pi/2. - (2.*scale_height))
+    #ph_u = AAT.find_nearest(x3v, np.pi)
+    #ph_l = AAT.find_nearest(x3v, 0)
 
     if rank==0:
         if not args.update:
@@ -54,9 +65,22 @@ def main(**kwargs):
         data_cons = athena_read.athdf(args.problem_id + ".cons." + str_t + ".athdf",
                                         quantities=['dens'])
 
+        # find corresponding entry in scale height data
+        scale_index = AAT.find_nearest(scale_time_list,data_cons['Time'])
+        scale_height = scale_height_list[scale_index]
 
         #unpack data
+        x2v = data_cons['x2v']
+        x3v = data_cons['x3v']
         dens = data_cons['dens']
+
+        # define bounds of region to average over
+        th_u = AAT.find_nearest(x2v, np.pi/2. + (2.*scale_height))
+        th_l = AAT.find_nearest(x2v, np.pi/2. - (2.*scale_height))
+        ph_u = AAT.find_nearest(x3v, np.pi)
+        ph_l = AAT.find_nearest(x3v, 0)
+
+        # take averages on each side
         dens_u = np.average(dens[ph_u, th_l:th_u, :], axis=0)
         dens_l = np.average(dens[ph_l, th_l:th_u, :], axis=0)
         dens_all = list(np.concatenate((np.flip(dens_l,0),dens_u), axis=0))
@@ -79,6 +103,8 @@ if __name__ == '__main__':
                         help='location of data folder, possibly including path')
     parser.add_argument('input',
                         help='location of athinput file, possibly including path')
+    parser.add_argument('scale',
+                        help='location of scale height file, possibly including path')
     parser.add_argument('output',
                         help='name of output to be (over)written, possibly including path')
     parser.add_argument('-u', '--update',
