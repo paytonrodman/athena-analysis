@@ -27,6 +27,10 @@ def main(**kwargs):
     temp = [[] for _ in range(n)]
     if args.rot:
         rot = [[] for _ in range(n)]
+    alpha = [[] for _ in range(n)]
+    Rey = [[] for _ in range(n)]
+    Max = [[] for _ in range(n)]
+
     x1v = [[] for _ in range(n)]
     labels = []
     colors = []
@@ -41,24 +45,44 @@ def main(**kwargs):
         data_mesh = athena_read.athdf(mesh_file, quantities=['x1v'])
         x1v[count] = data_mesh['x1v']
 
-        dens_file = f + 'dens_profile.npy'
-        mom1_file = f + 'mom1_profile.npy'
-        temp_file = f + 'temp_profile.npy'
+        if args.instant:
+            dens_file = f + 'dens_profile_instant.npy'
+            mom1_file = f + 'mom1_profile_instant.npy'
+            temp_file = f + 'temp_profile_instant.npy'
+            if args.rot:
+                rot_file = f + 'rot_profile_instant.npy'
+            if args.alpha:
+                alpha_file = f + 'alpha_profile_instant.npy'
+                Rey_file = f + 'Rey_profile_instant.npy'
+                Max_file = f + 'Max_profile_instant.npy'
+        else:
+            dens_file = f + 'dens_profile.npy'
+            mom1_file = f + 'mom1_profile.npy'
+            temp_file = f + 'temp_profile.npy'
+            if args.rot:
+                rot_file = f + 'rot_profile.npy'
+            if args.alpha:
+                alpha_file = f + 'alpha_profile.npy'
+                Rey_file = f + 'Rey_profile.npy'
+                Max_file = f + 'Max_profile.npy'
 
         dens[count] = np.load(dens_file, mmap_mode='r')
         mom1[count] = np.load(mom1_file, mmap_mode='r')
         temp[count] = np.load(temp_file, mmap_mode='r')
-
         if args.rot:
-            rot_file = f + 'rot_profile.npy'
             rot[count] = np.load(rot_file, mmap_mode='r')
+        if args.alpha:
+            alpha[count] = np.load(alpha_file, mmap_mode='r')
+            Rey[count] = np.load(Rey_file, mmap_mode='r')
+            Max[count] = np.load(Max_file, mmap_mode='r')
 
-    ylabels = [r'$\langle \rho \rangle^*$', r'$\langle v_r \rangle^*$', r'$\langle \frac{P}{\rho c^2} \rangle^*$', r'$\langle \frac{\Omega}{\Omega_K} \rangle^*$']
-    lw = 1.5
+    ylabels = [r'$\langle \rho \rangle^*$', r'$\langle v_r \rangle^*$', r'$\langle \frac{P}{\rho c^2} \rangle^*$']
     if args.rot:
-        n_plots = 4
-    else:
-        n_plots = 3
+        ylabels.append(r'$\langle \frac{\Omega}{\Omega_K} \rangle^*$')
+    if args.alpha:
+        ylabels.append(r'$\langle \alpha \rangle^*$')
+    lw = 1.5
+    n_plots = len(ylabels)
 
     fig, axs = plt.subplots(nrows=n_plots, ncols=1, sharex=True, figsize=(4,6))
     fig.subplots_adjust(hspace=0.0)
@@ -69,12 +93,28 @@ def main(**kwargs):
             axs[2].semilogx(x1v[ii], temp[ii], linewidth=lw, color=colors[ii], label=labels[ii])
             if args.rot:
                 axs[3].semilogx(x1v[ii], rot[ii], linewidth=lw, color=colors[ii], label=labels[ii])
+                if args.alpha:
+                    axs[4].semilogx(x1v[ii], alpha[ii], linewidth=lw, color=colors[ii], label=labels[ii])
+                    #axs[4].semilogx(x1v[ii], Rey[ii], linewidth=lw, color=colors[ii], linestyle=':', label='Reynolds stress')
+                    #axs[4].semilogx(x1v[ii], Max[ii], linewidth=lw, color=colors[ii], linestyle='-', label='Maxwell stress')
+            elif args.alpha:
+                axs[3].semilogx(x1v[ii], alpha[ii], linewidth=lw, color=colors[ii], label=labels[ii])
+                #axs[3].semilogx(x1v[ii], Rey[ii], linewidth=lw, color=colors[ii], linestyle=':', label='Reynolds stress')
+                #axs[3].semilogx(x1v[ii], Max[ii], linewidth=lw, color=colors[ii], linestyle='-', label='Maxwell stress')
         else:
             axs[0].plot(x1v[ii], dens[ii], linewidth=lw, color=colors[ii], label=labels[ii])
             axs[1].plot(x1v[ii], mom1[ii], linewidth=lw, color=colors[ii], label=labels[ii])
             axs[2].plot(x1v[ii], temp[ii], linewidth=lw, color=colors[ii], label=labels[ii])
             if args.rot:
                 axs[3].plot(x1v[ii], rot[ii], linewidth=lw, color=colors[ii], label=labels[ii])
+                if args.alpha:
+                    axs[4].plot(x1v[ii], alpha[ii], linewidth=lw, color=colors[ii], label=labels[ii])
+                    #axs[4].plot(x1v[ii], Rey[ii], linewidth=lw, color=colors[ii], linestyle=':', label='Reynolds stress')
+                    #axs[4].plot(x1v[ii], Max[ii], linewidth=lw, color=colors[ii], linestyle='-', label='Maxwell stress')
+            elif args.alpha:
+                axs[3].plot(x1v[ii], alpha[ii], linewidth=lw, color=colors[ii], label=labels[ii])
+                #axs[3].plot(x1v[ii], Rey[ii], linewidth=lw, color=colors[ii], linestyle=':', label='Reynolds stress')
+                #axs[3].plot(x1v[ii], Max[ii], linewidth=lw, color=colors[ii], linestyle='-', label='Maxwell stress')
     for ii in range(n_plots):
         axs[ii].set_ylabel(ylabels[ii])
         if not args.logr:
@@ -113,9 +153,15 @@ if __name__ == '__main__':
     parser.add_argument('--logr',
                         action='store_true',
                         help='plot r in log')
+    parser.add_argument('--instant',
+                        action='store_true',
+                        help='plot instantaneous values')
     parser.add_argument('--rot',
                         action='store_true',
                         help='plot rotational speed')
+    parser.add_argument('--alpha',
+                        action='store_true',
+                        help='plot Shakura-Sunyaev alpha')
     parser.add_argument('--pres',
                         action='store_true',
                         help='make presentation-quality image')
