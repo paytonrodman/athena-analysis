@@ -152,7 +152,6 @@ def main(**kwargs):
             writer.writerow(row)
 
 
-
 # Execute main function
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Calculate quality factors from simulation data.')
