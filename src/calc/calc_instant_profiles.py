@@ -129,7 +129,7 @@ def main(**kwargs):
         np.save(prob_dir + 'Bcc1_profile_instant.npy', Bcc1_profile)
         np.save(prob_dir + 'Bcc2_profile_instant.npy', Bcc2_profile)
         np.save(prob_dir + 'Bcc3_profile_instant.npy', Bcc3_profile)
-        #np.save(prob_dir + 'rot_profile_instant.npy', orbit_v_ratio_profile)
+        np.save(prob_dir + 'rot_profile_instant.npy', orbit_v_ratio_profile)
         np.save(prob_dir + 'Rey_profile_instant.npy', stress_Rey_profile)
         np.save(prob_dir + 'Max_profile_instant.npy', stress_Max_profile)
         np.save(prob_dir + 'alpha_profile_instant.npy', alpha_SS_profile)
