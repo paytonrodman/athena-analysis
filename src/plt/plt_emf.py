@@ -55,8 +55,6 @@ def main(**kwargs):
     if len(times)==0:
         sys.exit('No new timesteps to analyse in the given directory. Exiting.')
 
-    times = [6140] #43159 51273 6140 5000
-
     data_input = athena_read.athinput(runfile_dir + 'athinput.' + problem)
     scale_height = data_input['problem']['h_r']
     data_init = athena_read.athdf(problem + '.cons.00000.athdf', quantities=['x1v','x2v'])
@@ -142,56 +140,44 @@ def main(**kwargs):
         sim_t = data_cons['Time']
         orbit_t = sim_t/T_period
 
-        for num in range(0,len(emf_all)):
-            emf = emf_all[num]
-            Bcc = Bcc_all[num]
-            if num==0:
+        for i,val in enumerate(emf_all):
+            emf = emf_all[i]
+            Bcc = Bcc_all[i]
+            if i==0:
                 xlab1 = r'$\overline{B}_{r}$'
                 ylab1 = r'$\epsilon_{r}$'
                 f3 = 'r'
-            elif num==1:
+            elif i==1:
                 xlab1 = r'$\overline{B}_{\theta}$'
                 ylab1 = r'$\epsilon_{\theta}$'
                 f3 = 'th'
-            elif num==2:
+            elif i==2:
                 xlab1 = r'$\overline{B}_{\phi}$'
                 ylab1 = r'$\epsilon_{\phi}$'
                 f3 = 'ph'
+            title_str = "t=" + str(int(sim_t)) + " (" + str(int(orbit_t)) + " orbits)"
+            savename = prob_dir + 'dyn/' + av[:3] + '_' + hem + '_' + f3 + '_' + str_t + '.png'
 
             x = Bcc.flatten()
             y = emf.flatten()
-
-            # HUBER REGRESSION
-            #huber = HuberRegressor()
-            #huber.fit(x.reshape(-1,1), y)
-            #x_fit = np.linspace(np.min(x),np.max(x),100)
-            #y_fit = huber.coef_*x_fit + huber.intercept_
 
             # LINEAR LEAST SQUARES
             alpha,C = optimize.curve_fit(func, xdata=x, ydata=y)[0]
             y_fit = alpha*x + C
             x_fit = x
 
-            #idx = [randint(0, np.size(x)-1) for p in range(0, 10000)]
-            #x = x[idx]
-            #y = y[idx]
-
-            df = pd.DataFrame(list(zip(x, y)), columns =['Bcc', 'emf'])
+            df = pd.DataFrame(list(zip(x,y)), columns =['Bcc', 'emf'])
             sns.set_style("ticks")
             sns.despine()
             ax = sns.kdeplot(x=df.Bcc, y=df.emf, cmap="Reds", shade=True, bw_adjust=5)
             ax.set(xlabel=xlab1, ylabel=ylab1)
-            title_str = "t=" + str(int(sim_t)) + " (" + str(int(orbit_t)) + " orbits)"
             ax.set_title(title_str)
 
             plt.plot(x_fit, y_fit, '-k', linewidth=1)
-            #plt.xlim([-0.002, 0.002])
-            #plt.ylim([-6e-6, 6e-6])
 
             plt.tight_layout()
-            plt.savefig(prob_dir+'dyn/'+av[:3]+'_'+hem+'_'+f3+'_'+str_t+'.png',dpi=300)
+            plt.savefig(savename, dpi=300)
             plt.close()
-            #plt.show()
 
 
 def func(x, a, b):

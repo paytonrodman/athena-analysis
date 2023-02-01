@@ -26,8 +26,8 @@ def main(**kwargs):
 
     fourcc = cv2.VideoWriter_fourcc(*args.codec)
     out = cv2.VideoWriter(args.output, fourcc, args.fps, size)
-    for i in range(len(img_array)):
-        out.write(img_array[i])
+    for i,val in enumerate(img_array):
+        out.write(val)
     out.release()
     cv2.destroyAllWindows()
 
