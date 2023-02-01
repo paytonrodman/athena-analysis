@@ -102,7 +102,7 @@ def main(**kwargs):
 
         if args.log:
             logthresh = abs(int(np.ceil(np.log10(max_extent)))) + 2
-            norm = matplotlib.colors.SymLogNorm(linthresh=10**-logthresh, linscale=10**-logthresh, vmin=-max_extent, vmax=max_extent, base=10)
+            #norm = matplotlib.colors.SymLogNorm(linthresh=10**-logthresh, linscale=10**-logthresh, vmin=-max_extent, vmax=max_extent, base=10)
 
         if n==1:
             ax = axs
