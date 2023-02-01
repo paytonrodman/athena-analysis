@@ -11,7 +11,7 @@
 import argparse
 import sys
 import os
-import gc
+#import gc
 sys.path.insert(0, '/home/per29/rds/rds-accretion-zyNhkonJSR8/athena-analysis/dependencies')
 #sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies')
 
@@ -96,6 +96,11 @@ def main(**kwargs):
         phi,theta,r = np.meshgrid(x3v,x2v,x1v, sparse=False, indexing='ij')
         dphi,dtheta,_ = np.meshgrid(dx3f,dx2f,dx1f, sparse=False, indexing='ij')
 
+        # define bounds of region to average over
+        r_u = AAT.find_nearest(x1v, x1_high_max)
+        th_u = AAT.find_nearest(x2v, np.pi/2. + (3.*scale_height))
+        th_l = AAT.find_nearest(x2v, np.pi/2. - (3.*scale_height))
+
         # restrict range of meshes
         R = r*np.sin(theta)
         R = R[:, th_l:th_u, :r_u]
@@ -104,6 +109,13 @@ def main(**kwargs):
         dphi = dphi[:, th_l:th_u, :r_u]
         dtheta = dtheta[:, th_l:th_u, :r_u]
 
+        # restrict ranges
+        dens = dens[:, th_l:th_u, :r_u]
+        Bcc1 = Bcc1[:, th_l:th_u, :r_u]
+        Bcc2 = Bcc2[:, th_l:th_u, :r_u]
+        Bcc3 = Bcc3[:, th_l:th_u, :r_u]
+        press = press[:, th_l:th_u, :r_u]
+
         #del dx1f, dx2f, dx3f
         #del x2v, x3v
         #del x1f, x2f, x3f
@@ -111,18 +123,6 @@ def main(**kwargs):
 
         #del data_prim
         #gc.collect()
-
-        # define bounds of region to average over
-        r_u = AAT.find_nearest(x1v, x1_high_max)
-        th_u = AAT.find_nearest(x2v, np.pi/2. + (3.*scale_height))
-        th_l = AAT.find_nearest(x2v, np.pi/2. - (3.*scale_height))
-
-        # restrict ranges
-        dens = dens[:, th_l:th_u, :r_u]
-        Bcc1 = Bcc1[:, th_l:th_u, :r_u]
-        Bcc2 = Bcc2[:, th_l:th_u, :r_u]
-        Bcc3 = Bcc3[:, th_l:th_u, :r_u]
-        press = press[:, th_l:th_u, :r_u]
 
         # calculate Keplerian orbital velocity
         Omega_kep = np.sqrt(GM/(x1v[:r_u]**3.))
