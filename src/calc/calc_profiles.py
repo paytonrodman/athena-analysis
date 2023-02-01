@@ -77,9 +77,9 @@ def main(**kwargs):
                                     'reynolds_stress', 'maxwell_stress', 'alpha_SS'])
     for t in local_times:
         str_t = str(int(t)).zfill(5)
-        data_prim = athena_read.athdf(args.problem_id + ".prim." + str_t + ".athdf",
+        data_prim = athena_read.athdf(args.problem_id + '.prim.' + str_t + '.athdf',
                                         quantities=['press'])
-        data_cons = athena_read.athdf(args.problem_id + ".cons." + str_t + ".athdf",
+        data_cons = athena_read.athdf(args.problem_id + '.cons.' + str_t + '.athdf',
                                         quantities=['dens','mom1','mom2','mom3',
                                                     'Bcc1','Bcc2','Bcc3'])
 
@@ -182,7 +182,7 @@ def main(**kwargs):
         r = df['rotational_speed'].to_list()
         alp = df['alpha_SS'].to_list()
 
-        len_r = len(np.fromstring(d[0].strip("[]"), sep=' '))
+        len_r = len(np.fromstring(d[0].strip('[]'), sep=' '))
 
         d_arr = np.empty([len(time), len_r])
         m1_arr = np.empty([len(time), len_r])
@@ -196,16 +196,16 @@ def main(**kwargs):
         alp_arr = np.empty([len(time), len_r])
 
         for ii in range(len(time)):
-            d_arr[ii] = np.fromstring(d[ii].strip("[]"), sep=' ')
-            m1_arr[ii] = np.fromstring(m1[ii].strip("[]"), sep=' ')
-            m2_arr[ii] = np.fromstring(m2[ii].strip("[]"), sep=' ')
-            m3_arr[ii] = np.fromstring(m3[ii].strip("[]"), sep=' ')
-            t_arr[ii] = np.fromstring(t[ii].strip("[]"), sep=' ')
-            b1_arr[ii] = np.fromstring(b1[ii].strip("[]"), sep=' ')
-            b2_arr[ii] = np.fromstring(b2[ii].strip("[]"), sep=' ')
-            b3_arr[ii] = np.fromstring(b3[ii].strip("[]"), sep=' ')
-            r_arr[ii] = np.fromstring(r[ii].strip("[]"), sep=' ')
-            alp_arr[ii] = np.fromstring(alp[ii].strip("[]"), sep=' ')
+            d_arr[ii] = np.fromstring(d[ii].strip('[]'), sep=' ')
+            m1_arr[ii] = np.fromstring(m1[ii].strip('[]'), sep=' ')
+            m2_arr[ii] = np.fromstring(m2[ii].strip('[]'), sep=' ')
+            m3_arr[ii] = np.fromstring(m3[ii].strip('[]'), sep=' ')
+            t_arr[ii] = np.fromstring(t[ii].strip('[]'), sep=' ')
+            b1_arr[ii] = np.fromstring(b1[ii].strip('[]'), sep=' ')
+            b2_arr[ii] = np.fromstring(b2[ii].strip('[]'), sep=' ')
+            b3_arr[ii] = np.fromstring(b3[ii].strip('[]'), sep=' ')
+            r_arr[ii] = np.fromstring(r[ii].strip('[]'), sep=' ')
+            alp_arr[ii] = np.fromstring(alp[ii].strip('[]'), sep=' ')
 
         # average over time
         dens_av = np.mean(d_arr, axis=0)
@@ -247,7 +247,7 @@ if __name__ == '__main__':
     parser.add_argument('output',
                         help='location of output folder, including path')
     parser.add_argument('-u', '--update',
-                        action="store_true",
+                        action='store_true',
                         help='append new results to an existing data file')
     args = parser.parse_args()
 

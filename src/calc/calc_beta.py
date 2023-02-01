@@ -63,15 +63,15 @@ def main(**kwargs):
         if not args.update:
             with open(args.output, 'w', newline='') as f:
                 writer = csv.writer(f, delimiter='\t')
-                writer.writerow(["file_time", "sim_time", "orbit_time", "plasma_beta"])
+                writer.writerow(['file_time', 'sim_time', 'orbit_time', 'plasma_beta'])
     # cores loop through their assigned list of times
     for t in local_times:
         str_t = str(int(t)).zfill(5)
 
         # read in conservative and primitive data
-        data_prim = athena_read.athdf(args.problem_id + ".prim." + str_t + ".athdf",
+        data_prim = athena_read.athdf(args.problem_id + '.prim.' + str_t + '.athdf',
                                         quantities=['press'])
-        data_cons = athena_read.athdf(args.problem_id + ".cons." + str_t + ".athdf",
+        data_cons = athena_read.athdf(args.problem_id + '.cons.' + str_t + '.athdf',
                                         quantities=['dens','Bcc1','Bcc2','Bcc3'])
 
         # find corresponding entry in scale height data
@@ -158,7 +158,7 @@ if __name__ == '__main__':
     parser.add_argument('output',
                         help='name of output to be (over)written, possibly including path')
     parser.add_argument('-u', '--update',
-                        action="store_true",
+                        action='store_true',
                         help='append new results to an existing data file')
     args = parser.parse_args()
 

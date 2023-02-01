@@ -69,8 +69,8 @@ def main(**kwargs):
         if not args.update:
             with open(args.output, 'w', newline='') as f:
                 writer = csv.writer(f, delimiter='\t')
-                writer.writerow(["sim_time", "orbit_time",
-                "kappa_jet", "kappa_upatmos", "kappa_lowatmos", "kappa_disk"])
+                writer.writerow(['sim_time', 'orbit_time',
+                'kappa_jet', 'kappa_upatmos', 'kappa_lowatmos', 'kappa_disk'])
     for t in local_times:
         str_t = str(int(t)).zfill(5)
         data = athena_read.athdf(args.problem_id + '.cons.' + str_t + '.athdf',
@@ -114,7 +114,7 @@ def main(**kwargs):
         # curvature kappa = ||b dot nabla b|| where b = B / ||B|| and ||x|| is the modulus of x
         # and nabla is the differential operator, i d/dx + j d/dy + k d/dz
         with warnings.catch_warnings():
-            warnings.filterwarnings('ignore', category=RuntimeWarning) #silence "divide by zero"
+            warnings.filterwarnings('ignore', category=RuntimeWarning) #silence 'divide by zero'
             bx = vals_x.T / np.sqrt(vals_x.T**2. + vals_z.T**2.)
             bz = vals_z.T / np.sqrt(vals_x.T**2. + vals_z.T**2.)
 
@@ -168,7 +168,7 @@ if __name__ == '__main__':
     parser.add_argument('output',
                         help='name of output to be (over)written, possibly including path')
     parser.add_argument('-u', '--update',
-                        action="store_true",
+                        action='store_true',
                         help='append new results to an existing data file')
     parser.add_argument('-s', '--stream',
                         default=None,

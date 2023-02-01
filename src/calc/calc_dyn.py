@@ -50,7 +50,7 @@ def main(**kwargs):
     if args.hemisphere=='upper':
         th_l = AAT.find_nearest(x2v, np.pi/2. - (np.arctan(2.*dist/x1v[r_mid])))
         th_u = AAT.find_nearest(x2v, np.pi/2. - (np.arctan(1.*dist/x1v[r_mid])))
-    elif args.hemisphere=="lower":
+    elif args.hemisphere=='lower':
         th_l = AAT.find_nearest(x2v, np.pi/2. + (np.arctan(1.*dist/x1v[r_mid])))
         th_u = AAT.find_nearest(x2v, np.pi/2. + (np.arctan(2.*dist/x1v[r_mid])))
     # analyze phi wedge instead of full disk
@@ -65,7 +65,7 @@ def main(**kwargs):
         if not args.update:
             with open(args.output, 'w', newline='') as f:
                 writer = csv.writer(f, delimiter='\t')
-                writer.writerow(["sim_time", "orbit_time", "alpha", "C"])
+                writer.writerow(['sim_time', 'orbit_time', 'alpha', 'C'])
     for t in local_times:
         str_t = str(int(t)).zfill(5)
         data_cons = athena_read.athdf(args.problem_id + '.cons.' + str_t + '.athdf',
@@ -172,10 +172,10 @@ if __name__ == '__main__':
     parser.add_argument('output',
                         help='name of output to be (over)written, possibly including path')
     parser.add_argument('-u', '--update',
-                        action="store_true",
+                        action='store_true',
                         help='append new results to an existing data file')
     parser.add_argument('--reduced',
-                        action="store_true",
+                        action='store_true',
                         help='average over a reduced azimuthal range')
     parser.add_argument('-a', '--average',
                         type=str,

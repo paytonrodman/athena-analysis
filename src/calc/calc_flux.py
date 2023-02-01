@@ -48,11 +48,11 @@ def main(**kwargs):
         if not args.update:
             with open(args.output, 'w', newline='') as f:
                 writer = csv.writer(f, delimiter='\t')
-                writer.writerow(["file_time", "sim_time", "orbit_time",
-                                    "mag_flux_u", "mag_flux_l",
-                                    "mag_flux_u_abs", "mag_flux_l_abs",
-                                    "mag_flux_u_disk", "mag_flux_l_disk",
-                                    "mag_flux_u_abs_disk", "mag_flux_l_abs_disk"])
+                writer.writerow(['file_time', 'sim_time', 'orbit_time',
+                                    'mag_flux_u', 'mag_flux_l',
+                                    'mag_flux_u_abs', 'mag_flux_l_abs',
+                                    'mag_flux_u_disk', 'mag_flux_l_disk',
+                                    'mag_flux_u_abs_disk', 'mag_flux_l_abs_disk'])
     for t in local_times:
         str_t = str(int(t)).zfill(5)
         data_cons = athena_read.athdf(args.problem_id + '.cons.' + str_t + '.athdf',
@@ -135,7 +135,7 @@ if __name__ == '__main__':
     parser.add_argument('output',
                         help='name of output to be (over)written, possibly including path')
     parser.add_argument('-u', '--update',
-                        action="store_true",
+                        action='store_true',
                         help='append new results to an existing data file')
     args = parser.parse_args()
 

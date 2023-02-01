@@ -61,7 +61,7 @@ def main(**kwargs):
         if not args.update:
             with open(args.output, 'w', newline='') as f:
                 writer = csv.writer(f, delimiter='\t')
-                writer.writerow(["file_time", "sim_time", "orbit_time", "theta_B", "Q_theta", "Q_phi"])
+                writer.writerow(['file_time', 'sim_time', 'orbit_time', 'theta_B', 'Q_theta', 'Q_phi'])
     for t in local_times:
         str_t = str(int(t)).zfill(5)
         gamma = 5./3.
@@ -162,7 +162,7 @@ def main(**kwargs):
         #del R, r, phi, dphi, dtheta
         #del Q_theta, Q_phi
         #gc.collect()
-        #print("data written for time ", sim_t)
+        #print('data written for time ', sim_t)
 
 
 # Execute main function
@@ -179,7 +179,7 @@ if __name__ == '__main__':
     parser.add_argument('output',
                         help='name of output to be (over)written, possibly including path')
     parser.add_argument('-u', '--update',
-                        action="store_true",
+                        action='store_true',
                         help='append new results to an existing data file')
     args = parser.parse_args()
 

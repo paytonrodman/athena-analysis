@@ -44,9 +44,9 @@ def main(**kwargs):
         scale_time_list = df['sim_time'].to_list()
         scale_height_list = df['scale_height'].to_list()
 
-        data_prim = athena_read.athdf(data_dir + prob + ".prim." + t + ".athdf",
+        data_prim = athena_read.athdf(data_dir + prob + '.prim.' + t + '.athdf',
                                         quantities=['press'])
-        data_cons = athena_read.athdf(data_dir + prob + ".cons." + t + ".athdf",
+        data_cons = athena_read.athdf(data_dir + prob + '.cons.' + t + '.athdf',
                                         quantities=['dens','mom1','mom2','mom3',
                                                     'Bcc1','Bcc2','Bcc3'])
 
