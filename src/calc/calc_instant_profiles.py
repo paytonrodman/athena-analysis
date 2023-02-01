@@ -39,19 +39,20 @@ def main(**kwargs):
         data_dir = prob_dir + 'data/'
         runfile_dir = prob_dir + 'runfiles/'
 
-        data_input = athena_read.athinput(runfile_dir + 'athinput.' + prob)
-        scale_height = data_input['problem']['h_r']
-
-        data_init = athena_read.athdf(data_dir + prob + '.cons.00000.athdf', quantities=['x2v'])
-        x2v = data_init['x2v']
-        th_u = AAT.find_nearest(x2v, np.pi/2. + (2.*scale_height))
-        th_l = AAT.find_nearest(x2v, np.pi/2. - (2.*scale_height))
+        # retrieve lists of scale height with time
+        df = pd.read_csv(prob_dir + 'scale_with_time.csv', delimiter='\t', usecols=['sim_time', 'scale_height'])
+        scale_time_list = df['sim_time'].to_list()
+        scale_height_list = df['scale_height'].to_list()
 
         data_prim = athena_read.athdf(data_dir + prob + ".prim." + t + ".athdf",
                                         quantities=['press'])
         data_cons = athena_read.athdf(data_dir + prob + ".cons." + t + ".athdf",
                                         quantities=['dens','mom1','mom2','mom3',
                                                     'Bcc1','Bcc2','Bcc3'])
+
+        # find corresponding entry in scale height data
+        scale_index = AAT.find_nearest(scale_time_list,data_cons['Time'])
+        scale_height = scale_height_list[scale_index]
 
         #unpack data
         x1v = data_cons['x1v']
@@ -65,6 +66,10 @@ def main(**kwargs):
         Bcc2 = data_cons['Bcc2']
         Bcc3 = data_cons['Bcc3']
         press = data_prim['press']
+
+        # define bounds of region to average over
+        th_u = AAT.find_nearest(x2v, np.pi/2. + (3.*scale_height))
+        th_l = AAT.find_nearest(x2v, np.pi/2. - (3.*scale_height))
 
         temp = press/density
         v3 = mom3/density
