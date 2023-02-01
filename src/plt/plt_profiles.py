@@ -75,12 +75,19 @@ def main(**kwargs):
             alpha[count] = np.load(alpha_file, mmap_mode='r')
             Rey[count] = np.load(Rey_file, mmap_mode='r')
             Max[count] = np.load(Max_file, mmap_mode='r')
+    if args.instant:
+        ylabels = [r'$\langle \rho \rangle^*$', r'$\langle v_r \rangle^*$', r'$\langle \frac{P}{\rho c^2} \rangle^*$']
+        if args.rot:
+            ylabels.append(r'$\langle \frac{\Omega}{\Omega_K} \rangle^*$')
+        if args.alpha:
+            ylabels.append(r'$\langle \alpha \rangle^*$')
+    else:
+        ylabels = [r'$\langle\langle \rho \rangle\rangle^*$', r'$\langle\langle v_r \rangle\rangle^*$', r'$\langle\langle \frac{P}{\rho c^2} \rangle\rangle^*$']
+        if args.rot:
+            ylabels.append(r'$\langle\langle \frac{\Omega}{\Omega_K} \rangle\rangle^*$')
+        if args.alpha:
+            ylabels.append(r'$\langle\langle \alpha \rangle\rangle^*$')
 
-    ylabels = [r'$\langle \rho \rangle^*$', r'$\langle v_r \rangle^*$', r'$\langle \frac{P}{\rho c^2} \rangle^*$']
-    if args.rot:
-        ylabels.append(r'$\langle \frac{\Omega}{\Omega_K} \rangle^*$')
-    if args.alpha:
-        ylabels.append(r'$\langle \alpha \rangle^*$')
     lw = 1.5
     n_plots = len(ylabels)
 
