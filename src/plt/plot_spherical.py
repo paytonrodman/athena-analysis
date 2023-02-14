@@ -51,11 +51,15 @@ def main(**kwargs):
         cbar_title = r'$\rho$'
     elif kwargs['quantity']=='beta':
         cbar_title = r'$\beta$'
+    elif kwargs['quantity']=='alfven':
+        cbar_title = r'$v_A$'
 
     # Determine if vector quantities should be read
     if kwargs['quantity']=='beta':
         quantities = ['dens','Bcc1','Bcc2','Bcc3'] # quantities needed to calculate beta
         prim_quantities = ['press']
+    elif kwargs['quantity']=='alfven':
+        quantities = ['dens','Bcc1','Bcc2','Bcc3'] # quantities needed to calculate the Alfven speed
     else:
         quantities = [kwargs['quantity']]
 
@@ -102,9 +106,9 @@ def main(**kwargs):
         elif prob_id=='high_beta':
             id_f = 'b5'
         elif prob_id=='super_res':
-            id_f = 'b5_s'
+            id_f = 'b5_hi'
         elif prob_id=='b200_super_res':
-            id_f = 'b200_s'
+            id_f = 'b200_hi'
         sim_IDs.append(id_f)
 
         data = athena_read.athdf(f, quantities=quantities)
@@ -127,7 +131,8 @@ def main(**kwargs):
         nx1 = len(r)
         nx2 = len(theta)
         nx3 = len(phi)
-        titles.append("{:.2e}".format(int(data['Time'])))
+        titles.append(int(data['Time']))
+        #titles.append("{:.2e}".format(int(data['Time'])))
 
         # Set radial extent
         if kwargs['r_max'] is not None:
@@ -184,9 +189,12 @@ def main(**kwargs):
         # Perform slicing/averaging of scalar data
         if kwargs['quantity']=='beta':
             # beta = P_g / P_b
-            # P_b = B^2 / 2mu0
+            # P_b = B^2 / 2mu_0
             P_b = (data['Bcc1']**2. + data['Bcc3']**2. + data['Bcc3']**2.) / 2.
             scalar_q = data_p['press']/P_b
+        elif kwargs['quantity']=='alfven':
+            # v_A = B / sqrt(rho)
+            scalar_q = np.sqrt(data['Bcc1']**2. + data['Bcc3']**2. + data['Bcc3']**2.)/np.sqrt(data['dens'])
         else:
             scalar_q = data[kwargs['quantity']]
         if kwargs['midplane']:
@@ -384,7 +392,12 @@ def main(**kwargs):
                 ax.set_xlabel(r'$x$')
                 ax.set_ylabel(r'$z$')
         if kwargs['time']:
-            ax.set_title(titles[i])
+            ax.set_title("Time: {:.2e}".format(titles[i]))
+        if kwargs['minmax']:
+            min_all = np.min(scalar_q)
+            max_all = np.max(scalar_q)
+            txt = 'Min: %f Max: %f' % (min_all,max_all)
+            plt.figtext(0.5, 0.01, txt, wrap=True, horizontalalignment='center', fontsize=12)
         ax.set_aspect('equal')
 
         if n>1:
@@ -458,6 +471,9 @@ if __name__ == '__main__':
                         default=None,
                         help=('data value to correspond to colormap maximum; use '
                               '--vmax=<val> if <val> has negative sign'))
+    parser.add_argument('--minmax',
+                        action='store_true',
+                        help=('flag indicating global max and min should be plotted'))
     parser.add_argument('--logc',
                         action='store_true',
                         help='flag indicating data should be colormapped logarithmically')
