@@ -16,6 +16,7 @@ sys.path.insert(0, '/home/per29/rds/rds-accretion-zyNhkonJSR8/athena-analysis/de
 #sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies')
 
 # Other Python modules
+import pandas as pd
 import numpy as np
 from mpi4py import MPI
 import csv
@@ -34,6 +35,7 @@ def main(**kwargs):
 
     file_times = AAT.add_time_to_list(args.update, args.output)
     local_times = AAT.distribute_files_to_cores(file_times, size, rank)
+    print(local_times)
 
     data_input = athena_read.athinput(args.input)
     x1max = data_input['mesh']['x1max']
@@ -62,6 +64,8 @@ def main(**kwargs):
             with open(args.output, 'w', newline='') as f:
                 writer = csv.writer(f, delimiter='\t')
                 writer.writerow(['file_time', 'sim_time', 'orbit_time', 'theta_B', 'Q_theta', 'Q_phi'])
+
+    comm.barrier()
     for t in local_times:
         str_t = str(int(t)).zfill(5)
         gamma = 5./3.

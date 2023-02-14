@@ -64,6 +64,8 @@ def main(**kwargs):
             with open(args.output, 'w', newline='') as f:
                 writer = csv.writer(f, delimiter='\t')
                 writer.writerow(['file_time', 'sim_time', 'orbit_time', 'plasma_beta'])
+
+    comm.barrier()
     # cores loop through their assigned list of times
     for t in local_times:
         str_t = str(int(t)).zfill(5)

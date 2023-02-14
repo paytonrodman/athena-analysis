@@ -60,21 +60,15 @@ def main(**kwargs):
     scale_height_list = comm.bcast(scale_height_list, root=0)
     scale_time_list = comm.bcast(scale_time_list, root=0)
 
-    #data_input = athena_read.athinput(args.input)
-    #scale_height = data_input['problem']['h_r']
-
-    #data_init = athena_read.athdf(args.problem_id + '.cons.00000.athdf', quantities=['x2v'])
-    #x2v = data_init['x2v']
-    #th_u = AAT.find_nearest(x2v, np.pi/2. + (2.*scale_height))
-    #th_l = AAT.find_nearest(x2v, np.pi/2. - (2.*scale_height))
-
     if rank==0:
         if not args.update:
             with open(args.output1, 'w', newline='') as f:
                 writer = csv.writer(f, delimiter='\t')
                 writer.writerow(['sim_time', 'orbit_time', 'dens', 'mom1', 'mom2', 'mom3',
-                                    'temp', 'Bcc1', 'Bcc2', 'Bcc3', 'rotational_speed',
+                                    'temp', 'Bcc1', 'Bcc2', 'Bcc3',
                                     'reynolds_stress', 'maxwell_stress', 'alpha_SS'])
+
+    comm.barrier()
     for t in local_times:
         str_t = str(int(t)).zfill(5)
         data_prim = athena_read.athdf(args.problem_id + '.prim.' + str_t + '.athdf',
@@ -109,7 +103,7 @@ def main(**kwargs):
 
         # calculate rotational velocity
         r,_,_ = np.meshgrid(x3v,x2v,x1v, sparse=False, indexing='ij')
-        orbital_rotation = v3**2./r**2.
+        #orbital_rotation = v3**2./r**2.
         Omega_kep = np.sqrt(GM/(x1v**3.))
         Omega_kep = np.broadcast_to(Omega_kep, (np.shape(density)[0], np.shape(density)[1], np.shape(density)[2]))
         dmom3 = mom3 - r*Omega_kep
@@ -136,10 +130,10 @@ def main(**kwargs):
         #Omega_kep = np.average(Omega_kep, axis=(0,1))
 
         # weight rotation by density
-        numWeight_orb = np.sum(orbital_rotation*density) #value * weight
-        sum_orb       = np.sum(density) # weight
-        weighted_rotation = numWeight_orb/sum_orb
-        orbit_v_ratio = weighted_rotation/Omega_kep
+        #numWeight_orb = np.sum(orbital_rotation*density) #value * weight
+        #sum_orb       = np.sum(density) # weight
+        #weighted_rotation = numWeight_orb/sum_orb
+        #orbit_v_ratio = weighted_rotation/Omega_kep
 
         # average over theta and phi
         dens_profile = np.average(dens, axis=(0,1))
@@ -150,7 +144,7 @@ def main(**kwargs):
         Bcc1_profile = np.average(Bcc1, axis=(0,1))
         Bcc2_profile = np.average(Bcc2, axis=(0,1))
         Bcc3_profile = np.average(Bcc3, axis=(0,1))
-        orbit_v_ratio_profile = np.average(orbit_v_ratio, axis=(0,1))
+        #orbit_v_ratio_profile = np.average(orbit_v_ratio, axis=(0,1))
         stress_Rey_profile = np.average(stress_Rey, axis=(0,1))
         stress_Max_profile = np.average(stress_Max, axis=(0,1))
         alpha_SS_profile = np.average(alpha_SS, axis=(0,1))
@@ -161,7 +155,7 @@ def main(**kwargs):
         with open(args.output1, 'a', newline='') as f:
             writer = csv.writer(f, delimiter='\t')
             writer.writerow([sim_t,orbit_t,dens_profile,mom1_profile,mom2_profile,mom3_profile,
-                                temp_profile,Bcc1_profile,Bcc2_profile,Bcc3_profile,orbit_v_ratio_profile,
+                                temp_profile,Bcc1_profile,Bcc2_profile,Bcc3_profile,
                                 stress_Rey_profile, stress_Max_profile, alpha_SS_profile])
 
     # now take average over time
@@ -238,8 +232,6 @@ if __name__ == '__main__':
                         help='root name for data files, e.g. high_res')
     parser.add_argument('data',
                         help='location of data folder, including path')
-    parser.add_argument('input',
-                        help='location of athinput file, including path')
     parser.add_argument('scale',
                         help='location of scale height file, possibly including path')
     parser.add_argument('output1',

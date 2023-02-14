@@ -15,6 +15,7 @@ sys.path.insert(0, '/home/per29/rds/rds-accretion-zyNhkonJSR8/athena-analysis/de
 
 # Other Python modules
 import numpy as np
+import pandas as pd
 from mpi4py import MPI
 import csv
 
@@ -53,6 +54,7 @@ def main(**kwargs):
                                     'mag_flux_u_abs', 'mag_flux_l_abs',
                                     'mag_flux_u_disk', 'mag_flux_l_disk',
                                     'mag_flux_u_abs_disk', 'mag_flux_l_abs_disk'])
+    comm.barrier()
     for t in local_times:
         str_t = str(int(t)).zfill(5)
         data_cons = athena_read.athdf(args.problem_id + '.cons.' + str_t + '.athdf',
@@ -128,8 +130,6 @@ if __name__ == '__main__':
                         help='root name for data files, e.g. high_res')
     parser.add_argument('data',
                         help='location of data folder, possibly including path')
-    parser.add_argument('input',
-                        help='location of athinput file, possibly including path')
     parser.add_argument('scale',
                         help='location of scale height file, possibly including path')
     parser.add_argument('output',
