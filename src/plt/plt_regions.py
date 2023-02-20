@@ -177,7 +177,7 @@ def main(**kwargs):
     # Make plot
     plt.figure()
     im = plt.pcolormesh(x_grid, y_grid, vals, cmap=cmap, norm=norm)
-    for index,val in enumerate(upper_boundaries):
+    for index,_ in enumerate(upper_boundaries):
         y_limit = x1max*np.tan(upper_boundaries[index])
         plt.plot([-x1max,x1max], [-y_limit,y_limit],'white',linewidth=1)
         y_limit = x1max*np.tan(lower_boundaries[index])
