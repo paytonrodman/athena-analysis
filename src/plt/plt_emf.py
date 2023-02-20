@@ -140,7 +140,7 @@ def main(**kwargs):
         sim_t = data_cons['Time']
         orbit_t = sim_t/T_period
 
-        for i,val in enumerate(emf_all):
+        for i,_ in enumerate(emf_all):
             emf = emf_all[i]
             Bcc = Bcc_all[i]
             if i==0:
