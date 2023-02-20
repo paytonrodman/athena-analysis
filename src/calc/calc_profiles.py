@@ -12,8 +12,8 @@
 import argparse
 import sys
 import os
-sys.path.insert(0, '/home/per29/rds/rds-accretion-zyNhkonJSR8/athena-analysis/dependencies')
-#sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies')
+#sys.path.insert(0, '/home/per29/rds/rds-accretion-zyNhkonJSR8/athena-analysis/dependencies')
+sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies')
 
 # Other Python modules
 import csv
@@ -46,8 +46,13 @@ def main(**kwargs):
             sim_t = data_check['Time']
             if sim_t >= t_min:
                 file_times_restricted.append(f)
+    else:
+        file_times_restricted = None
+    file_times_restricted = comm.bcast(file_times_restricted, root=0)
 
+    file_times_restricted = [0,2500,5000,7500]
     local_times = AAT.distribute_files_to_cores(file_times_restricted, size, rank)
+
 
     # retrieve lists of scale height with time
     if rank==0:
@@ -59,17 +64,17 @@ def main(**kwargs):
         scale_height_list = None
     scale_height_list = comm.bcast(scale_height_list, root=0)
     scale_time_list = comm.bcast(scale_time_list, root=0)
-
-    if rank==0:
-        if not args.update:
-            with open(args.output1, 'w', newline='') as f:
-                writer = csv.writer(f, delimiter='\t')
-                writer.writerow(['sim_time', 'orbit_time', 'dens', 'mom1', 'mom2', 'mom3',
-                                    'temp', 'Bcc1', 'Bcc2', 'Bcc3',
-                                    'reynolds_stress', 'maxwell_stress', 'alpha_SS'])
-
     comm.barrier()
-    for t in local_times:
+
+    #dens_profile = []
+    #mom1_profile, mom2_profile, mom3_profile = [], [], []
+    #temp_profile = []
+    #Bcc1_profile, Bcc2_profile, Bcc3_profile = [], [], []
+    #stress_Rey_profile, stress_Max_profile = [], []
+    #alpha_SS_profile = []
+
+    #dens_av_local = []
+    for num_elem,t in enumerate(local_times):
         str_t = str(int(t)).zfill(5)
         data_prim = athena_read.athdf(args.problem_id + '.prim.' + str_t + '.athdf',
                                         quantities=['press'])
@@ -97,16 +102,15 @@ def main(**kwargs):
         v3 = mom3/density
         GM = 1.
 
-        # define bounds of region to average over
-        th_u = AAT.find_nearest(x2v, np.pi/2. + (2.*scale_height))
-        th_l = AAT.find_nearest(x2v, np.pi/2. - (2.*scale_height))
-
-        # calculate rotational velocity
+        # calculate rotational velocity for Reynolds stress
         r,_,_ = np.meshgrid(x3v,x2v,x1v, sparse=False, indexing='ij')
-        #orbital_rotation = v3**2./r**2.
         Omega_kep = np.sqrt(GM/(x1v**3.))
         Omega_kep = np.broadcast_to(Omega_kep, (np.shape(density)[0], np.shape(density)[1], np.shape(density)[2]))
         dmom3 = mom3 - r*Omega_kep
+
+        # define bounds of region to average over
+        th_u = AAT.find_nearest(x2v, np.pi/2. + (3.*scale_height))
+        th_l = AAT.find_nearest(x2v, np.pi/2. - (3.*scale_height))
 
         # restrict range (arrays ordered by [phi,theta,r]!)
         dens = density[:, th_l:th_u, :]
@@ -124,16 +128,7 @@ def main(**kwargs):
         stress_Rey = dens*mom1*dmom3
         stress_Max = -Bcc1*Bcc3
         T_rphi = stress_Rey + stress_Max
-        alpha_SS = T_rphi/press
-
-        #orbital_rotation = np.average(orbital_rotation, axis=(0,1))
-        #Omega_kep = np.average(Omega_kep, axis=(0,1))
-
-        # weight rotation by density
-        #numWeight_orb = np.sum(orbital_rotation*density) #value * weight
-        #sum_orb       = np.sum(density) # weight
-        #weighted_rotation = numWeight_orb/sum_orb
-        #orbit_v_ratio = weighted_rotation/Omega_kep
+        alpha = T_rphi/press
 
         # average over theta and phi
         dens_profile = np.average(dens, axis=(0,1))
@@ -144,74 +139,64 @@ def main(**kwargs):
         Bcc1_profile = np.average(Bcc1, axis=(0,1))
         Bcc2_profile = np.average(Bcc2, axis=(0,1))
         Bcc3_profile = np.average(Bcc3, axis=(0,1))
-        #orbit_v_ratio_profile = np.average(orbit_v_ratio, axis=(0,1))
-        stress_Rey_profile = np.average(stress_Rey, axis=(0,1))
-        stress_Max_profile = np.average(stress_Max, axis=(0,1))
-        alpha_SS_profile = np.average(alpha_SS, axis=(0,1))
+        alpha_profile = np.average(alpha, axis=(0,1))
 
-        sim_t = data_cons['Time']
-        orbit_t = AAT.calculate_orbit_time(sim_t)
+        if num_elem==0:
+            dens_av_local = [dens_profile]
+            mom1_av_local = [mom1_profile]
+            mom2_av_local = [mom2_profile]
+            mom3_av_local = [mom3_profile]
+            temp_av_local = [temp_profile]
+            Bcc1_av_local = [Bcc1_profile]
+            Bcc2_av_local = [Bcc2_profile]
+            Bcc3_av_local = [Bcc3_profile]
+            alpha_av_local = [alpha_profile]
+        else:
+            dens_av_local = addToAverage(dens_av_local, num_elem, dens_profile)
+            mom1_av_local = addToAverage(mom1_av_local, num_elem, mom1_profile)
+            mom2_av_local = addToAverage(mom2_av_local, num_elem, mom2_profile)
+            mom3_av_local = addToAverage(mom3_av_local, num_elem, mom3_profile)
+            temp_av_local = addToAverage(temp_av_local, num_elem, temp_profile)
+            Bcc1_av_local = addToAverage(Bcc1_av_local, num_elem, Bcc1_profile)
+            Bcc2_av_local = addToAverage(Bcc2_av_local, num_elem, Bcc2_profile)
+            Bcc3_av_local = addToAverage(Bcc3_av_local, num_elem, Bcc3_profile)
+            alpha_av_local = addToAverage(alpha_av_local, num_elem, alpha_profile)
 
-        with open(args.output1, 'a', newline='') as f:
-            writer = csv.writer(f, delimiter='\t')
-            writer.writerow([sim_t,orbit_t,dens_profile,mom1_profile,mom2_profile,mom3_profile,
-                                temp_profile,Bcc1_profile,Bcc2_profile,Bcc3_profile,
-                                stress_Rey_profile, stress_Max_profile, alpha_SS_profile])
 
-    # now take average over time
-    comm.barrier()
+    N = num_elem+1
+
+    weighted_dens = dens_av_local*N
+    weighted_mom1 = mom1_av_local*N
+    weighted_mom2 = mom2_av_local*N
+    weighted_mom3 = mom3_av_local*N
+    weighted_temp = temp_av_local*N
+    weighted_Bcc1 = Bcc1_av_local*N
+    weighted_Bcc2 = Bcc2_av_local*N
+    weighted_Bcc3 = Bcc3_av_local*N
+    weighted_alpha = alpha_av_local*N
+
+    all_weighted_dens = comm.gather(weighted_dens, root=0)
+    all_weighted_mom1 = comm.gather(weighted_mom1, root=0)
+    all_weighted_mom2 = comm.gather(weighted_mom2, root=0)
+    all_weighted_mom3 = comm.gather(weighted_mom3, root=0)
+    all_weighted_temp = comm.gather(weighted_temp, root=0)
+    all_weighted_Bcc1 = comm.gather(weighted_Bcc1, root=0)
+    all_weighted_Bcc2 = comm.gather(weighted_Bcc2, root=0)
+    all_weighted_Bcc3 = comm.gather(weighted_Bcc3, root=0)
+    all_weighted_alpha = comm.gather(weighted_alpha, root=0)
+
+    all_elem = comm.gather(N, root=0)
+
     if rank == 0:
-        df = pd.read_csv(args.output1, delimiter='\t', usecols=['sim_time', 'dens', 'mom1', 'mom2', 'mom3',
-                                                                'temp', 'Bcc1', 'Bcc2', 'Bcc3', 'rotational_speed',
-                                                                'reynolds_stress', 'maxwell_stress', 'alpha_SS'])
-        time = df['sim_time'].to_list()
-        d = df['dens'].to_list()
-        m1 = df['mom1'].to_list()
-        m2 = df['mom2'].to_list()
-        m3 = df['mom3'].to_list()
-        t = df['temp'].to_list()
-        b1 = df['Bcc1'].to_list()
-        b2 = df['Bcc2'].to_list()
-        b3 = df['Bcc3'].to_list()
-        r = df['rotational_speed'].to_list()
-        alp = df['alpha_SS'].to_list()
-
-        len_r = len(np.fromstring(d[0].strip('[]'), sep=' '))
-
-        d_arr = np.empty([len(time), len_r])
-        m1_arr = np.empty([len(time), len_r])
-        m2_arr = np.empty([len(time), len_r])
-        m3_arr = np.empty([len(time), len_r])
-        t_arr = np.empty([len(time), len_r])
-        b1_arr = np.empty([len(time), len_r])
-        b2_arr = np.empty([len(time), len_r])
-        b3_arr = np.empty([len(time), len_r])
-        r_arr = np.empty([len(time), len_r])
-        alp_arr = np.empty([len(time), len_r])
-
-        for ii in range(len(time)):
-            d_arr[ii] = np.fromstring(d[ii].strip('[]'), sep=' ')
-            m1_arr[ii] = np.fromstring(m1[ii].strip('[]'), sep=' ')
-            m2_arr[ii] = np.fromstring(m2[ii].strip('[]'), sep=' ')
-            m3_arr[ii] = np.fromstring(m3[ii].strip('[]'), sep=' ')
-            t_arr[ii] = np.fromstring(t[ii].strip('[]'), sep=' ')
-            b1_arr[ii] = np.fromstring(b1[ii].strip('[]'), sep=' ')
-            b2_arr[ii] = np.fromstring(b2[ii].strip('[]'), sep=' ')
-            b3_arr[ii] = np.fromstring(b3[ii].strip('[]'), sep=' ')
-            r_arr[ii] = np.fromstring(r[ii].strip('[]'), sep=' ')
-            alp_arr[ii] = np.fromstring(alp[ii].strip('[]'), sep=' ')
-
-        # average over time
-        dens_av = np.mean(d_arr, axis=0)
-        mom1_av = np.mean(m1_arr, axis=0)
-        mom2_av = np.mean(m2_arr, axis=0)
-        mom3_av = np.mean(m3_arr, axis=0)
-        temp_av = np.mean(t_arr, axis=0)
-        Bcc1_av = np.mean(b1_arr, axis=0)
-        Bcc2_av = np.mean(b2_arr, axis=0)
-        Bcc3_av = np.mean(b3_arr, axis=0)
-        rot_av = np.mean(r_arr, axis=0)
-        alp_av = np.mean(alp_arr, axis=0)
+        dens_av = np.sum(all_weighted_dens, axis=0)/np.sum(all_elem, axis=0)
+        mom1_av = np.sum(all_weighted_mom1, axis=0)/np.sum(all_elem, axis=0)
+        mom2_av = np.sum(all_weighted_mom2, axis=0)/np.sum(all_elem, axis=0)
+        mom3_av = np.sum(all_weighted_mom3, axis=0)/np.sum(all_elem, axis=0)
+        temp_av = np.sum(all_weighted_temp, axis=0)/np.sum(all_elem, axis=0)
+        Bcc1_av = np.sum(all_weighted_Bcc1, axis=0)/np.sum(all_elem, axis=0)
+        Bcc2_av = np.sum(all_weighted_Bcc2, axis=0)/np.sum(all_elem, axis=0)
+        Bcc3_av = np.sum(all_weighted_Bcc3, axis=0)/np.sum(all_elem, axis=0)
+        alpha_av = np.sum(all_weighted_alpha, axis=0)/np.sum(all_elem, axis=0)
 
         np.save(args.output + 'dens_profile.npy', dens_av)
         np.save(args.output + 'mom1_profile.npy', mom1_av)
@@ -221,8 +206,11 @@ def main(**kwargs):
         np.save(args.output + 'Bcc1_profile.npy', Bcc1_av)
         np.save(args.output + 'Bcc2_profile.npy', Bcc2_av)
         np.save(args.output + 'Bcc3_profile.npy', Bcc3_av)
-        np.save(args.output + 'rot_profile.npy', rot_av)
-        np.save(args.output + 'alpha_profile.npy', alp_av)
+        np.save(args.output + 'alpha_profile.npy', alpha_av)
+
+
+def addToAverage(average, size, value):
+    return (size * average + value) / (size + 1);
 
 
 # Execute main function
