@@ -16,7 +16,6 @@ import os
 sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies')
 
 # Other Python modules
-import csv
 import numpy as np
 from mpi4py import MPI
 import pandas as pd
