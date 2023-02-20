@@ -32,7 +32,7 @@ def main(**kwargs):
 
     os.chdir(args.data)
 
-    file_times = AAT.add_time_to_list(args.update, args.output1)
+    file_times = AAT.add_time_to_list(False, None)
     file_times.sort()
     _,_,t_min = AAT.problem_dictionary(args.problem_id, False) # get minimum time
     file_times_restricted = []
@@ -49,9 +49,7 @@ def main(**kwargs):
         file_times_restricted = None
     file_times_restricted = comm.bcast(file_times_restricted, root=0)
 
-    file_times_restricted = [0,2500,5000,7500]
     local_times = AAT.distribute_files_to_cores(file_times_restricted, size, rank)
-
 
     # retrieve lists of scale height with time
     if rank==0:
@@ -65,14 +63,6 @@ def main(**kwargs):
     scale_time_list = comm.bcast(scale_time_list, root=0)
     comm.barrier()
 
-    #dens_profile = []
-    #mom1_profile, mom2_profile, mom3_profile = [], [], []
-    #temp_profile = []
-    #Bcc1_profile, Bcc2_profile, Bcc3_profile = [], [], []
-    #stress_Rey_profile, stress_Max_profile = [], []
-    #alpha_SS_profile = []
-
-    #dens_av_local = []
     for num_elem,t in enumerate(local_times):
         str_t = str(int(t)).zfill(5)
         data_prim = athena_read.athdf(args.problem_id + '.prim.' + str_t + '.athdf',
@@ -221,13 +211,8 @@ if __name__ == '__main__':
                         help='location of data folder, including path')
     parser.add_argument('scale',
                         help='location of scale height file, possibly including path')
-    parser.add_argument('output1',
-                        help='output file for intermediate results, including path')
     parser.add_argument('output',
                         help='location of output folder, including path')
-    parser.add_argument('-u', '--update',
-                        action='store_true',
-                        help='append new results to an existing data file')
     args = parser.parse_args()
 
     main(**vars(args))
