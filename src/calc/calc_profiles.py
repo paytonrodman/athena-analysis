@@ -12,8 +12,8 @@
 import argparse
 import sys
 import os
-#sys.path.insert(0, '/home/per29/rds/rds-accretion-zyNhkonJSR8/athena-analysis/dependencies')
-sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies')
+sys.path.insert(0, '/home/per29/rds/rds-accretion-zyNhkonJSR8/athena-analysis/dependencies')
+#sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies')
 
 # Other Python modules
 import numpy as np
@@ -88,14 +88,13 @@ def main(**kwargs):
         Bcc3 = data_cons['Bcc3']
         press = data_prim['press']
         temp = press/density
-        v3 = mom3/density
         GM = 1.
 
         # calculate rotational velocity for Reynolds stress
         r,_,_ = np.meshgrid(x3v,x2v,x1v, sparse=False, indexing='ij')
         Omega_kep = np.sqrt(GM/(x1v**3.))
         Omega_kep = np.broadcast_to(Omega_kep, (np.shape(density)[0], np.shape(density)[1], np.shape(density)[2]))
-        dmom3 = mom3 - r*Omega_kep
+        dmom3 = mom3 - Omega_kep
 
         # define bounds of region to average over
         th_u = AAT.find_nearest(x2v, np.pi/2. + (3.*scale_height))
