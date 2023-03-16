@@ -12,8 +12,8 @@ import argparse
 import sys
 import os
 #import gc
-sys.path.insert(0, '/home/per29/rds/rds-accretion-zyNhkonJSR8/athena-analysis/dependencies')
-#sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies')
+#sys.path.insert(0, '/home/per29/rds/rds-accretion-zyNhkonJSR8/athena-analysis/dependencies')
+sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies')
 
 # Other Python modules
 import pandas as pd
@@ -35,7 +35,7 @@ def main(**kwargs):
 
     file_times = AAT.add_time_to_list(args.update, args.output)
     local_times = AAT.distribute_files_to_cores(file_times, size, rank)
-    print(local_times)
+    #print(local_times)
 
     data_input = athena_read.athinput(args.input)
     x1max = data_input['mesh']['x1max']
@@ -120,14 +120,6 @@ def main(**kwargs):
         Bcc3 = Bcc3[:, th_l:th_u, :r_u]
         press = press[:, th_l:th_u, :r_u]
 
-        #del dx1f, dx2f, dx3f
-        #del x2v, x3v
-        #del x1f, x2f, x3f
-        #gc.collect()
-
-        #del data_prim
-        #gc.collect()
-
         # calculate Keplerian orbital velocity
         Omega_kep = np.sqrt(GM/(x1v[:r_u]**3.))
         Omega_kep = np.broadcast_to(Omega_kep, (np.shape(dens)[0], np.shape(dens)[1], np.shape(dens)[2]))
@@ -138,9 +130,9 @@ def main(**kwargs):
 
         # quality factors in theta and phi
         w = dens + (gamma/(gamma - 1.))*press
-        B2 = Bcc1**2. + Bcc2**2. + Bcc3**2.
-        vA_theta = Bcc2/(np.sqrt(w+B2)) #Alfven velocity of theta component of B
-        vA_phi = Bcc3/(np.sqrt(w+B2)) #Alfven velocity of phi component of B
+        B2 = Bcc1*Bcc1 + Bcc2*Bcc2 + Bcc3*Bcc3
+        vA_theta = Bcc2/(np.sqrt(w+B2)) #Alfven velocity of B_theta
+        vA_phi = Bcc3/(np.sqrt(w+B2)) #Alfven velocity of B_phi
 
         lambda_MRI_theta = 2.*np.pi*np.sqrt(16./15.)*np.abs(vA_theta)/Omega_kep
         lambda_MRI_phi = 2.*np.pi*np.sqrt(16./15.)*np.abs(vA_phi)/Omega_kep
@@ -148,11 +140,8 @@ def main(**kwargs):
         Q_theta = lambda_MRI_theta/(r*dtheta)
         Q_phi = lambda_MRI_phi/(R*dphi)
 
-        Q_theta = np.array(Q_theta.flatten())
-        Q_phi = np.array(Q_phi.flatten())
-
-        Qt_av = np.mean(Q_theta)
-        Qp_av = np.mean(Q_phi)
+        Qt_av = np.average(Q_theta)
+        Qp_av = np.average(Q_phi)
 
         sim_t = data_cons['Time']
         orbit_t = AAT.calculate_orbit_time(sim_t)
@@ -161,12 +150,6 @@ def main(**kwargs):
             writer = csv.writer(f, delimiter='\t')
             row = [t,sim_t,orbit_t,tB_av,Qt_av,Qp_av]
             writer.writerow(row)
-        # cleanup
-        #del w, B2, vA_theta, vA_phi, lambda_MRI_theta, lambda_MRI_phi
-        #del R, r, phi, dphi, dtheta
-        #del Q_theta, Q_phi
-        #gc.collect()
-        #print('data written for time ', sim_t)
 
 
 # Execute main function
