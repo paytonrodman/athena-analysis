@@ -16,9 +16,13 @@ sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies'
 # Other Python modules
 import matplotlib
 import matplotlib.pyplot as plt
+from mpl_toolkits.axes_grid1.inset_locator import TransformedBbox, BboxPatch, BboxConnector
 import numpy as np
 import pandas as pd
 import re
+
+# Athena++ modules (require sys.path.insert above)
+import AAT
 
 def main(**kwargs):
     dens = []
@@ -40,9 +44,19 @@ def main(**kwargs):
 
     r_min = -290
     r_max = 290
-    t_min = 0
-    t_max = time[-1]
     N = 50
+
+    if args.early:
+        t_min = 0
+        t_max = 1.22e5
+    else:
+        t_min = 0
+        t_max = time[-1]
+
+    tmax_index = AAT.find_nearest(time, t_max)
+    t_max = time[tmax_index]
+    time = time[:tmax_index]
+    dens = dens[:tmax_index]
 
     zl, zr = np.split(dens, 2, axis=1)
     z_nan = np.nan*np.ones((np.size(time),N))
@@ -59,8 +73,15 @@ def main(**kwargs):
     # sub region of the original image
     x1, x2 = r_min, r_max
     if prob_id=='high_res':
-        y1, y2 = 2.5e5, 3.5e5
+        if args.early:
+            y1, y2 = 0.2e5, 0.6e5
+        else:
+            y1, y2 = 2.5e5, 3.5e5
+    elif prob_id=='high_beta':
+        y1, y2 = 0.2e5, 0.6e5
     elif prob_id=='b200_super_res':
+        y1, y2 = 0.2e5, 0.6e5
+    elif prob_id=='super_res':
         y1, y2 = 0.2e5, 0.6e5
 
     axins = fig.add_subplot(132)
@@ -122,9 +143,9 @@ if __name__ == '__main__':
                         type=str,
                         default=None,
                         help='name of plot to be created, including path')
-    parser.add_argument('--grid',
+    parser.add_argument('--early',
                         action='store_true',
-                        help='plot grid')
+                        help='plot at early time (up to 1.2e5)')
     args = parser.parse_args()
 
     main(**vars(args))
