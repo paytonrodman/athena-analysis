@@ -31,37 +31,43 @@ def main(**kwargs):
 
     t_lists = [[] for _ in range(n)]
     b_lists = [[] for _ in range(n)]
+    if args.orbits:
+        time_col = 'orbit_time'
+    else:
+        time_col = 'sim_time'
+
     for count,f in enumerate(args.file):
-        df = pd.read_csv(f, delimiter='\t', usecols=['sim_time', 'plasma_beta'])
-        t = df['sim_time'].to_list()
+        df = pd.read_csv(f, delimiter='\t', usecols=[time_col, 'plasma_beta'])
+        t = df[time_col].to_list()
         b = df['plasma_beta'].to_list()
-        t_lists[count] = [ti/1e5 for ti in t]
-        b_lists[count] = b
+        if args.orbits:
+            t_lists[count] = t
+        else:
+            t_lists[count] = [ti/1e5 for ti in t] # convert time to units of 10^5 GM/c3
+        if args.inverse:
+            b_lists[count] = [1./bi for bi in b]
+        else:
+            b_lists[count] = b
 
     for ii in range(n):
         t_lists[ii], b_lists[ii] = zip(*sorted(zip(t_lists[ii], b_lists[ii])))
 
     lw = 1.5
-    x_label = r'time [$10^5~GM/c^3$]'
+    if args.orbits:
+        x_label = r'time [ISCO orbits]'
+    else:
+        x_label = r'time [$10^5~GM/c^3$]'
     y_label = r'$\langle\beta\rangle$'
 
     _, ax1 = plt.subplots(nrows=1, ncols=1, constrained_layout=True, sharex=True)
     for ii in range(n):
-        if args.logx:
-            ax1.semilogx(t_lists[ii], b_lists[ii], linewidth=lw, color=colors[ii], label=labels[ii])
-        elif args.logy:
+        if args.logy:
             ax1.semilogy(t_lists[ii], b_lists[ii], linewidth=lw, color=colors[ii], label=labels[ii])
-            #ax1.ticklabel_format(axis="x", style="sci", scilimits=(0,0), useMathText=True)
         else:
             ax1.plot(t_lists[ii], b_lists[ii], linewidth=lw, color=colors[ii], label=labels[ii])
-            #ax1.ticklabel_format(axis="x", style="sci", scilimits=(0,0), useMathText=True)
     ax1.set_xlabel(x_label)#, x=0.5, y=-0.03)
     ax1.set_ylabel(y_label)
 
-    if args.grid:
-        ax1.grid(visible=True, which='major', color='#666666', linestyle='-', alpha=0.3)
-        ax1.minorticks_on()
-        ax1.grid(visible=True, which='minor', color='#999999', linestyle='-', alpha=0.1)
     leg = ax1.legend(loc='best')
     for line in leg.get_lines():
         line.set_linewidth(4.0)
@@ -81,15 +87,15 @@ if __name__ == '__main__':
                         type=str,
                         default=None,
                         help='name of plot to be created, including path')
-    parser.add_argument('--logx',
-                        action='store_true',
-                        help='plot logx version')
     parser.add_argument('--logy',
                         action='store_true',
                         help='plot logy version')
-    parser.add_argument('--grid',
+    parser.add_argument('--inverse',
                         action='store_true',
-                        help='plot grid')
+                        help='plot inverse, 1/beta')
+    parser.add_argument('--orbits',
+                        action='store_true',
+                        help='plot against number of ISCO orbits')
     parser.add_argument('--pres',
                         action='store_true',
                         help='make presentation-quality image')

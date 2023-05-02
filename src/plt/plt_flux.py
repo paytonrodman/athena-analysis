@@ -38,6 +38,11 @@ def main(**kwargs):
     mfl_lists = [[] for _ in range(n)]
     mfu_abs_lists = [[] for _ in range(n)]
     mfl_abs_lists = [[] for _ in range(n)]
+    if args.orbits:
+        time_col = 'orbit_time'
+    else:
+        time_col = 'sim_time'
+
     for count,f in enumerate(args.file):
         filename = f.name
         filename = filename.replace("flux", "mass")
@@ -58,7 +63,7 @@ def main(**kwargs):
         scale = np.sqrt(4*np.pi)*rawtoscaled
 
         df = pd.read_csv(f, delimiter='\t')
-        t = df['sim_time'].to_list()
+        t = df[time_col].to_list()
         if args.disk:
             mfu = df['mag_flux_u_disk'].to_list()
             mfl = df['mag_flux_l_disk'].to_list()
@@ -69,8 +74,10 @@ def main(**kwargs):
             mfl = df['mag_flux_l'].to_list()
             mfu_a = df['mag_flux_u_abs'].to_list()
             mfl_a = df['mag_flux_l_abs'].to_list()
-        t_lists[count] = [ti/1.e5 for ti in t]
-        #t_lists[count] = [ti for ti in t]
+        if args.orbits:
+            t_lists[count] = t
+        else:
+            t_lists[count] = [ti/1e5 for ti in t] # convert time to units of 10^5 GM/c3
         mfu_lists[count] = [x*scale for x in mfu]
         mfl_lists[count] = [x*scale for x in mfl]
         mfu_abs_lists[count] = [x*scale for x in mfu_a]
@@ -99,7 +106,10 @@ def main(**kwargs):
     lw=1.5
     fig, axs = plt.subplots(nrows=2, ncols=1, sharex=True, figsize=(8,4))
     fig.subplots_adjust(hspace=0.1)
-    x_label = r'time [$10^5~GM/c^3$]'
+    if args.orbits:
+        x_label = r'time [ISCO orbits]'
+    else:
+        x_label = r'time [$10^5~GM/c^3$]'
     y1_label = r'$\Phi / \sqrt{\langle\langle\dot{M}\rangle\rangle r_g c^2}$'
     y2_label = r'$\Phi /|\Phi|$'
     for i in range(n):
@@ -115,11 +125,6 @@ def main(**kwargs):
     for ax in axs:
         ax.set_xlim(left=0)
         ax.yaxis.set_major_formatter(FormatStrFormatter('%.1f'))
-        ax.ticklabel_format(axis="x", style="sci", scilimits=(0,0))
-        if args.grid:
-            ax.grid(visible=True, which='major', color='#666666', linestyle='-', alpha=0.3)
-            ax.minorticks_on()
-            ax.grid(visible=True, which='minor', color='#999999', linestyle='-', alpha=0.1)
 
     leg = axs[0].legend(loc='best')
     for line in leg.get_lines():
@@ -141,12 +146,12 @@ if __name__ == '__main__':
                         type=str,
                         default=None,
                         help='name of plot to be created, including path')
-    parser.add_argument('--grid',
-                        action='store_true',
-                        help='plot grid')
     parser.add_argument('--disk',
                         action='store_true',
                         help='use disk flux only')
+    parser.add_argument('--orbits',
+                        action='store_true',
+                        help='plot against number of ISCO orbits')
     parser.add_argument('--pres',
                         action='store_true',
                         help='make presentation-quality image')

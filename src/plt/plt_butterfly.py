@@ -46,6 +46,11 @@ def main(**kwargs):
     b_lists = [[] for _ in range(n)]
     t_redundant = [[] for _ in range(n)]
     s_lists = [[] for _ in range(n)]
+    if args.orbits:
+        time_col = 'orbit_time'
+    else:
+        time_col = 'sim_time'
+
     for count,f in enumerate(args.file):
         slash_list = [m.start() for m in re.finditer('/', f.name)]
         prob_id = f.name[slash_list[-2]+1:slash_list[-1]]
@@ -57,20 +62,26 @@ def main(**kwargs):
         theta_N.append(int(8*data_input['mesh']['nx2']))
 
         # read butterfly data
-        df = pd.read_csv(f, delimiter='\t', usecols=['sim_time', col_b])
-        t = df['sim_time'].to_list()
+        df = pd.read_csv(f, delimiter='\t', usecols=[time_col, col_b])
+        t = df[time_col].to_list()
         b = df[col_b].to_list()
-        t_lists[count] = [ti/1e5 for ti in t] # convert time to units of 10^5 GM/c3
+        if args.orbits:
+            t_lists[count] = t
+        else:
+            t_lists[count] = [ti/1e5 for ti in t] # convert time to units of 10^5 GM/c3
         for bi in b:
             bi = np.fromstring(bi.strip("[]"), sep=', ')
             b_lists[count].append(bi)
 
         # read scale height data
         scale_filename = f.name.replace("butterfly", "scale")
-        df = pd.read_csv(scale_filename, delimiter='\t', usecols=['sim_time', 'scale_height'])
-        t = df['sim_time'].to_list()
+        df = pd.read_csv(scale_filename, delimiter='\t', usecols=[time_col, 'scale_height'])
+        t = df[time_col].to_list()
         s = df['scale_height'].to_list()
-        t_redundant[count] = [ti/1e5 for ti in t] # convert time to units of 10^5 GM/c3
+        if args.orbits:
+            t_redundant[count] = t
+        else:
+            t_redundant[count] = [ti/1e5 for ti in t] # convert time to units of 10^5 GM/c3
         s_lists[count] = s
 
     # arrange in time order
@@ -93,7 +104,10 @@ def main(**kwargs):
         ylab = r'$\theta - \pi/2$'
 
     fig, axs = plt.subplots(nrows=n, ncols=1, constrained_layout=True, figsize=(w,n*2))
-    x_label = r'time [$10^5~GM/c^3$]'
+    if args.orbits:
+        x_label = r'time [ISCO orbits]'
+    else:
+        x_label = r'time [$10^5~GM/c^3$]'
     for idx in range(n):
         X = t_lists[idx]
         Y = np.linspace(theta_min,theta_max,theta_N[idx])
@@ -116,7 +130,6 @@ def main(**kwargs):
         at = AnchoredText(labels[idx], prop=dict(size=15), frameon=True, loc='upper left')
         at.patch.set_boxstyle("round,pad=0.,rounding_size=0.2")
         ax.add_artist(at)
-        ax.ticklabel_format(axis="x", style="sci", scilimits=(0,0), useMathText=True)
 
         if args.log:
             maxlog = int(np.ceil(np.log10(max_extent)))
@@ -163,6 +176,9 @@ if __name__ == '__main__':
     parser.add_argument('--log',
                         action='store_true',
                         help='Use logarithmic colour scale')
+    parser.add_argument('--orbits',
+                        action='store_true',
+                        help='plot against number of ISCO orbits')
     parser.add_argument('--pres',
                         action='store_true',
                         help='Make presentation-quality image')

@@ -33,14 +33,21 @@ def main(**kwargs):
     qt_lists = [[] for _ in range(n)]
     qp_lists = [[] for _ in range(n)]
     tb_lists = [[] for _ in range(n)]
+    if args.orbits:
+        time_col = 'orbit_time'
+    else:
+        time_col = 'sim_time'
+
     for count,f in enumerate(args.file):
-        df = pd.read_csv(f, delimiter='\t', usecols=['sim_time', 'Q_theta', 'Q_phi', 'theta_B'])
-        t = df['sim_time'].to_list()
+        df = pd.read_csv(f, delimiter='\t', usecols=[time_col, 'Q_theta', 'Q_phi', 'theta_B'])
+        t = df[time_col].to_list()
         Qt = df['Q_theta'].to_list()
         Qp = df['Q_phi'].to_list()
         tB = df['theta_B'].to_list()
-        #t_lists[count] = t
-        t_lists[count] = [ti/1e5 for ti in t] # convert time to units of 10^5 GM/c3
+        if args.orbits:
+            t_lists[count] = t
+        else:
+            t_lists[count] = [ti/1e5 for ti in t] # convert time to units of 10^5 GM/c3
         qt_lists[count] = Qt
         qp_lists[count] = Qp
         tb_lists[count] = tB
@@ -52,7 +59,10 @@ def main(**kwargs):
     lw = 1.5
     fig, axs = plt.subplots(nrows=3, ncols=1, sharex=True, figsize=(4,6))
     fig.subplots_adjust(hspace=0.0)  # adjust space between axes
-    x_label = r'time [$10^5~GM/c^3$]'
+    if args.orbits:
+        x_label = r'time [ISCO orbits]'
+    else:
+        x_label = r'time [$10^5~GM/c^3$]'
     y1_label = r'$\langle Q_{\theta}\rangle$'
     y2_label = r'$\langle Q_{\phi}\rangle$'
     y3_label = r'$\langle \theta_{B}\rangle$'
@@ -70,7 +80,6 @@ def main(**kwargs):
     axs[1].set_ylabel(y2_label)
     axs[2].set_ylabel(y3_label)
     for ax in axs:
-        ax.ticklabel_format(axis="x", style="sci", scilimits=(0,0), useMathText=True)
         ax.set_xlim(left=0)
         ax.set_ylim(bottom=0)
     axs[-1].set_xlabel(x_label)
@@ -94,9 +103,9 @@ if __name__ == '__main__':
                         type=str,
                         default=None,
                         help='name of plot to be created, including path')
-    parser.add_argument('--grid',
+    parser.add_argument('--orbits',
                         action='store_true',
-                        help='plot grid')
+                        help='plot against number of ISCO orbits')
     parser.add_argument('--pres',
                         action='store_true',
                         help='make presentation-quality image')

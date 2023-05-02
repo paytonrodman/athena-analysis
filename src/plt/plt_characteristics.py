@@ -30,6 +30,11 @@ def main(**kwargs):
     scale = [[] for _ in range(n)]
     labels = []
     colors = []
+    if args.orbits:
+        time_col = 'orbit_time'
+    else:
+        time_col = 'sim_time'
+
     for count,f in enumerate(args.prob_id):
         slash_list = [m.start() for m in re.finditer('/', f)]
         prob_id = f[slash_list[-2]+1:slash_list[-1]]
@@ -41,26 +46,37 @@ def main(**kwargs):
         beta_file = f + 'beta_with_time.csv'
         scale_file = f + 'scale_with_time.csv'
 
-        df = pd.read_csv(mass_file, delimiter='\t', usecols=['sim_time', 'mass_flux'])
-        t = df['sim_time'].to_list()
+        df = pd.read_csv(mass_file, delimiter='\t', usecols=[time_col, 'mass_flux'])
+        t = df[time_col].to_list()
         m = df['mass_flux'].to_list()
         for mi in m:
             if isinstance(mi, str):
                 mi = np.fromstring(mi.strip("[]"), sep=', ')
             mass[count].append(mi)
-        t1[count] = t
-        #mass[count] = m
+        #t1[count] = t
+        if args.orbits:
+            t1[count] = t
+        else:
+            t1[count] = [ti/1e5 for ti in t] # convert time to units of 10^5 GM/c3
 
-        df = pd.read_csv(beta_file, delimiter='\t', usecols=['sim_time', 'plasma_beta'])
-        t = df['sim_time'].to_list()
+        df = pd.read_csv(beta_file, delimiter='\t', usecols=[time_col, 'plasma_beta'])
+        t = df[time_col].to_list()
         b = df['plasma_beta'].to_list()
-        t2[count] = t
+        #t2[count] = t
+        if args.orbits:
+            t2[count] = t
+        else:
+            t2[count] = [ti/1e5 for ti in t] # convert time to units of 10^5 GM/c3
         beta[count] = b
 
-        df = pd.read_csv(scale_file, delimiter='\t', usecols=['sim_time', 'scale_height'])
-        t = df['sim_time'].to_list()
+        df = pd.read_csv(scale_file, delimiter='\t', usecols=[time_col, 'scale_height'])
+        t = df[time_col].to_list()
         s = df['scale_height'].to_list()
-        t3[count] = t
+        #t3[count] = t
+        if args.orbits:
+            t3[count] = t
+        else:
+            t3[count] = [ti/1e5 for ti in t] # convert time to units of 10^5 GM/c3
         scale[count] = s
 
     for ii in range(n):
@@ -81,14 +97,17 @@ def main(**kwargs):
     for ii in range(3):
         axs[ii].set_ylabel(ylabels[ii])
     for ax in axs:
-        ax.ticklabel_format(axis="x", style="sci", scilimits=(0,0), useMathText=True)
         ax.set_xlim(left=0)
 
     axs[0].set_ylim(bottom=0, top=2)
     axs[1].set_ylim(bottom=1e0)
     axs[2].set_ylim(bottom=0.2, top=0.37)
 
-    axs[-1].set_xlabel(r'time ($GM/c^3$)')
+    if args.orbits:
+        x_label = r'time [ISCO orbits]'
+    else:
+        x_label = r'time [$10^5~GM/c^3$]'
+    axs[-1].set_xlabel(x_label)
 
     leg = axs[0].legend(loc='best')
     for line in leg.get_lines():
@@ -117,6 +136,9 @@ if __name__ == '__main__':
                         type=str,
                         default=None,
                         help='name of plot to be created, including path')
+    parser.add_argument('--orbits',
+                        action='store_true',
+                        help='plot against number of ISCO orbits')
     parser.add_argument('--pres',
                         action='store_true',
                         help='make presentation-quality image')

@@ -31,12 +31,19 @@ def main(**kwargs):
 
     t_lists = [[] for _ in range(n)]
     m_lists = [[] for _ in range(n)]
+    if args.orbits:
+        time_col = 'orbit_time'
+    else:
+        time_col = 'sim_time'
+
     for count,f in enumerate(args.file):
-        df = pd.read_csv(f, delimiter='\t', usecols=['file_time', 'sim_time', 'mass_flux'])
-        t = df['sim_time'].to_list()
+        df = pd.read_csv(f, delimiter='\t', usecols=[time_col, 'mass_flux'])
+        t = df[time_col].to_list()
         m = df['mass_flux'].to_list()
-        #t_lists[count] = t
-        t_lists[count] = [ti/1e5 for ti in t]
+        if args.orbits:
+            t_lists[count] = t
+        else:
+            t_lists[count] = [ti/1e5 for ti in t] # convert time to units of 10^5 GM/c3
         m_lists[count] = m
 
     for ii in range(n):
@@ -44,18 +51,19 @@ def main(**kwargs):
 
 
     lw = 1.5
-    x_label = r'time [$10^5~GM/c^3$]'
+    if args.orbits:
+        x_label = r'time [ISCO orbits]'
+    else:
+        x_label = r'time [$10^5~GM/c^3$]'
     y_label = r'$\dot{M}$'
 
     _, ax = plt.subplots(nrows=1, ncols=1, constrained_layout=True, sharex=True)
     for ii in range(n):
-        if args.logx:
-            ax.semilogx(t_lists[ii], m_lists[ii], linewidth=lw, color=colors[ii], label=labels[ii])
-        elif args.logy:
+        if args.logy:
             ax.semilogy(t_lists[ii], m_lists[ii], linewidth=lw, color=colors[ii], label=labels[ii])
         else:
             ax.plot(t_lists[ii], m_lists[ii], linewidth=lw, color=colors[ii], label=labels[ii])
-            ax.ticklabel_format(axis="both", style="sci", scilimits=(0,0), useMathText=True)
+            ax.ticklabel_format(axis="y", style="sci", scilimits=(0,0), useMathText=True)
     plt.axhline(color="grey")
     ax.set_xlabel(x_label)
     ax.set_ylabel(y_label)
@@ -63,11 +71,6 @@ def main(**kwargs):
     ax.set_ylim(bottom=0,top=2)
 
     leg = ax.legend(loc='best')
-
-    if args.grid:
-        ax.grid(visible=True, which='major', color='#666666', linestyle='-', alpha=0.3)
-        ax.minorticks_on()
-        ax.grid(visible=True, which='minor', color='#999999', linestyle='-', alpha=0.1)
 
     for line in leg.get_lines():
         line.set_linewidth(4.0)
@@ -88,15 +91,12 @@ if __name__ == '__main__':
                         type=str,
                         default=None,
                         help='name of plot to be created, including path')
-    parser.add_argument('--logx',
-                        action='store_true',
-                        help='plot logx version')
     parser.add_argument('--logy',
                         action='store_true',
                         help='plot logy version')
-    parser.add_argument('--grid',
+    parser.add_argument('--orbits',
                         action='store_true',
-                        help='plot grid')
+                        help='plot against number of ISCO orbits')
     parser.add_argument('--pres',
                         action='store_true',
                         help='make presentation-quality image')
