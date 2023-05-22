@@ -76,8 +76,8 @@ def main(**kwargs):
         # define bounds of region to average over
         r_id = AAT.find_nearest(x1v, 6.)
         th_id = AAT.find_nearest(x2v, np.pi/2.)
-        th_l = AAT.find_nearest(x2v, np.pi/2. - (2.*scale_height))
-        th_u = AAT.find_nearest(x2v, np.pi/2. + (2.*scale_height))
+        th_l = AAT.find_nearest(x2v, np.pi/2. - (3.*scale_height))
+        th_u = AAT.find_nearest(x2v, np.pi/2. + (3.*scale_height))
 
         _,dx2f,dx3f = AAT.calculate_delta(x1f,x2f,x3f)
 
