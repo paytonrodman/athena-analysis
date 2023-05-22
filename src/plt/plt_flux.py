@@ -57,7 +57,6 @@ def main(**kwargs):
         time_m, mass_flux = zip(*sorted(zip(time_m, mass_flux)))
         time_m = np.array(time_m)
         mass_flux = np.array(mass_flux)
-        mass_flux = np.array(mass_flux)
         mass_average = np.average(mass_flux[time_m > min_time[count]])
         rawtoscaled = 1./(np.sqrt(mass_average))
         scale = np.sqrt(4*np.pi)*rawtoscaled
