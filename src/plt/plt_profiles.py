@@ -25,14 +25,10 @@ def main(**kwargs):
     dens = [[] for _ in range(n)]
     mom1 = [[] for _ in range(n)]
     temp = [[] for _ in range(n)]
-    if args.alpha:
-        alpha = [[] for _ in range(n)]
     if args.short:
         dens_short = [[] for _ in range(n)]
         mom1_short = [[] for _ in range(n)]
         temp_short = [[] for _ in range(n)]
-        if args.alpha:
-            alpha_short = [[] for _ in range(n)]
 
     x1v = [[] for _ in range(n)]
     labels = []
@@ -52,49 +48,46 @@ def main(**kwargs):
             dens_file = f + 'dens_profile_instant.npy'
             mom1_file = f + 'mom1_profile_instant.npy'
             temp_file = f + 'temp_profile_instant.npy'
-            if args.alpha:
-                alpha_file = f + 'alpha_profile_instant.npy'
             if args.short:
                 dens_file_short = f + 'dens_profile_short_instant.npy'
                 mom1_file_short = f + 'mom1_profile_short_instant.npy'
                 temp_file_short = f + 'temp_profile_short_instant.npy'
-                if args.alpha:
-                    alpha_file_short = f + 'alpha_profile_short_instant.npy'
         else:
             dens_file = f + 'dens_profile.npy'
             mom1_file = f + 'mom1_profile.npy'
             temp_file = f + 'temp_profile.npy'
-            if args.alpha:
-                alpha_file = f + 'alpha_profile.npy'
 
-        dens[count] = np.load(dens_file, mmap_mode='r')
-        mom1[count] = np.load(mom1_file, mmap_mode='r')
-        temp[count] = np.load(temp_file, mmap_mode='r')
-        if args.alpha:
-            alpha[count] = np.load(alpha_file, mmap_mode='r')
+        #dens[count] = np.load(dens_file, mmap_mode='r')
+        #mom1[count] = np.load(mom1_file, mmap_mode='r')
+        #temp[count] = np.load(temp_file, mmap_mode='r')
 
+        dens_i = np.load(dens_file, mmap_mode='r')
+        mom1_i = np.load(mom1_file, mmap_mode='r')
+        temp_i = np.load(temp_file, mmap_mode='r')
 
-        if prob_id=='high_res' or prob_id=='b200_super_res':
-            dens_short[count] = np.load(dens_file_short)
-            mom1_short[count] = np.load(mom1_file_short)
-            temp_short[count] = np.load(temp_file_short)
-            if args.alpha:
-                alpha_short[count] = np.load(alpha_file_short)
+        if prob_id in ['high_res','high_beta']:
+            dens[count] = dens_i[0]
+            mom1[count] = mom1_i[0]
+            temp[count] = temp_i[0]
         else:
-            dens_short[count] = np.nan*np.load(dens_file)
-            mom1_short[count] = np.nan*np.load(mom1_file)
-            temp_short[count] = np.nan*np.load(temp_file)
-            if args.alpha:
-                alpha_short[count] =np.nan* np.load(alpha_file)
+            dens[count] = dens_i
+            mom1[count] = mom1_i
+            temp[count] = temp_i
+
+        if args.short:
+            if prob_id in ['high_res','b200_super_res']:
+                dens_short[count] = np.load(dens_file_short)
+                mom1_short[count] = np.load(mom1_file_short)
+                temp_short[count] = np.load(temp_file_short)
+            else:
+                dens_short[count] = np.nan*np.load(dens_file)
+                mom1_short[count] = np.nan*np.load(mom1_file)
+                temp_short[count] = np.nan*np.load(temp_file)
 
     if args.instant:
         ylabels = [r'$\langle \rho \rangle^*$', r'$\langle v_r \rangle^*$', r'$\langle \frac{P}{\rho c^2} \rangle^*$']
-        if args.alpha:
-            ylabels.append(r'$\langle \alpha \rangle^*$')
     else:
         ylabels = [r'$\langle\langle \rho \rangle\rangle^*$', r'$\langle\langle v_r \rangle\rangle^*$', r'$\langle\langle \frac{P}{\rho c^2} \rangle\rangle^*$']
-        if args.alpha:
-            ylabels.append(r'$\langle\langle \alpha \rangle\rangle^*$')
 
     lw = 1.5
     n_plots = len(ylabels)
@@ -110,10 +103,6 @@ def main(**kwargs):
                 axs[0].semilogx(x1v[ii], dens_short[ii], linewidth=lw, color=colors[ii], linestyle='--')
                 axs[1].semilogx(x1v[ii], mom1_short[ii], linewidth=lw, color=colors[ii], linestyle='--')
                 axs[2].semilogx(x1v[ii], temp_short[ii], linewidth=lw, color=colors[ii], linestyle='--')
-                if args.alpha:
-                    axs[3].semilogx(x1v[ii], alpha_short[ii], linewidth=lw, color=colors[ii], linestyle='--')
-            if args.alpha:
-                axs[3].semilogx(x1v[ii], alpha[ii], linewidth=lw, color=colors[ii], label=labels[ii])
         else:
             axs[0].plot(x1v[ii], dens[ii], linewidth=lw, color=colors[ii], label=labels[ii])
             axs[1].plot(x1v[ii], mom1[ii], linewidth=lw, color=colors[ii], label=labels[ii])
@@ -122,10 +111,6 @@ def main(**kwargs):
                 axs[0].plot(x1v[ii], dens_short[ii], linewidth=lw, color=colors[ii], linestyle='--')
                 axs[1].plot(x1v[ii], mom1_short[ii], linewidth=lw, color=colors[ii], linestyle='--')
                 axs[2].plot(x1v[ii], temp_short[ii], linewidth=lw, color=colors[ii], linestyle='--')
-                if args.alpha:
-                    axs[3].plot(x1v[ii], alpha_short[ii], linewidth=lw, color=colors[ii], linestyle='--')
-            if args.alpha:
-                axs[3].plot(x1v[ii], alpha[ii], linewidth=lw, color=colors[ii], label=labels[ii])
     for ii in range(n_plots):
         axs[ii].set_ylabel(ylabels[ii])
         if not args.logr:
@@ -170,9 +155,6 @@ if __name__ == '__main__':
     parser.add_argument('--short',
                         action='store_true',
                         help='add lines for same time as strong-field case')
-    parser.add_argument('--alpha',
-                        action='store_true',
-                        help='plot Shakura-Sunyaev alpha')
     parser.add_argument('--pres',
                         action='store_true',
                         help='make presentation-quality image')
