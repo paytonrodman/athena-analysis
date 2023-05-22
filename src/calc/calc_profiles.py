@@ -12,8 +12,8 @@
 import argparse
 import sys
 import os
-sys.path.insert(0, '/home/per29/rds/rds-accretion-zyNhkonJSR8/athena-analysis/dependencies')
-#sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies')
+#sys.path.insert(0, '/home/per29/rds/rds-accretion-zyNhkonJSR8/athena-analysis/dependencies')
+sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies')
 
 # Other Python modules
 import numpy as np
@@ -32,9 +32,9 @@ def main(**kwargs):
 
     os.chdir(args.data)
 
-    file_times = AAT.add_time_to_list(False, None)
+    file_times = AAT.add_time_to_list(False, None) # retrieve all data file names
     file_times.sort()
-    _,_,t_min = AAT.problem_dictionary(args.problem_id, False) # get minimum time
+    _,_,t_min = AAT.problem_dictionary(args.problem_id, False) # get minimum required time
     file_times_restricted = []
     if rank==0:
         for f in file_times:
@@ -47,11 +47,14 @@ def main(**kwargs):
                 file_times_restricted.append(f)
     else:
         file_times_restricted = None
-    file_times_restricted = comm.bcast(file_times_restricted, root=0)
+    file_times_restricted = comm.bcast(file_times_restricted, root=0) # broadcast list to all nodes
+
+    if not file_times_restricted: # if list is empty
+        sys.exit('No file times meet requirements. Exiting.')
 
     local_times = AAT.distribute_files_to_cores(file_times_restricted, size, rank)
 
-    # retrieve lists of scale height with time
+    # retrieve lists of scale height with time and broadcast
     if rank==0:
         df = pd.read_csv(args.scale, delimiter='\t', usecols=['sim_time', 'scale_height'])
         scale_time_list = df['sim_time'].to_list()
