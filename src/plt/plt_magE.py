@@ -45,7 +45,6 @@ def main(**kwargs):
             t_lists[count] = [AAT.calculate_orbit_time(ti) for ti in t]
         else:
             t_lists[count] = [ti/1e5 for ti in t] # convert time to units of 10^5 GM/c3
-
         ME_lists[count] = ME_tot
 
     for ii in range(n):
