@@ -62,7 +62,7 @@ def main(**kwargs):
             ax1.semilogy(t_lists[ii], s_lists[ii], linewidth=lw, color=colors[ii], label=labels[ii])
         else:
             ax1.plot(t_lists[ii], s_lists[ii], linewidth=lw, color=colors[ii], label=labels[ii])
-            ax1.set_ylim(bottom=0, top=0.5)
+            ax1.set_ylim(bottom=0.2, top=0.4)
             ax1.set_xlim(left=0)
     ax1.set_xlabel(x_label)#, x=0.5, y=-0.03)
     ax1.set_ylabel(y_label)
