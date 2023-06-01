@@ -18,6 +18,7 @@ sys.path.insert(0, '/home/per29/rds/rds-accretion-zyNhkonJSR8/athena-analysis/de
 # Other Python modules
 import numpy as np
 from mpi4py import MPI
+import pandas as pd
 import csv
 
 # Athena++ modules
@@ -35,6 +36,18 @@ def main(**kwargs):
     file_times = AAT.add_time_to_list(args.update, args.output)
     local_times = AAT.distribute_files_to_cores(file_times, size, rank)
 
+    # read from input file
+    data_input = athena_read.athinput(args.input)
+    # find bounds of high resolution region
+    if 'refinement3' in data_input:
+        x1_high_max = data_input['refinement3']['x1max']
+    elif 'refinement2' in data_input:
+        x1_high_max = data_input['refinement2']['x1max']
+    elif 'refinement1' in data_input:
+        x1_high_max = data_input['refinement1']['x1max']
+    else:
+        x1_high_max = data_input['mesh']['x1max']
+
     # retrieve lists of scale height with time
     if rank==0:
         df = pd.read_csv(args.scale, delimiter='\t', usecols=['sim_time', 'scale_height'])
@@ -50,7 +63,7 @@ def main(**kwargs):
         if not args.update:
             with open(args.output, 'w', newline='') as f:
                 writer = csv.writer(f, delimiter='\t')
-                writer.writerow(['sim_time', 'orbit_time', 'T_rphi', 'alpha'])
+                writer.writerow(['sim_time', 'orbit_time', 'av_Max', 'T_rphi', 'alpha'])
     for t in local_times:
         str_t = str(int(t)).zfill(5)
         data_prim = athena_read.athdf(args.problem_id + '.prim.' + str_t + '.athdf',
@@ -76,6 +89,7 @@ def main(**kwargs):
         press = data_prim['press']
 
         # define bounds of region to average over
+        r_u = AAT.find_nearest(x1v, x1_high_max)
         th_u = AAT.find_nearest(x2v, np.pi/2. + (3.*scale_height))
         th_l = AAT.find_nearest(x2v, np.pi/2. - (3.*scale_height))
 
@@ -86,16 +100,17 @@ def main(**kwargs):
         dmom3 = mom3 - r*Omega_kep
 
         # restrict range (arrays ordered by [phi,theta,r]!)
-        press = press[:, th_l:th_u, :]
-        dens = dens[:, th_l:th_u, :]
-        mom1 = mom1[:, th_l:th_u, :]
-        Bcc1 = Bcc1[:, th_l:th_u, :]
-        Bcc3 = Bcc3[:, th_l:th_u, :]
-        dmom3 = dmom3[:, th_l:th_u, :]
+        press = press[:, th_l:th_u, :r_u]
+        dens = dens[:, th_l:th_u, :r_u]
+        mom1 = mom1[:, th_l:th_u, :r_u]
+        Bcc1 = Bcc1[:, th_l:th_u, :r_u]
+        Bcc3 = Bcc3[:, th_l:th_u, :r_u]
+        dmom3 = dmom3[:, th_l:th_u, :r_u]
 
         # calculate Shakura-Sunyaev alpha from stresses
         Reynolds_stress = dens*mom1*dmom3
         Maxwell_stress = -Bcc1*Bcc3
+        av_Max = np.average(Maxwell_stress, axis=(1))
         T_rphi = Reynolds_stress + Maxwell_stress
         T_rphi = np.average(T_rphi, axis=(1)) # average over vertical height, theta
         alpha_SS = T_rphi/np.average(press, axis=(1))
@@ -105,13 +120,13 @@ def main(**kwargs):
 
         with open(args.output, 'a', newline='') as f:
             writer = csv.writer(f, delimiter='\t')
-            row = [sim_t, orbit_t, T_rphi, alpha_SS]
+            row = [sim_t, orbit_t, av_Max, T_rphi, alpha_SS]
             writer.writerow(row)
 
 
 # Execute main function
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Calculate plasma beta from raw simulation data.')
+    parser = argparse.ArgumentParser(description='Calculate Shakura-Sunyaev alpha from raw simulation data.')
     parser.add_argument('problem_id',
                         help='root name for data files, e.g. high_res')
     parser.add_argument('data',
