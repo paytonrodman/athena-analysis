@@ -76,7 +76,7 @@ def main(**kwargs):
     print('create grid')
     # Create scalar grid
     phi_grid, theta_grid, r_grid = np.meshgrid(phi_face, theta_face, r_face, indexing='ij') # req all comp for curl later
-    phi_grid_alt, theta_grid_alt, r_grid_alt = np.meshgrid(phi, theta, r, indexing='ij') # req all comp for curl later
+    phi_grid_alt, _, r_grid_alt = np.meshgrid(phi, theta, r, indexing='ij') # req all comp for curl later
     # make 2D plotting grid at midplane
     x_grid = r_grid[:, int(nx2/2), :] * np.cos(phi_grid[:, int(nx2/2), :])
     y_grid = r_grid[:, int(nx2/2), :] * np.sin(phi_grid[:, int(nx2/2), :])
@@ -134,14 +134,12 @@ def main(**kwargs):
         vel_vals = dvp[:, int(nx2/2), :]
 
     # Define the vortensity
-    w1, w2, w3 = curl(r_grid,theta_grid,phi_grid,vr,vt,dvp)
+    w1, _, w3 = curl(r_grid,theta_grid,phi_grid,vr,vt,dvp)
     if kwargs['b']: # use magnetovortensity
         vor1 = w1*data['dens']/(data['Bcc1']**2. + data['Bcc2']**2. + data['Bcc3']**2.)
-        vor2 = w2*data['dens']/(data['Bcc1']**2. + data['Bcc2']**2. + data['Bcc3']**2.)
         vor3 = w3*data['dens']/(data['Bcc1']**2. + data['Bcc2']**2. + data['Bcc3']**2.)
     else: # use regular vortensity
         vor1 = w1/data['dens']
-        vor2 = w2/data['dens']
         vor3 = w3/data['dens']
 
     # Perform slicing/averaging of vector data
@@ -197,9 +195,6 @@ def main(**kwargs):
     else:
         norm = colors.Normalize(vmin, vmax)
 
-    print(np.shape(vals))
-    print(np.shape(vel_vals))
-
     # Make plot
     #plt.figure()
     fig, ax = plt.subplots()
@@ -207,7 +202,7 @@ def main(**kwargs):
     if kwargs['contour']:
         #vel_midplane = np.average(dvp, axis=(1)) # average in theta
         #vel_midplane = dvp[:, int(nx2/2), :] # take middle value
-        CS = ax.contour(x_grid_alt, y_grid_alt, vel_vals)
+        ax.contour(x_grid_alt, y_grid_alt, vel_vals)
     else:
         with warnings.catch_warnings():
             warnings.filterwarnings(
