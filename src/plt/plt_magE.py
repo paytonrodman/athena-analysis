@@ -9,7 +9,6 @@ sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies'
 import matplotlib.pyplot as plt
 import pandas as pd
 import re
-import numpy as np
 
 # Athena++ modules
 import AAT
@@ -60,11 +59,6 @@ def main(**kwargs):
     for ii in range(n):
         t_lists[ii], ME_1_lists[ii], ME_2_lists[ii], ME_3_lists[ii], ME_lists[ii] = zip(*sorted(zip(t_lists[ii], ME_1_lists[ii], ME_2_lists[ii], ME_3_lists[ii], ME_lists[ii])))
 
-    #t = list(t_lists[0])
-    #print(t)
-    #print([i for i in t if i>2. and i<2.5])
-    #print(dict((x, indices(t, x)) for x in set(t) if t.count(x) > 1))
-    #print(jwbdjw)
     lw = 1.5
     if args.orbits:
         x_label = r'Time [ISCO Orbits]'
