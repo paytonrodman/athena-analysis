@@ -47,6 +47,7 @@ def main(**kwargs):
                 file_times_restricted.append(f)
     else:
         file_times_restricted = None
+    comm.barrier() # wait for master node to be done before moving on
     file_times_restricted = comm.bcast(file_times_restricted, root=0) # broadcast list to all nodes
 
     if not file_times_restricted: # if list is empty
