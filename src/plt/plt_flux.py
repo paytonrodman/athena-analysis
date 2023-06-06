@@ -28,6 +28,7 @@ def main(**kwargs):
     min_time = []
     colors = []
     labels = []
+    # get pre-defined labels, line colours, and minimum times for each simulation
     for f in args.file:
         slash_list = [m.start() for m in re.finditer('/', f.name)]
         prob_id = f.name[slash_list[-2]+1:slash_list[-1]]
@@ -60,13 +61,15 @@ def main(**kwargs):
         time_m, mass_flux = zip(*sorted(zip(time_m, mass_flux)))
         time_m = np.array(time_m)
         mass_flux = np.array(mass_flux)
+
+        # scale factor based on late-time-averaged mass inflow rate
         mass_average = np.average(mass_flux[time_m > min_time[count]])
         rawtoscaled = 1./(np.sqrt(mass_average))
         scale = np.sqrt(4*np.pi)*rawtoscaled
 
         df = pd.read_csv(f, delimiter='\t')
         t = df[time_col].to_list()
-        if args.disk:
+        if args.disk: # use mag flux from within disk only
             mfu = df['mag_flux_u_disk'].to_list()
             mfl = df['mag_flux_l_disk'].to_list()
             mfu_a = df['mag_flux_u_abs_disk'].to_list()
@@ -80,6 +83,7 @@ def main(**kwargs):
             t_lists[count] = t
         else:
             t_lists[count] = [ti/1e5 for ti in t] # convert time to units of 10^5 GM/c3
+        # scale magnetic flux
         mfu_lists[count] = [x*scale for x in mfu]
         mfl_lists[count] = [x*scale for x in mfl]
         mfu_abs_lists[count] = [x*scale for x in mfu_a]
@@ -96,7 +100,6 @@ def main(**kwargs):
         mfl_array[ii] = np.array(mfl_lists[ii], dtype=object)
         mfu_abs_array[ii] = np.array(mfu_abs_lists[ii], dtype=object)
         mfl_abs_array[ii] = np.array(mfl_abs_lists[ii], dtype=object)
-        #t_lists[ii] = t_lists[ii]
 
     data_u_ratio = np.array(mfu_array, dtype=object)/np.array(mfu_abs_lists, dtype=object)
     data_l_ratio = np.array(mfl_array, dtype=object)/np.array(mfl_abs_lists, dtype=object)

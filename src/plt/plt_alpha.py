@@ -61,6 +61,7 @@ def main(**kwargs):
     Bcc3 = data_cons['Bcc3']
     press = data_prim['press']
 
+    # define bounds
     th_u = AAT.find_nearest(x2v, np.pi/2. + (2.*scale_height))
     th_l = AAT.find_nearest(x2v, np.pi/2. - (2.*scale_height))
 
@@ -70,14 +71,13 @@ def main(**kwargs):
     Omega_kep = np.broadcast_to(Omega_kep, (np.shape(dens)[0], np.shape(dens)[1], np.shape(dens)[2]))
     dmom3 = mom3 - r*Omega_kep
 
+    # restrict range of data
     press = press[:, th_l:th_u, :]
     dens = dens[:, th_l:th_u, :]
     mom1 = mom1[:, th_l:th_u, :]
     Bcc1 = Bcc1[:, th_l:th_u, :]
     Bcc3 = Bcc3[:, th_l:th_u, :]
     dmom3 = dmom3[:, th_l:th_u, :]
-
-    #plt.pcolormesh(np.average(dmom3, axis=(1)), cmap="viridis", shading='auto')
 
     Reynolds_stress = dens*mom1*dmom3
     Maxwell_stress = -Bcc1*Bcc3/(4.*np.pi)

@@ -26,6 +26,7 @@ def main(**kwargs):
     labels = []
     colors = []
     for f in args.file:
+        # get pre-defined labels and line colours for each simulation
         slash_list = [m.start() for m in re.finditer('/', f.name)]
         prob_id = f.name[slash_list[-2]+1:slash_list[-1]]
         l,c,_ = AAT.problem_dictionary(prob_id, args.pres)

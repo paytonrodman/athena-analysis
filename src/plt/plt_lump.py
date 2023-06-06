@@ -29,6 +29,7 @@ import AAT
 
 def main(**kwargs):
     dens = []
+    # get pre-defined labels and line colours for each simulation
     f = args.file[0]
     slash_list = [m.start() for m in re.finditer('/', f.name)]
     prob_id = f.name[slash_list[-2]+1:slash_list[-1]]

@@ -38,6 +38,7 @@ def main(**kwargs):
         time_col = 'sim_time'
 
     for count,f in enumerate(args.prob_id):
+        # get pre-defined labels and line colours for each simulation
         slash_list = [m.start() for m in re.finditer('/', f)]
         prob_id = f[slash_list[-2]+1:slash_list[-1]]
         l,c,_ = AAT.problem_dictionary(prob_id, args.pres)
@@ -55,7 +56,6 @@ def main(**kwargs):
             if isinstance(mi, str):
                 mi = np.fromstring(mi.strip("[]"), sep=', ')
             mass[count].append(mi)
-        #t1[count] = t
         if args.orbits:
             t1[count] = t
         else:
@@ -64,7 +64,6 @@ def main(**kwargs):
         df = pd.read_csv(beta_file, delimiter='\t', usecols=[time_col, 'plasma_beta'])
         t = df[time_col].to_list()
         b = df['plasma_beta'].to_list()
-        #t2[count] = t
         if args.orbits:
             t2[count] = t
         else:
@@ -74,7 +73,6 @@ def main(**kwargs):
         df = pd.read_csv(scale_file, delimiter='\t', usecols=[time_col, 'scale_height'])
         t = df[time_col].to_list()
         s = df['scale_height'].to_list()
-        #t3[count] = t
         if args.orbits:
             t3[count] = t
         else:
