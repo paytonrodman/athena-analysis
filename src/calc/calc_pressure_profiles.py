@@ -10,14 +10,19 @@
 import argparse
 import sys
 import os
-sys.path.insert(0, '/home/per29/rds/rds-accretion-zyNhkonJSR8/athena-analysis/dependencies')
+
+dir_path = os.path.dirname(__file__)
+lib_path = os.path.join(dir_path, '..', '..', 'dependencies')
+sys.path.append(lib_path)
+
+#sys.path.insert(0, '/home/per29/rds/rds-accretion-zyNhkonJSR8/athena-analysis/dependencies')
 #sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies')
 
 # Other Python modules
 import numpy as np
 from mpi4py import MPI
 
-# Athena++ modules
+# Athena++ modules (require sys.path.insert above)
 import athena_read
 import AAT
 

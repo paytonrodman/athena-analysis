@@ -10,7 +10,12 @@
 import argparse
 import sys
 import os
-sys.path.insert(0, '/home/per29/rds/rds-accretion-zyNhkonJSR8/athena-analysis/dependencies')
+
+dir_path = os.path.dirname(__file__)
+lib_path = os.path.join(dir_path, '..', '..', 'dependencies')
+sys.path.append(lib_path)
+
+#sys.path.insert(0, '/home/per29/rds/rds-accretion-zyNhkonJSR8/athena-analysis/dependencies')
 #sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies')
 
 # Other Python modules
@@ -35,9 +40,8 @@ def main(**kwargs):
     file_times = AAT.add_time_to_list(args.update, args.output)
     local_times = AAT.distribute_files_to_cores(file_times, size, rank)
 
-    # read from input file
-    data_input = athena_read.athinput(args.input)
     # find bounds of high resolution region
+    data_input = athena_read.athinput(args.input)
     if 'refinement3' in data_input:
         x1_high_max = data_input['refinement3']['x1max']
     elif 'refinement2' in data_input:
@@ -60,7 +64,7 @@ def main(**kwargs):
 
     # assign one core the job of creating output file with header
     if rank==0:
-        if not args.update:
+        if not args.update: # create output file with header
             with open(args.output, 'w', newline='') as f:
                 writer = csv.writer(f, delimiter='\t')
                 writer.writerow(['file_time', 'sim_time', 'orbit_time', 'plasma_beta'])

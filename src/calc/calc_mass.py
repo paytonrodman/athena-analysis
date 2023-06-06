@@ -10,7 +10,12 @@
 import argparse
 import sys
 import os
-sys.path.append('/home/per29/rds/rds-accretion-zyNhkonJSR8/athena-analysis/dependencies')
+
+dir_path = os.path.dirname(__file__)
+lib_path = os.path.join(dir_path, '..', '..', 'dependencies')
+sys.path.append(lib_path)
+
+#sys.path.append('/home/per29/rds/rds-accretion-zyNhkonJSR8/athena-analysis/dependencies')
 #sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies')
 
 # Other Python modules
@@ -18,7 +23,7 @@ import numpy as np
 from mpi4py import MPI
 import csv
 
-# Athena++ modules
+# Athena++ modules (require sys.path.insert above)
 import athena_read
 import AAT
 
@@ -38,7 +43,7 @@ def main(**kwargs):
     r_id = AAT.find_nearest(x1v_init, 6.)
 
     if rank==0:
-        if not args.update:
+        if not args.update: # create output file with header
             with open(args.output, 'w', newline='') as f:
                 writer = csv.writer(f, delimiter='\t')
                 writer.writerow(['sim_time', 'orbit_time', 'mass_flux'])

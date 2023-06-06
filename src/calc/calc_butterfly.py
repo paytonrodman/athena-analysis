@@ -11,7 +11,12 @@
 import argparse
 import sys
 import os
-sys.path.insert(0, '/home/per29/rds/rds-accretion-zyNhkonJSR8/athena-analysis/dependencies')
+
+dir_path = os.path.dirname(__file__)
+lib_path = os.path.join(dir_path, '..', '..', 'dependencies')
+sys.path.append(lib_path)
+
+#sys.path.insert(0, '/home/per29/rds/rds-accretion-zyNhkonJSR8/athena-analysis/dependencies')
 #sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies')
 
 # Other Python modules
@@ -19,7 +24,7 @@ import numpy as np
 from mpi4py import MPI
 import csv
 
-# Athena++ modules
+# Athena++ modules (require sys.path.insert above)
 import athena_read
 import AAT
 
@@ -31,9 +36,11 @@ def main(**kwargs):
 
     os.chdir(args.data)
 
+    # make list of files/times to analyse, distribute to cores
     file_times = AAT.add_time_to_list(args.update, args.output)
     local_times = AAT.distribute_files_to_cores(file_times, size, rank)
 
+    # define radius where data is collected
     data_init = athena_read.athdf(args.problem_id + '.cons.00000.athdf', quantities=['x1v'])
     x1v_init = data_init['x1v']
     if args.r is not None:
@@ -42,7 +49,7 @@ def main(**kwargs):
         r_id = AAT.find_nearest(x1v_init, 25.) # approx. middle of high res region
 
     if rank==0:
-        if not args.update:
+        if not args.update: # create output file with header
             with open(kargs.output, 'w', newline='') as f:
                 writer = csv.writer(f, delimiter='\t')
                 writer.writerow(['sim_time', 'orbit_time', 'Bcc1', 'Bcc2', 'Bcc3'])
