@@ -1,6 +1,5 @@
 # Python standard modules
 import argparse
-import warnings
 import sys
 import os
 
@@ -19,8 +18,6 @@ import athena_read
 def main(**kwargs):
     import matplotlib.pyplot as plt
     import matplotlib.colors as colors
-    from matplotlib.colors import TwoSlopeNorm
-    from scipy.ndimage import map_coordinates
 
     # Set resolution of plot in dots per square inch
     if kwargs['dpi'] is not None:
@@ -34,17 +31,13 @@ def main(**kwargs):
         print('Contour choice invalid. Choose from data keys.')
 
     # Extract basic coordinate information
-    coordinates = data['Coordinates']
     r = data['x1v']
     theta = data['x2v']
     phi = data['x3v']
     r_face = data['x1f']
     theta_face = data['x2f']
     phi_face = data['x3f']
-    dens = data['dens']
-    nx1 = len(r)
     nx2 = len(theta)
-    nx3 = len(phi)
 
     phi_grid, theta_grid, r_grid = np.meshgrid(phi_face,theta_face,r_face,indexing='ij') # req all comp for curl later
 
@@ -71,12 +64,12 @@ def main(**kwargs):
             # Define the vortensity
             w1, w2, w3 = curl(r_grid,theta_grid,phi_grid,vr,vt,dvp)
             if kwargs['background'] in ['vor'] or kwargs['contour'] in ['vor']:
-                vor1 = w1/data['dens']
-                vor2 = w2/data['dens']
+                #vor1 = w1/data['dens']
+                #vor2 = w2/data['dens']
                 vor3 = w3/data['dens']
             if kwargs['background'] in ['vorb'] or kwargs['contour'] in ['vorb']:
-                vorb1 = w1*data['dens']/(data['Bcc1']**2. + data['Bcc2']**2. + data['Bcc3']**2.)
-                vorb2 = w2*data['dens']/(data['Bcc1']**2. + data['Bcc2']**2. + data['Bcc3']**2.)
+                #vorb1 = w1*data['dens']/(data['Bcc1']**2. + data['Bcc2']**2. + data['Bcc3']**2.)
+                #vorb2 = w2*data['dens']/(data['Bcc1']**2. + data['Bcc2']**2. + data['Bcc3']**2.)
                 vorb3 = w3*data['dens']/(data['Bcc1']**2. + data['Bcc2']**2. + data['Bcc3']**2.)
 
     if kwargs['background']=='dvp':
@@ -110,7 +103,7 @@ def main(**kwargs):
             ct_vals = contour[:, int(nx2/2), :]
 
     # Create background scalar grid
-    phi_grid_alt, theta_grid_alt, r_grid_alt = np.meshgrid(phi, theta, r, indexing='ij')
+    phi_grid_alt, _, r_grid_alt = np.meshgrid(phi, theta, r, indexing='ij')
     # make 2D plotting grid at midplane
     x_grid = r_grid[:, int(nx2/2), :] * np.cos(phi_grid[:, int(nx2/2), :])
     y_grid = r_grid[:, int(nx2/2), :] * np.sin(phi_grid[:, int(nx2/2), :])
@@ -135,7 +128,7 @@ def main(**kwargs):
     if kwargs['output_file'] == 'show':
         plt.show()
     else:
-        plt.savefig(kwargs['output_file'], bbox_inches='tight')
+        plt.savefig(kwargs['output_file'], bbox_inches='tight', dpi=resolution)
 
 
 def curl(r,theta,phi,vr,vt,vp):
