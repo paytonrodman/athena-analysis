@@ -129,7 +129,7 @@ def main(**kwargs):
     plt.close()
 
 
-def dir_path(path):
+def directory_path(path):
     if os.path.isdir(path):
         return path
     else:
@@ -140,7 +140,7 @@ def dir_path(path):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Plot magnetic field curvature, kappa, over time for different disk regions.')
     parser.add_argument('-p', '--prob_id',
-                        type=dir_path,
+                        type=directory_path,
                         nargs='+',
                         default=None,
                         help='list of directory paths for each problem ID')

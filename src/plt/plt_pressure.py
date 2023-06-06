@@ -105,7 +105,7 @@ def main(**kwargs):
 
     #plt.savefig(data_dir + 'plots/pressure.png')
     #plt.close()
-def dir_path(path):
+def directory_path(path):
     if os.path.isdir(path):
         return path
     else:
@@ -116,7 +116,7 @@ def dir_path(path):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Plot the scale height of the disk over time.')
     parser.add_argument('-p', '--prob_id',
-                        type=dir_path,
+                        type=directory_path,
                         nargs='+',
                         default=None,
                         help='list of directory paths for each problem ID')
