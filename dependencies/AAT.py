@@ -83,7 +83,9 @@ def problem_dictionary(problem_id, presentation_quality_flag):
     else:
         label_list = ['b200','b5','b5_hi','b200_hi']
     color_list = ['tab:blue', 'tab:orange', 'tab:purple', 'tab:red']
-    time_list = [2.5e4, 1e4, 1e4, 2.5e4]
+    weak_min_time = 1.23125e5 # 2000 ISCO orbits
+    strong_min_time = 3.07812e4 # 500 ISCO orbits
+    time_list = [weak_min_time, strong_min_time, strong_min_time, weak_min_time]
 
     prob_dict = {
     'high_res': {'label': label_list[0], 'color': color_list[0], 'min_time': time_list[0]},
