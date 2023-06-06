@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 #
-# calc_beta.py
+# calc_lump.py
 #
-# A program to calculate the plasma beta of an Athena++ disk using MPI.
+# A program that returns a slice of density in the disk midplane, for visualising
+# the m=1 mode.
 #
-# Usage: mpirun -n [nprocs] calc_beta.py [options]
+# Usage: mpirun -n [nprocs] calc_lump.py [options]
 #
 # Python standard modules
 import argparse
@@ -24,7 +25,7 @@ import pandas as pd
 from mpi4py import MPI
 import csv
 
-# Athena++ modules (require sys.path.insert above)
+# Athena++ modules (require sys.path.append above)
 import athena_read
 import AAT
 
@@ -36,6 +37,7 @@ def main(**kwargs):
 
     os.chdir(args.data)
 
+    # make list of files/times to analyse, distribute to cores
     file_times = AAT.add_time_to_list(args.update, args.output)
     local_times = AAT.distribute_files_to_cores(file_times, size, rank)
 

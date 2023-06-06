@@ -24,7 +24,7 @@ from mpi4py import MPI
 import pandas as pd
 import csv
 
-# Athena++ modules (require sys.path.insert above)
+# Athena++ modules (require sys.path.append above)
 import athena_read
 import AAT
 

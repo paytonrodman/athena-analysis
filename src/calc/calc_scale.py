@@ -23,7 +23,7 @@ import numpy as np
 from mpi4py import MPI
 import csv
 
-# Athena++ modules (require sys.path.insert above)
+# Athena++ modules (require sys.path.append above)
 import athena_read
 import AAT
 
@@ -34,6 +34,7 @@ def main(**kwargs):
 
     os.chdir(args.data)
 
+    # make list of files/times to analyse, distribute to cores
     file_times = AAT.add_time_to_list(args.update, args.output)
     local_times = AAT.distribute_files_to_cores(file_times, size, rank)
 
@@ -46,6 +47,7 @@ def main(**kwargs):
     x2f = data_init['x2f']
     x3f = data_init['x3f']
 
+    # create necessary grids
     dx1f,dx2f,dx3f = AAT.calculate_delta(x1f,x2f,x3f)
     _,theta,_ = np.meshgrid(x3v,x2v,x1v, sparse=False, indexing='ij')
     dphi,dtheta,_ = np.meshgrid(dx3f,dx2f,dx1f, sparse=False, indexing='ij')

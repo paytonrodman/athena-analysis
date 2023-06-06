@@ -2,7 +2,7 @@
 #
 # calc_profiles.py
 #
-# A program to calculate radial profiles of various parameters at late times in the disk.
+# A program to calculate radial profiles of various parameters at late times in the disk using MPI.
 #
 # Usage: mpirun -n [nprocs] calc_profiles.py [options]
 #
@@ -25,7 +25,7 @@ import numpy as np
 from mpi4py import MPI
 import pandas as pd
 
-# Athena++ modules (require sys.path.insert above)
+# Athena++ modules (require sys.path.append above)
 import athena_read
 import AAT
 
@@ -37,6 +37,7 @@ def main(**kwargs):
 
     os.chdir(args.data)
 
+    # make list of files/times to analyse, distribute to cores
     file_times = AAT.add_time_to_list(False, None) # retrieve all data file names
     file_times.sort()
     _,_,t_min = AAT.problem_dictionary(args.problem_id, False) # get minimum required time

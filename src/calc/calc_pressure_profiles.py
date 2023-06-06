@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 #
-# calc_beta.py
+# calc_pressure_profiles.py
 #
-# A program to calculate the plasma beta of an Athena++ disk using MPI.
+# A program to calculate the radial pressure profile of a disk using MPI.
 #
-# Usage: mpirun -n [nprocs] calc_beta.py [options]
+# Usage: mpirun -n [nprocs] calc_pressure_profiles.py [options]
 #
 # Python standard modules
 import argparse
@@ -22,7 +22,7 @@ sys.path.append(lib_path)
 import numpy as np
 from mpi4py import MPI
 
-# Athena++ modules (require sys.path.insert above)
+# Athena++ modules (require sys.path.append above)
 import athena_read
 import AAT
 
@@ -34,12 +34,29 @@ def main(**kwargs):
 
     os.chdir(args.data)
 
-    file_times = AAT.add_time_to_list(args.update, args.output)
-    if args.problem_id=='high_res':
-        file_times = file_times[file_times>10000] # t > 5e4
-    elif args.problem_id=='high_beta':
-        file_times = file_times[file_times>4000] # t > 2e4
-    local_times = AAT.distribute_files_to_cores(file_times, size, rank)
+    # make list of files/times to analyse, distribute to cores
+    file_times = AAT.add_time_to_list(False, None) # retrieve all data file names
+    file_times.sort()
+    _,_,t_min = AAT.problem_dictionary(args.problem_id, False) # get minimum required time
+    file_times_restricted = []
+    if rank==0:
+        for f in file_times:
+            str_f = str(int(f)).zfill(5)
+            # read in some small slice of the file to check the time
+            data_check = athena_read.athdf(args.problem_id + '.cons.' + str_f + '.athdf',
+                                           x1_min=5,x1_max=6,x2_min=0,x2_max=0.1,x3_min=0,x3_max=0.1)
+            sim_t = data_check['Time']
+            if sim_t >= t_min:
+                file_times_restricted.append(f)
+    else:
+        file_times_restricted = None
+    comm.barrier() # wait for master node to be done before moving on
+    file_times_restricted = comm.bcast(file_times_restricted, root=0) # broadcast list to all nodes
+
+    if not file_times_restricted: # if list is empty
+        sys.exit('No file times meet requirements. Exiting.')
+
+    local_times = AAT.distribute_files_to_cores(file_times_restricted, size, rank)
 
     data_init = athena_read.athdf(args.problem_id + '.cons.00000.athdf', quantities=['x1v','x2v'])
     x1v = data_init['x1v']

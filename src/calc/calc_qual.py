@@ -25,7 +25,7 @@ import numpy as np
 from mpi4py import MPI
 import csv
 
-# Athena++ modules (require sys.path.insert above)
+# Athena++ modules (require sys.path.append above)
 import athena_read
 import AAT
 
@@ -37,9 +37,9 @@ def main(**kwargs):
 
     os.chdir(args.data)
 
+    # make list of files/times to analyse, distribute to cores
     file_times = AAT.add_time_to_list(args.update, args.output)
     local_times = AAT.distribute_files_to_cores(file_times, size, rank)
-    #print(local_times)
 
     data_input = athena_read.athinput(args.input)
     x1max = data_input['mesh']['x1max']
@@ -117,7 +117,7 @@ def main(**kwargs):
         dphi = dphi[:, th_l:th_u, :r_u]
         dtheta = dtheta[:, th_l:th_u, :r_u]
 
-        # restrict ranges
+        # restrict range of data
         dens = dens[:, th_l:th_u, :r_u]
         Bcc1 = Bcc1[:, th_l:th_u, :r_u]
         Bcc2 = Bcc2[:, th_l:th_u, :r_u]
