@@ -2,8 +2,11 @@
 # Python standard modules
 import argparse
 import sys
-sys.path.insert(0, '/Users/paytonrodman/athena/vis/python')
-sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies')
+import os
+
+dir_path = os.path.dirname(__file__)
+lib_path = os.path.join(dir_path, '..', '..', 'dependencies')
+sys.path.append(lib_path)
 
 # Other Python modules
 import matplotlib.pyplot as plt
