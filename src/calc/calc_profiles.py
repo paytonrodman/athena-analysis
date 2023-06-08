@@ -73,116 +73,117 @@ def main(**kwargs):
     scale_time_list = comm.bcast(scale_time_list, root=0)
     comm.barrier()
 
-    for num_elem,t in enumerate(local_times):
-        str_t = str(int(t)).zfill(5)
-        data_prim = athena_read.athdf(args.problem_id + '.prim.' + str_t + '.athdf',
-                                        quantities=['press'])
-        data_cons = athena_read.athdf(args.problem_id + '.cons.' + str_t + '.athdf',
-                                        quantities=['dens','mom1','mom2','mom3',
-                                                    'Bcc1','Bcc2','Bcc3'])
+    if len(local_times)>0: # skip for nodes that have no assigned times
+        for num_elem,t in enumerate(local_times):
+            str_t = str(int(t)).zfill(5)
+            data_prim = athena_read.athdf(args.problem_id + '.prim.' + str_t + '.athdf',
+                                            quantities=['press'])
+            data_cons = athena_read.athdf(args.problem_id + '.cons.' + str_t + '.athdf',
+                                            quantities=['dens','mom1','mom2','mom3',
+                                                        'Bcc1','Bcc2','Bcc3'])
 
-        # find corresponding entry in scale height data
-        scale_index = AAT.find_nearest(scale_time_list, data_cons['Time'])
-        scale_height = scale_height_list[scale_index]
+            # find corresponding entry in scale height data
+            scale_index = AAT.find_nearest(scale_time_list, data_cons['Time'])
+            scale_height = scale_height_list[scale_index]
 
-        #unpack data
-        x1v = data_cons['x1v']
-        x2v = data_cons['x2v']
-        x3v = data_cons['x3v']
-        density = data_cons['dens']
-        mom1 = data_cons['mom1']
-        mom2 = data_cons['mom2']
-        mom3 = data_cons['mom3']
-        Bcc1 = data_cons['Bcc1']
-        Bcc2 = data_cons['Bcc2']
-        Bcc3 = data_cons['Bcc3']
-        press = data_prim['press']
-        temp = press/density
-        GM = 1.
+            #unpack data
+            x1v = data_cons['x1v']
+            x2v = data_cons['x2v']
+            x3v = data_cons['x3v']
+            density = data_cons['dens']
+            mom1 = data_cons['mom1']
+            mom2 = data_cons['mom2']
+            mom3 = data_cons['mom3']
+            Bcc1 = data_cons['Bcc1']
+            Bcc2 = data_cons['Bcc2']
+            Bcc3 = data_cons['Bcc3']
+            press = data_prim['press']
+            temp = press/density
+            GM = 1.
 
-        # calculate rotational velocity for Reynolds stress
-        Omega_kep = np.sqrt(GM/(x1v**3.))
-        Omega_kep = np.broadcast_to(Omega_kep, (np.shape(density)[0], np.shape(density)[1], np.shape(density)[2]))
-        dmom3 = mom3 - Omega_kep
+            # calculate rotational velocity for Reynolds stress
+            Omega_kep = np.sqrt(GM/(x1v**3.))
+            Omega_kep = np.broadcast_to(Omega_kep, (np.shape(density)[0], np.shape(density)[1], np.shape(density)[2]))
+            dmom3 = mom3 - Omega_kep
 
-        # define bounds of region to average over
-        th_u = AAT.find_nearest(x2v, np.pi/2. + (3.*scale_height))
-        th_l = AAT.find_nearest(x2v, np.pi/2. - (3.*scale_height))
+            # define bounds of region to average over
+            th_u = AAT.find_nearest(x2v, np.pi/2. + (3.*scale_height))
+            th_l = AAT.find_nearest(x2v, np.pi/2. - (3.*scale_height))
 
-        # restrict range (arrays ordered by [phi,theta,r]!)
-        dens = density[:, th_l:th_u, :]
-        mom1 = mom1[:, th_l:th_u, :]
-        mom2 = mom2[:, th_l:th_u, :]
-        mom3 = mom3[:, th_l:th_u, :]
-        temp = temp[:, th_l:th_u, :]
-        Bcc1 = Bcc1[:, th_l:th_u, :]
-        Bcc2 = Bcc2[:, th_l:th_u, :]
-        Bcc3 = Bcc3[:, th_l:th_u, :]
-        press = press[:, th_l:th_u, :]
-        dmom3 = dmom3[:, th_l:th_u, :]
+            # restrict range (arrays ordered by [phi,theta,r]!)
+            dens = density[:, th_l:th_u, :]
+            mom1 = mom1[:, th_l:th_u, :]
+            mom2 = mom2[:, th_l:th_u, :]
+            mom3 = mom3[:, th_l:th_u, :]
+            temp = temp[:, th_l:th_u, :]
+            Bcc1 = Bcc1[:, th_l:th_u, :]
+            Bcc2 = Bcc2[:, th_l:th_u, :]
+            Bcc3 = Bcc3[:, th_l:th_u, :]
+            press = press[:, th_l:th_u, :]
+            dmom3 = dmom3[:, th_l:th_u, :]
 
-        # calculate Shakura-Sunyaev alpha from stresses
-        stress_Rey = dens*mom1*dmom3
-        stress_Max = -Bcc1*Bcc3
-        T_rphi = stress_Rey + stress_Max
-        alpha = T_rphi/press
+            # calculate Shakura-Sunyaev alpha from stresses
+            stress_Rey = dens*mom1*dmom3
+            stress_Max = -Bcc1*Bcc3
+            T_rphi = stress_Rey + stress_Max
+            alpha = T_rphi/press
 
-        # average over theta and phi
-        dens_profile = np.average(dens, axis=(0,1))
-        mom1_profile = np.average(mom1, axis=(0,1))
-        mom2_profile = np.average(mom2, axis=(0,1))
-        mom3_profile = np.average(mom3, axis=(0,1))
-        temp_profile = np.average(temp, axis=(0,1))
-        Bcc1_profile = np.average(Bcc1, axis=(0,1))
-        Bcc2_profile = np.average(Bcc2, axis=(0,1))
-        Bcc3_profile = np.average(Bcc3, axis=(0,1))
-        alpha_profile = np.average(alpha, axis=(0,1))
+            # average over theta and phi
+            dens_profile = np.average(dens, axis=(0,1))
+            mom1_profile = np.average(mom1, axis=(0,1))
+            mom2_profile = np.average(mom2, axis=(0,1))
+            mom3_profile = np.average(mom3, axis=(0,1))
+            temp_profile = np.average(temp, axis=(0,1))
+            Bcc1_profile = np.average(Bcc1, axis=(0,1))
+            Bcc2_profile = np.average(Bcc2, axis=(0,1))
+            Bcc3_profile = np.average(Bcc3, axis=(0,1))
+            alpha_profile = np.average(alpha, axis=(0,1))
 
-        if num_elem==0:
-            dens_av_local = [dens_profile]
-            mom1_av_local = [mom1_profile]
-            mom2_av_local = [mom2_profile]
-            mom3_av_local = [mom3_profile]
-            temp_av_local = [temp_profile]
-            Bcc1_av_local = [Bcc1_profile]
-            Bcc2_av_local = [Bcc2_profile]
-            Bcc3_av_local = [Bcc3_profile]
-            alpha_av_local = [alpha_profile]
-        else:
-            dens_av_local = addToAverage(dens_av_local, num_elem, dens_profile)
-            mom1_av_local = addToAverage(mom1_av_local, num_elem, mom1_profile)
-            mom2_av_local = addToAverage(mom2_av_local, num_elem, mom2_profile)
-            mom3_av_local = addToAverage(mom3_av_local, num_elem, mom3_profile)
-            temp_av_local = addToAverage(temp_av_local, num_elem, temp_profile)
-            Bcc1_av_local = addToAverage(Bcc1_av_local, num_elem, Bcc1_profile)
-            Bcc2_av_local = addToAverage(Bcc2_av_local, num_elem, Bcc2_profile)
-            Bcc3_av_local = addToAverage(Bcc3_av_local, num_elem, Bcc3_profile)
-            alpha_av_local = addToAverage(alpha_av_local, num_elem, alpha_profile)
+            if num_elem==0:
+                dens_av_local = [dens_profile]
+                mom1_av_local = [mom1_profile]
+                mom2_av_local = [mom2_profile]
+                mom3_av_local = [mom3_profile]
+                temp_av_local = [temp_profile]
+                Bcc1_av_local = [Bcc1_profile]
+                Bcc2_av_local = [Bcc2_profile]
+                Bcc3_av_local = [Bcc3_profile]
+                alpha_av_local = [alpha_profile]
+            else:
+                dens_av_local = addToAverage(dens_av_local, num_elem, dens_profile)
+                mom1_av_local = addToAverage(mom1_av_local, num_elem, mom1_profile)
+                mom2_av_local = addToAverage(mom2_av_local, num_elem, mom2_profile)
+                mom3_av_local = addToAverage(mom3_av_local, num_elem, mom3_profile)
+                temp_av_local = addToAverage(temp_av_local, num_elem, temp_profile)
+                Bcc1_av_local = addToAverage(Bcc1_av_local, num_elem, Bcc1_profile)
+                Bcc2_av_local = addToAverage(Bcc2_av_local, num_elem, Bcc2_profile)
+                Bcc3_av_local = addToAverage(Bcc3_av_local, num_elem, Bcc3_profile)
+                alpha_av_local = addToAverage(alpha_av_local, num_elem, alpha_profile)
 
 
-    N = num_elem+1
+        N = num_elem+1
 
-    weighted_dens = dens_av_local*N
-    weighted_mom1 = mom1_av_local*N
-    weighted_mom2 = mom2_av_local*N
-    weighted_mom3 = mom3_av_local*N
-    weighted_temp = temp_av_local*N
-    weighted_Bcc1 = Bcc1_av_local*N
-    weighted_Bcc2 = Bcc2_av_local*N
-    weighted_Bcc3 = Bcc3_av_local*N
-    weighted_alpha = alpha_av_local*N
+        weighted_dens = dens_av_local*N
+        weighted_mom1 = mom1_av_local*N
+        weighted_mom2 = mom2_av_local*N
+        weighted_mom3 = mom3_av_local*N
+        weighted_temp = temp_av_local*N
+        weighted_Bcc1 = Bcc1_av_local*N
+        weighted_Bcc2 = Bcc2_av_local*N
+        weighted_Bcc3 = Bcc3_av_local*N
+        weighted_alpha = alpha_av_local*N
 
-    all_weighted_dens = comm.gather(weighted_dens, root=0)
-    all_weighted_mom1 = comm.gather(weighted_mom1, root=0)
-    all_weighted_mom2 = comm.gather(weighted_mom2, root=0)
-    all_weighted_mom3 = comm.gather(weighted_mom3, root=0)
-    all_weighted_temp = comm.gather(weighted_temp, root=0)
-    all_weighted_Bcc1 = comm.gather(weighted_Bcc1, root=0)
-    all_weighted_Bcc2 = comm.gather(weighted_Bcc2, root=0)
-    all_weighted_Bcc3 = comm.gather(weighted_Bcc3, root=0)
-    all_weighted_alpha = comm.gather(weighted_alpha, root=0)
+        all_weighted_dens = comm.gather(weighted_dens, root=0)
+        all_weighted_mom1 = comm.gather(weighted_mom1, root=0)
+        all_weighted_mom2 = comm.gather(weighted_mom2, root=0)
+        all_weighted_mom3 = comm.gather(weighted_mom3, root=0)
+        all_weighted_temp = comm.gather(weighted_temp, root=0)
+        all_weighted_Bcc1 = comm.gather(weighted_Bcc1, root=0)
+        all_weighted_Bcc2 = comm.gather(weighted_Bcc2, root=0)
+        all_weighted_Bcc3 = comm.gather(weighted_Bcc3, root=0)
+        all_weighted_alpha = comm.gather(weighted_alpha, root=0)
 
-    all_elem = comm.gather(N, root=0)
+        all_elem = comm.gather(N, root=0)
 
     if rank == 0:
         dens_av = np.sum(all_weighted_dens, axis=0)/np.sum(all_elem, axis=0)
