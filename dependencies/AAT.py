@@ -30,7 +30,10 @@ def add_time_to_list(update_flag, output):
 
     # check if data file already exists
     if update_flag:
-        df = pd.read_csv(output, delimiter='\t', usecols=['file_time'])
+        try:
+            df = pd.read_csv(output, delimiter='\t', usecols=['file_time'])
+        except:
+            sys.exit('File {output} not found.'.format(output=output))
         t = df['file_time'].to_list()
         csv_times = t
 
