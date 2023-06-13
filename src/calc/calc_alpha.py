@@ -95,6 +95,7 @@ def main(**kwargs):
 
         # calculate rotational velocity
         r,_,_ = np.meshgrid(x3v,x2v,x1v, sparse=False, indexing='ij')
+        GM = 1. #code units
         Omega_kep = np.sqrt(GM/(x1v**3.))
         Omega_kep = np.broadcast_to(Omega_kep, (np.shape(dens)[0], np.shape(dens)[1], np.shape(dens)[2]))
         dmom3 = mom3 - r*Omega_kep
@@ -110,17 +111,15 @@ def main(**kwargs):
         # calculate Shakura-Sunyaev alpha from stresses
         Reynolds_stress = dens*mom1*dmom3
         Maxwell_stress = -Bcc1*Bcc3
-        av_Max = np.average(Maxwell_stress, axis=(1))
         T_rphi = Reynolds_stress + Maxwell_stress
-        T_rphi = np.average(T_rphi, axis=(1)) # average over vertical height, theta
-        alpha_SS = T_rphi/np.average(press, axis=(1))
+        alpha_SS = np.average(T_rphi)/np.average(press)
 
         sim_t = data_cons['Time']
         orbit_t = AAT.calculate_orbit_time(sim_t)
 
         with open(args.output, 'a', newline='') as f:
             writer = csv.writer(f, delimiter='\t')
-            row = [sim_t, orbit_t, av_Max, T_rphi, alpha_SS]
+            row = [sim_t, orbit_t, np.average(Maxwell_stress), np.average(T_rphi), alpha_SS]
             writer.writerow(row)
 
 
