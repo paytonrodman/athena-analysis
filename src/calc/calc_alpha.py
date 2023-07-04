@@ -63,7 +63,7 @@ def main(**kwargs):
         if not args.update: # create output file with header
             with open(args.output, 'w', newline='') as f:
                 writer = csv.writer(f, delimiter='\t')
-                writer.writerow(['sim_time', 'orbit_time', 'av_Max', 'T_rphi', 'alpha'])
+                writer.writerow(['file_time', 'sim_time', 'orbit_time', 'av_Max', 'T_rphi', 'alpha'])
     for t in local_times:
         str_t = str(int(t)).zfill(5)
         data_prim = athena_read.athdf(args.problem_id + '.prim.' + str_t + '.athdf',
@@ -119,7 +119,7 @@ def main(**kwargs):
 
         with open(args.output, 'a', newline='') as f:
             writer = csv.writer(f, delimiter='\t')
-            row = [sim_t, orbit_t, np.average(Maxwell_stress), np.average(T_rphi), alpha_SS]
+            row = [int(t), sim_t, orbit_t, np.average(Maxwell_stress), np.average(T_rphi), alpha_SS]
             writer.writerow(row)
 
 
