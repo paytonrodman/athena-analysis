@@ -37,24 +37,21 @@ def main(**kwargs):
 
     os.chdir(args.data)
 
-    # make list of files/times to analyse, distribute to cores
-    file_times = AAT.add_time_to_list(False, None) # retrieve all data file names
-    file_times.sort()
-    _,_,t_min = AAT.problem_dictionary(args.problem_id, False) # get minimum required time
-    file_times_restricted = []
+    # retrieve lists of file times and file names
+    #file_times_restricted = []
     if rank==0:
-        for f in file_times:
-            str_f = str(int(f)).zfill(5)
-            # read in some small slice of the file to check the time
-            data_check = athena_read.athdf(args.problem_id + '.cons.' + str_f + '.athdf',
-                                           x1_min=5,x1_max=6,x2_min=0,x2_max=0.1,x3_min=0,x3_max=0.1)
-            sim_t = data_check['Time']
-            if sim_t >= t_min:
-                file_times_restricted.append(f)
+        df = pd.read_csv(args.filetime, delimiter='\t', usecols=['file_time', 'sim_time'])
+        filetime_list = df['file_time'].to_list()
+        simtime_list = df['sim_time'].to_list()
+
+        _,_,t_min = AAT.problem_dictionary(args.problem_id, False) # get minimum required time
+
+
+        file_times_restricted = [f for ii,f in enumerate(filetime_list) if simtime_list[ii]>t_min]
     else:
         file_times_restricted = None
-    comm.barrier() # wait for master node to be done before moving on
-    file_times_restricted = comm.bcast(file_times_restricted, root=0) # broadcast list to all nodes
+    file_times_restricted = comm.bcast(file_times_restricted, root=0)
+    comm.barrier()
 
     if not file_times_restricted: # if list is empty
         sys.exit('No file times meet requirements. Exiting.')
@@ -220,6 +217,8 @@ if __name__ == '__main__':
                         help='location of data folder, including path')
     parser.add_argument('scale',
                         help='location of scale height file, possibly including path')
+    parser.add_argument('filetime',
+                        help='location of time file, possibly including path')
     parser.add_argument('output',
                         help='location of output folder, including path')
     args = parser.parse_args()
