@@ -6,7 +6,7 @@
 #
 # Usage: mpirun -n [nprocs] calc_profiles.py [options]
 #
-# Output: profiles.csv, Bcc[1,2,3]_profile.npy, mom[1,2,3]_profile.npy, dens_profile.npy, rot_profile.npy, temp_profile.npy
+# Output: Bcc[1,2,3]_profile.npy, mom[1,2,3]_profile.npy, dens_profile.npy, alpha_profile.npy, temp_profile.npy
 #
 # Python standard modules
 import argparse
@@ -16,9 +16,6 @@ import os
 dir_path = os.path.dirname(__file__)
 lib_path = os.path.join(dir_path, '..', '..', 'dependencies')
 sys.path.append(lib_path)
-
-#sys.path.insert(0, '/home/per29/rds/rds-accretion-zyNhkonJSR8/athena-analysis/dependencies')
-#sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies')
 
 # Other Python modules
 import numpy as np
@@ -30,6 +27,9 @@ import athena_read
 import AAT
 
 def main(**kwargs):
+    if args.filetime_short and args.problem_id not in ['high_res','high_beta']:
+        sys.exit('--filetime_short argument can only be used with high_res or high_beta. Exiting.')
+
     # get number of processors and processor rank
     comm = MPI.COMM_WORLD
     size = comm.Get_size()
@@ -46,8 +46,13 @@ def main(**kwargs):
 
         _,_,t_min = AAT.problem_dictionary(args.problem_id, False) # get minimum required time
 
-
-        file_times_restricted = [f for ii,f in enumerate(filetime_list) if simtime_list[ii]>t_min]
+        if args.filetime_short is not None:
+            df = pd.read_csv(args.filetime_short, delimiter='\t', usecols=['file_time', 'sim_time'])
+            simtime_list = df['sim_time'].to_list()
+            t_max = np.max(simtime_list)
+            file_times_restricted = [f for ii,f in enumerate(filetime_list) if simtime_list[ii]>t_min and simtime_list[ii]<t_max]
+        else:
+            file_times_restricted = [f for ii,f in enumerate(filetime_list) if simtime_list[ii]>t_min]
     else:
         file_times_restricted = None
     file_times_restricted = comm.bcast(file_times_restricted, root=0)
@@ -221,6 +226,8 @@ if __name__ == '__main__':
                         help='location of time file, possibly including path')
     parser.add_argument('output',
                         help='location of output folder, including path')
+    parser.add_argument('-s', '--filetime_short',
+                        help='location of short time file, possibly including path')
     args = parser.parse_args()
 
     main(**vars(args))

@@ -88,6 +88,12 @@ def main(**kwargs):
         Bcc3 = data_cons['Bcc3']
         press = data_prim['press']
 
+        sim_t = data_cons['Time']
+
+        # manage memory
+        del data_cons
+        del data_prim
+
         # define bounds of region to average over
         r_u = AAT.find_nearest(x1v, x1_high_max)
         th_u = AAT.find_nearest(x2v, np.pi/2. + (3.*scale_height))
@@ -114,7 +120,6 @@ def main(**kwargs):
         T_rphi = Reynolds_stress + Maxwell_stress
         alpha_SS = np.average(T_rphi)/np.average(press)
 
-        sim_t = data_cons['Time']
         orbit_t = AAT.calculate_orbit_time(sim_t)
 
         with open(args.output, 'a', newline='') as f:

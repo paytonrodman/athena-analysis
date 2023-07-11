@@ -5,6 +5,7 @@ def calculate_velocity(mom1,mom2,mom3,dens):
     v3 = mom3/dens
     return v1,v2,v3
 
+
 def calculate_delta(x1,x2,x3):
     """For 3 vector arrays x1,x2,x3, return the difference between each adjacent entry."""
     import numpy as np
@@ -13,12 +14,14 @@ def calculate_delta(x1,x2,x3):
     dx3 = np.diff(x3)
     return dx1,dx2,dx3
 
+
 def find_nearest(array, value):
     """For a given array, find the index of the entry closest to 'value'."""
     import numpy as np
     array = np.asarray(array);
     idx = (np.abs(array - value)).argmin();
     return idx;
+
 
 def add_time_to_list(update_flag, output):
     """Compile a unique list of files that have not been analysed before."""
@@ -34,8 +37,8 @@ def add_time_to_list(update_flag, output):
             df = pd.read_csv(output, delimiter='\t', usecols=['file_time'])
         except:
             sys.exit('File {output} not found.'.format(output=output))
-        t = df['file_time'].to_list()
-        csv_times = t
+        # if it does, get times already present
+        csv_times = df['file_time'].to_list()
 
     # compile a list of unique times associated with data files
     files = glob.glob('./*.cons.*.athdf')
@@ -52,6 +55,7 @@ def add_time_to_list(update_flag, output):
         sys.exit('No new timesteps to analyse in the given directory. Exiting.')
 
     return file_times
+
 
 def distribute_files_to_cores(file_list, n_process, rank):
     """Distribute files to cores in a balanced way."""
@@ -77,6 +81,7 @@ def calculate_orbit_time(simulation_time):
     T_period = 2.*np.pi*np.sqrt(r_ISCO)*(r_ISCO - 2.)
     orbit_time = simulation_time/T_period
     return orbit_time
+
 
 def problem_dictionary(problem_id, presentation_quality_flag):
     """Return the appropriate plotting label and colour for the given problem ID."""
