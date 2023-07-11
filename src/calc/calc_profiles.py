@@ -91,7 +91,6 @@ def main(**kwargs):
             #unpack data
             x1v = data_cons['x1v']
             x2v = data_cons['x2v']
-            x3v = data_cons['x3v']
             density = data_cons['dens']
             mom1 = data_cons['mom1']
             mom2 = data_cons['mom2']
