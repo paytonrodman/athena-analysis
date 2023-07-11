@@ -1,6 +1,6 @@
 #!/bin/bash
-ROOTDIR=/Users/paytonrodman/athena-sim
-#ROOTDIR=/home/per29/rds/rds-accretion-zyNhkonJSR8
+#ROOTDIR=/Users/paytonrodman/athena-sim
+ROOTDIR=/home/per29/rds/rds-accretion-zyNhkonJSR8
 PROBLEM=$1
 
 if [ $# -lt 3 ]

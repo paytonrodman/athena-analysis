@@ -21,8 +21,8 @@ Requires scipy if making a stream plot.
 import argparse
 import warnings
 import sys
-#sys.path.insert(0, '/home/per29/rds/rds-accretion-zyNhkonJSR8/athena-analysis/dependencies')
-sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies')
+sys.path.insert(0, '/home/per29/rds/rds-accretion-zyNhkonJSR8/athena-analysis/dependencies')
+#sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies')
 
 # Other Python modules
 import numpy as np
@@ -95,21 +95,25 @@ def main(**kwargs):
     vals_X = [[] for _ in range(n)]
     vals_Y = [[] for _ in range(n)]
     titles = []
-    sim_IDs = []
+    labels = []
     # Read data
     for idx in range(n):
         f = kwargs['data_file'][idx]
         file = f[f.rindex('/'):][1:]
         prob_id = file[:file.index('.')]
-        if prob_id=='high_res':
-            id_f = 'b200'
-        elif prob_id=='high_beta':
-            id_f = 'b5'
-        elif prob_id=='super_res':
-            id_f = 'b5_hi'
-        elif prob_id=='b200_super_res':
-            id_f = 'b200_hi'
-        sim_IDs.append(id_f)
+
+        l,_,_ = AAT.problem_dictionary(prob_id, args.pres)
+        labels.append(l)
+
+        #if prob_id=='high_res':
+        #    id_f = 'b200'
+        #elif prob_id=='high_beta':
+        #    id_f = 'b5'
+        #elif prob_id=='super_res':
+        #    id_f = 'b5_hi'
+        #elif prob_id=='b200_super_res':
+        #    id_f = 'b200_hi'
+        #sim_IDs.append(id_f)
 
         data = athena_read.athdf(f, quantities=quantities)
         if kwargs['quantity']=='beta':

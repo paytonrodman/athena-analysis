@@ -1,11 +1,4 @@
-#!/usr/bin/env python3
-#
-# plt_alpha.py
-#
-# A program to plot a 2D map of the azimuthally-averaged Shakura-Sunyaev alpha.
-#
-# Usage: python plt_alpha.py [options]
-#
+#!/usr/bin/python
 # Python standard modules
 import argparse
 import sys
@@ -16,150 +9,134 @@ lib_path = os.path.join(dir_path, '..', '..', 'dependencies')
 sys.path.append(lib_path)
 
 # Other Python modules
-import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
+import pandas as pd
+import re
 
 # Athena++ modules
-import athena_read
 import AAT
 
 def main(**kwargs):
-    # Load Python plotting modules
-    import matplotlib.pyplot as plt
-    import matplotlib.colors as colors
+    n = len(args.file) # number of data files to read
+    if not args.file:
+        sys.exit('Must specify data files')
+    if not args.output:
+        sys.exit('Must specify output file')
 
-    # Set resolution of plot in dots per square inch
-    if args.dpi is not None:
-        resolution = args.dpi
+    labels = []
+    colors = []
+    # get pre-defined labels and line colours for each simulation
+    for f in args.file:
+        slash_list = [m.start() for m in re.finditer('/', f.name)]
+        prob_id = f.name[slash_list[-2]+1:slash_list[-1]]
+        l,c,_ = AAT.problem_dictionary(prob_id, args.pres)
+        labels.append(l)
+        colors.append(c)
 
-    data_input = athena_read.athinput(args.input)
-    scale_height = data_input['problem']['h_r']
-
-    if 'cons' in args.data_file:
-        file_cons = args.data_file
-        file_prim = args.data_file.replace('cons','prim')
+    t_lists = [[] for _ in range(n)]
+    Max_lists = [[] for _ in range(n)]
+    Rey_lists = [[] for _ in range(n)]
+    a_lists = [[] for _ in range(n)]
+    if args.orbits:
+        time_col = 'orbit_time'
     else:
-        file_prim = args.data_file
-        file_cons = args.data_file.replace('prim','cons')
+        time_col = 'sim_time'
 
-    data_prim = athena_read.athdf(file_prim, quantities=['press'])
-    data_cons = athena_read.athdf(file_cons, quantities=['x1v','x2v','x3v',
-                                                        'x1f','x3f',
-                                                        'dens',
-                                                        'mom1','mom3',
-                                                        'Bcc1','Bcc3'])
+    for count,f in enumerate(args.file):
+        df = pd.read_csv(f, delimiter='\t', usecols=[time_col, 'av_Max', 'T_rphi', 'alpha'])
+        t = df[time_col].to_list()
+        Max_stress = df['av_Max'].to_list()
+        T_rphi = df['T_rphi'].to_list()
+        alpha = df['alpha'].to_list()
 
-    #unpack data
-    x1v = data_cons['x1v']
-    x2v = data_cons['x2v']
-    x3v = data_cons['x3v']
-    x1f = data_cons['x1f']
-    x3f = data_cons['x3f']
-    dens = data_cons['dens']
-    mom1 = data_cons['mom1']
-    mom3 = data_cons['mom3']
-    Bcc1 = data_cons['Bcc1']
-    Bcc3 = data_cons['Bcc3']
-    press = data_prim['press']
-
-    # define bounds
-    th_u = AAT.find_nearest(x2v, np.pi/2. + (2.*scale_height))
-    th_l = AAT.find_nearest(x2v, np.pi/2. - (2.*scale_height))
-
-    r,_,_ = np.meshgrid(x3v,x2v,x1v, sparse=False, indexing='ij')
-    GM = 1.
-    Omega_kep = np.sqrt(GM/(x1v**3.))
-    Omega_kep = np.broadcast_to(Omega_kep, (np.shape(dens)[0], np.shape(dens)[1], np.shape(dens)[2]))
-    dmom3 = mom3 - r*Omega_kep
-
-    # restrict range of data
-    press = press[:, th_l:th_u, :]
-    dens = dens[:, th_l:th_u, :]
-    mom1 = mom1[:, th_l:th_u, :]
-    Bcc1 = Bcc1[:, th_l:th_u, :]
-    Bcc3 = Bcc3[:, th_l:th_u, :]
-    dmom3 = dmom3[:, th_l:th_u, :]
-
-    Reynolds_stress = dens*mom1*dmom3
-    Maxwell_stress = -Bcc1*Bcc3/(4.*np.pi)
-
-    T_rphi = Reynolds_stress + Maxwell_stress
-    T_rphi = np.average(T_rphi, axis=(1)) # average over vertical height, theta
-    T_mag = Maxwell_stress
-    T_mag = np.average(T_mag, axis=(1)) # average over vertical height, theta
-
-    alpha_SS = T_rphi/np.average(press, axis=(1))
-    alpha_mag = T_mag/np.average(press, axis=(1))
-
-    # Create scalar grid
-    r_grid, phi_grid = np.meshgrid(x1f, x3f)
-    x_grid = r_grid * np.cos(phi_grid)
-    y_grid = r_grid * np.sin(phi_grid)
-
-    vals = [T_rphi,alpha_SS,alpha_mag]
-    labels = [r'$\langle T_{r\phi}\rangle_{\theta}$', r'$\langle \alpha_{SS}\rangle_{\theta}$', r'$\langle \alpha_{\rm mag}\rangle_{\theta}$']
-    outputs = ['Trphi.png', 'alpha.png', 'alpha_mag.png']
-    for num in np.arange(0,3):
-        data = vals[num]
-        fig = plt.figure()
-        fig.add_subplot(111)
-        if args.vmin is not None:
-            vmin = args.vmin
+        Rey_stress = [T_rphi[ii] - Max_stress[ii] for ii,val in enumerate(T_rphi)]
+        if args.orbits:
+            t_lists[count] = t
         else:
-            vmin = np.nanmin(data[np.isfinite(data)])
-        if args.vmax is not None:
-            vmax = args.vmax
-        else:
-            vmax = np.nanmax(data[np.isfinite(data)])
+            t_lists[count] = [ti/1e5 for ti in t] # convert time to units of 10^5 GM/c3
+        Max_lists[count] = Max_stress
+        Rey_lists[count] = Rey_stress
+        a_lists[count] = alpha
 
-        if num in [1,2] and args.logc:
-            norm = colors.SymLogNorm(linthresh=1e-5, linscale=1e-5,
-                                          vmin=vmin, vmax=vmax, base=10)
-        elif num==0 and args.logc:
-            vmin = 1e-10
-            norm = colors.LogNorm(vmin, vmax)
+    for ii in range(n):
+        t_lists[ii], Max_lists[ii], Rey_lists[ii], a_lists[ii] = zip(*sorted(zip(t_lists[ii], Max_lists[ii], Rey_lists[ii], a_lists[ii])))
+
+    lw = 1.5
+    if args.orbits:
+        x_label = r'time [ISCO orbits]'
+    else:
+        x_label = r'time [$10^5~GM/c^3$]'
+    if not args.stresses:
+        y_label = r'$\langle\alpha_{\rm SS, eff}\rangle$'
+    else:
+        y_label = r'Stress'
+
+    _, ax1 = plt.subplots(nrows=1, ncols=1, constrained_layout=True, sharex=True)
+    if n>1:
+        for ii in range(n):
+            if not args.stresses:
+                ax1.plot(t_lists[ii], a_lists[ii], linewidth=lw, color=colors[ii], label=labels[ii])
+            else:
+                ax1.plot([],[], color=colors[ii], label=labels[ii])
+                ax1.plot(t_lists[ii], Rey_lists[ii], linewidth=0.5, linestyle='dashed', alpha=0.5, color=colors[ii])
+                ax1.plot(t_lists[ii], Max_lists[ii], linewidth=0.5, linestyle='dotted', color=colors[ii])
+    else:
+        if not args.stresses:
+            ax1.plot(t_lists[ii], a_lists[ii], linewidth=lw, color=colors[ii], label=r'$\langle\alpha_{\rm SS, eff}\rangle$')
         else:
-            norm = colors.Normalize(vmin, vmax)
-        im = plt.pcolormesh(x_grid, y_grid, data, cmap="viridis", norm=norm, shading='auto')
-        cbar = plt.colorbar(im, extend='both')
-        plt.gca().set_aspect('equal')
-        cbar.set_label(labels[num])
-        plt.xlabel(r'$x$')
-        plt.ylabel(r'$y$')
-        plt.title('t={:.2e} GM/c3'.format(data_cons['Time']))
-        plt.savefig(args.output_location + outputs[num], bbox_inches='tight', dpi=resolution)
+            ax1.plot(t_lists[ii], Rey_lists[ii], linewidth=0.5, linestyle='dashed', alpha=0.5, color=colors[ii], label='Reynolds stress')
+            ax1.plot(t_lists[ii], Max_lists[ii], linewidth=0.5, linestyle='dotted', color=colors[ii], label='Maxwell stress')
+
+    if args.ymax is not None:
+        ax1.set_ylim(top=args.ymax)
+
+    ax1.set_xlabel(x_label)#, x=0.5, y=-0.03)
+    ax1.set_ylabel(y_label)
+
+    if n==1:
+        plt.title(label=labels[0])
+
+    if args.stresses:
+        custom_lines = [Line2D([0],[0], color='k', linestyle='dashed', alpha=0.5),
+                        Line2D([0],[0], color='k', linestyle='dotted')]
+        leg2 = plt.legend(custom_lines, ['Reynolds stress', 'Maxwell stress'], loc=2)
+        leg1 = ax1.legend(loc='best')
+        plt.gca().add_artist(leg2)
+    else:
+        leg1 = ax1.legend(loc='best')
+
+    #for line in leg1.get_lines():
+    #    line.set_linewidth(1.0)
+    plt.savefig(args.output, bbox_inches='tight')
+    plt.close()
 
 
 # Execute main function
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Calculate various quality factors from raw simulation data.')
-    parser.add_argument('data_file',
-                        help='name of the .athdf data file to be analysed, including path')
-    parser.add_argument('input',
-                        help='location of athinput file, including path')
-    parser.add_argument('output_location',
-                        help='folder to save outputs to, including path')
-    parser.add_argument('-a', '--average',
+    parser = argparse.ArgumentParser(description='Plot plasma beta over time.')
+    parser.add_argument('-f', '--file',
+                        type=argparse.FileType('r'),
+                        nargs='+',
+                        default=None,
+                        help='list of data files to read, including path')
+    parser.add_argument('-o', '--output',
+                        type=str,
+                        default=None,
+                        help='name of plot to be created, including path')
+    parser.add_argument('--ymax',
+                        type=float,
+                        default=None,
+                        help='ymax of plot')
+    parser.add_argument('--stresses',
                         action='store_true',
-                        help='flag indicating phi-averaging should be done')
-    parser.add_argument('-r', '--r_max',
-                        type=float,
-                        default=None,
-                        help='maximum radial extent of plot')
-    parser.add_argument('--logc',
+                        help='plot constituent stresses (Maxwell & Reynolds)')
+    parser.add_argument('--orbits',
                         action='store_true',
-                        help='flag indicating data should be colormapped logarithmically')
-    parser.add_argument('--dpi',
-                        type=int,
-                        default=200,
-                        help='resolution of saved image (dots per square inch)')
-    parser.add_argument('--vmin',
-                        type=float,
-                        default=None,
-                        help='minimum value for colormap')
-    parser.add_argument('--vmax',
-                        type=float,
-                        default=None,
-                        help='maximum value for colormap')
+                        help='plot against number of ISCO orbits')
+    parser.add_argument('--pres',
+                        action='store_true',
+                        help='make presentation-quality image')
     args = parser.parse_args()
 
     main(**vars(args))
