@@ -200,7 +200,7 @@ def main(**kwargs):
 
     # Make plot
     #plt.figure()
-    fig, ax = plt.subplots()
+    _, ax = plt.subplots()
     im = ax.pcolormesh(x_grid, y_grid, vals, cmap=cmap, norm=norm)
     if kwargs['contour']:
         #vel_midplane = np.average(dvp, axis=(1)) # average in theta

@@ -92,9 +92,7 @@ def main(**kwargs):
         ax.set_ylabel(y_label)
         ax.set_title(labels[ii])
 
-        leg = ax.legend(loc='best')
-        #for line in leg.get_lines():
-        #    line.set_linewidth(2.0)
+        ax.legend(loc='best')
     plt.savefig(args.output, bbox_inches='tight')
     plt.close()
 

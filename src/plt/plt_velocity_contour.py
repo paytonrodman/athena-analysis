@@ -62,14 +62,10 @@ def main(**kwargs):
 
         if kwargs['background'] in ['vor','vorb'] or kwargs['contour'] in ['vor','vorb']:
             # Define the vortensity
-            w1, w2, w3 = curl(r_grid,theta_grid,phi_grid,vr,vt,dvp)
+            _, _, w3 = curl(r_grid,theta_grid,phi_grid,vr,vt,dvp)
             if kwargs['background'] in ['vor'] or kwargs['contour'] in ['vor']:
-                #vor1 = w1/data['dens']
-                #vor2 = w2/data['dens']
                 vor3 = w3/data['dens']
             if kwargs['background'] in ['vorb'] or kwargs['contour'] in ['vorb']:
-                #vorb1 = w1*data['dens']/(data['Bcc1']**2. + data['Bcc2']**2. + data['Bcc3']**2.)
-                #vorb2 = w2*data['dens']/(data['Bcc1']**2. + data['Bcc2']**2. + data['Bcc3']**2.)
                 vorb3 = w3*data['dens']/(data['Bcc1']**2. + data['Bcc2']**2. + data['Bcc3']**2.)
 
     if kwargs['background']=='dvp':
@@ -110,7 +106,7 @@ def main(**kwargs):
     x_grid_alt = r_grid_alt[:, int(nx2/2), :] * np.cos(phi_grid_alt[:, int(nx2/2), :])
     y_grid_alt = r_grid_alt[:, int(nx2/2), :] * np.sin(phi_grid_alt[:, int(nx2/2), :])
 
-    fig, ax = plt.subplots()
+    _, ax = plt.subplots()
     if kwargs['background'] in ['dvp','vor','vorb']:
         val_max = np.max(np.abs(bg_vals))
         im = ax.pcolormesh(x_grid, y_grid, bg_vals, norm=colors.SymLogNorm(linthresh=0.001*val_max,linscale=0.5,base=10), cmap='seismic')
