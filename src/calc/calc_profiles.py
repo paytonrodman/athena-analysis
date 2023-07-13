@@ -21,6 +21,7 @@ sys.path.append(lib_path)
 import numpy as np
 from mpi4py import MPI
 import pandas as pd
+import gc # only necessary for very big files
 
 # Athena++ modules (require sys.path.append above)
 import athena_read
@@ -38,7 +39,6 @@ def main(**kwargs):
     os.chdir(args.data)
 
     # retrieve lists of file times and file names
-    #file_times_restricted = []
     if rank==0:
         df = pd.read_csv(args.filetime, delimiter='\t', usecols=['file_time', 'sim_time'])
         filetime_list = df['file_time'].to_list()
@@ -46,6 +46,7 @@ def main(**kwargs):
 
         _,_,t_min = AAT.problem_dictionary(args.problem_id, False) # get minimum required time
 
+        # if applicable, use maximum time of the higher resolution simulation
         if args.filetime_short is not None:
             df = pd.read_csv(args.filetime_short, delimiter='\t', usecols=['file_time', 'sim_time'])
             simtime_list = df['sim_time'].to_list()
@@ -101,6 +102,10 @@ def main(**kwargs):
             press = data_prim['press']
             temp = press/density
             GM = 1.
+
+            # clear references to large objects and free memory
+            del data_cons, data_prim
+            gc.collect()
 
             # calculate rotational velocity for Reynolds stress
             Omega_kep = np.sqrt(GM/(x1v**3.))
@@ -197,15 +202,26 @@ def main(**kwargs):
         Bcc3_av = np.sum(all_weighted_Bcc3, axis=0)/np.sum(all_elem, axis=0)
         alpha_av = np.sum(all_weighted_alpha, axis=0)/np.sum(all_elem, axis=0)
 
-        np.save(args.output + 'dens_profile.npy', dens_av)
-        np.save(args.output + 'mom1_profile.npy', mom1_av)
-        np.save(args.output + 'mom2_profile.npy', mom2_av)
-        np.save(args.output + 'mom3_profile.npy', mom3_av)
-        np.save(args.output + 'temp_profile.npy', temp_av)
-        np.save(args.output + 'Bcc1_profile.npy', Bcc1_av)
-        np.save(args.output + 'Bcc2_profile.npy', Bcc2_av)
-        np.save(args.output + 'Bcc3_profile.npy', Bcc3_av)
-        np.save(args.output + 'alpha_profile.npy', alpha_av)
+        if filetime_short is not None:
+            np.save(args.output + 'dens_profile_short.npy', dens_av)
+            np.save(args.output + 'mom1_profile_short.npy', mom1_av)
+            np.save(args.output + 'mom2_profile_short.npy', mom2_av)
+            np.save(args.output + 'mom3_profile_short.npy', mom3_av)
+            np.save(args.output + 'temp_profile_short.npy', temp_av)
+            np.save(args.output + 'Bcc1_profile_short.npy', Bcc1_av)
+            np.save(args.output + 'Bcc2_profile_short.npy', Bcc2_av)
+            np.save(args.output + 'Bcc3_profile_short.npy', Bcc3_av)
+            np.save(args.output + 'alpha_profile_short.npy', alpha_av)
+        else:
+            np.save(args.output + 'dens_profile.npy', dens_av)
+            np.save(args.output + 'mom1_profile.npy', mom1_av)
+            np.save(args.output + 'mom2_profile.npy', mom2_av)
+            np.save(args.output + 'mom3_profile.npy', mom3_av)
+            np.save(args.output + 'temp_profile.npy', temp_av)
+            np.save(args.output + 'Bcc1_profile.npy', Bcc1_av)
+            np.save(args.output + 'Bcc2_profile.npy', Bcc2_av)
+            np.save(args.output + 'Bcc3_profile.npy', Bcc3_av)
+            np.save(args.output + 'alpha_profile.npy', alpha_av)
 
 
 def addToAverage(average, size, value):
