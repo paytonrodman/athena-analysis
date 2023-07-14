@@ -257,7 +257,7 @@ def main(**kwargs):
 
 
 
-        if filetime_short is not None:
+        if args.filetime_short is not None:
             if 'dens' in args.profile_data:
                 np.save(args.output + 'dens_profile_short.npy', dens_av)
             if 'mom' in args.profile_data:
