@@ -78,6 +78,7 @@ def main(**kwargs):
 
     if len(local_times)>0: # skip for nodes that have no assigned times
         for num_elem,t in enumerate(local_times):
+            print("Time: ", t)
             str_t = str(int(t)).zfill(5)
             data_prim = athena_read.athdf(args.problem_id + '.prim.' + str_t + '.athdf',
                                             quantities=['press'])
@@ -112,6 +113,9 @@ def main(**kwargs):
             Omega_kep = np.broadcast_to(Omega_kep, (np.shape(density)[0], np.shape(density)[1], np.shape(density)[2]))
             dmom3 = mom3 - Omega_kep
 
+            del Omega_kep
+            gc.collect()
+
             # define bounds of region to average over
             th_u = AAT.find_nearest(x2v, np.pi/2. + (3.*scale_height))
             th_l = AAT.find_nearest(x2v, np.pi/2. - (3.*scale_height))
@@ -145,6 +149,9 @@ def main(**kwargs):
             Bcc3_profile = np.average(Bcc3, axis=(0,1))
             alpha_profile = np.average(alpha, axis=(0,1))
 
+            del dens, mom1, mom2, mom3, temp, Bcc1, Bcc2, Bcc3, alpha
+            gc.collect()
+
             if num_elem==0:
                 dens_av_local = [dens_profile]
                 mom1_av_local = [mom1_profile]
@@ -165,6 +172,13 @@ def main(**kwargs):
                 Bcc2_av_local = addToAverage(Bcc2_av_local, num_elem, Bcc2_profile)
                 Bcc3_av_local = addToAverage(Bcc3_av_local, num_elem, Bcc3_profile)
                 alpha_av_local = addToAverage(alpha_av_local, num_elem, alpha_profile)
+
+            del dens_profile
+            del mom1_profile, mom2_profile, mom3_profile
+            del temp_profile
+            del Bcc1_profile, Bcc2_profile, Bcc3_profile
+            del alpha_profile
+            gc.collect()
 
 
         N = num_elem+1
