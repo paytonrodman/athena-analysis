@@ -30,6 +30,38 @@ import AAT
 def main(**kwargs):
     if args.filetime_short and args.problem_id not in ['high_res','high_beta']:
         sys.exit('--filetime_short argument can only be used with high_res or high_beta. Exiting.')
+    if 'all' in args.profile_data:
+        args.profile_data = ['dens','mom','temp','Bcc','alpha']
+        quantities_cons = ['dens','mom1','mom2','mom3','Bcc1','Bcc2','Bcc3']
+        quantities_prim = ['press']
+    else:
+        quantities_cons = []
+        quantities_prim = []
+        if 'dens' in args.profile_data:
+            quantities_cons.append('dens')
+        if 'mom' in args.profile_data:
+            quantities_cons.append('mom1')
+            quantities_cons.append('mom2')
+            quantities_cons.append('mom3')
+        if 'temp' in args.profile_data:
+            quantities_cons.append('dens')
+            quantities_prim.append('press')
+        if 'Bcc' in args.profile_data:
+            quantities_cons.append('Bcc1')
+            quantities_cons.append('Bcc2')
+            quantities_cons.append('Bcc3')
+        if 'alpha' in args.profile_data:
+            quantities_cons.append('x1v')
+            quantities_cons.append('dens')
+            quantities_cons.append('mom1')
+            quantities_cons.append('mom3')
+            quantities_cons.append('Bcc1')
+            quantities_cons.append('Bcc3')
+            quantities_prim.append('press')
+
+    # remove duplicates
+    quantities_cons = (list(set(quantities_cons)))
+    quantities_prim = (list(set(quantities_prim)))
 
     # get number of processors and processor rank
     comm = MPI.COMM_WORLD
@@ -81,161 +113,180 @@ def main(**kwargs):
             print("Time: ", t)
             str_t = str(int(t)).zfill(5)
             data_prim = athena_read.athdf(args.problem_id + '.prim.' + str_t + '.athdf',
-                                            quantities=['press'])
+                                            quantities=quantities_prim)
             data_cons = athena_read.athdf(args.problem_id + '.cons.' + str_t + '.athdf',
-                                            quantities=['dens','mom1','mom2','mom3',
-                                                        'Bcc1','Bcc2','Bcc3'])
+                                            quantities=quantities_cons)
 
             # find corresponding entry in scale height data
             scale_index = AAT.find_nearest(scale_time_list, data_cons['Time'])
             scale_height = scale_height_list[scale_index]
 
-            #unpack data
-            x1v = data_cons['x1v']
-            x2v = data_cons['x2v']
-            density = data_cons['dens']
-            mom1 = data_cons['mom1']
-            mom2 = data_cons['mom2']
-            mom3 = data_cons['mom3']
-            Bcc1 = data_cons['Bcc1']
-            Bcc2 = data_cons['Bcc2']
-            Bcc3 = data_cons['Bcc3']
-            press = data_prim['press']
-            temp = press/density
-            GM = 1.
-
-            # clear references to large objects and free memory
-            del data_cons, data_prim
-            gc.collect()
-
-            # calculate rotational velocity for Reynolds stress
-            Omega_kep = np.sqrt(GM/(x1v**3.))
-            Omega_kep = np.broadcast_to(Omega_kep, (np.shape(density)[0], np.shape(density)[1], np.shape(density)[2]))
-            dmom3 = mom3 - Omega_kep
-
-            del Omega_kep
-            gc.collect()
-
             # define bounds of region to average over
+            x2v = data_cons['x2v']
             th_u = AAT.find_nearest(x2v, np.pi/2. + (3.*scale_height))
             th_l = AAT.find_nearest(x2v, np.pi/2. - (3.*scale_height))
 
-            # restrict range (arrays ordered by [phi,theta,r]!)
-            dens = density[:, th_l:th_u, :]
-            mom1 = mom1[:, th_l:th_u, :]
-            mom2 = mom2[:, th_l:th_u, :]
-            mom3 = mom3[:, th_l:th_u, :]
-            temp = temp[:, th_l:th_u, :]
-            Bcc1 = Bcc1[:, th_l:th_u, :]
-            Bcc2 = Bcc2[:, th_l:th_u, :]
-            Bcc3 = Bcc3[:, th_l:th_u, :]
-            press = press[:, th_l:th_u, :]
-            dmom3 = dmom3[:, th_l:th_u, :]
+            #unpack data
+            if 'dens' in args.profile_data:
+                dens = data_cons['dens'][:, th_l:th_u, :]
+            if 'mom' in args.profile_data:
+                mom1 = data_cons['mom1'][:, th_l:th_u, :]
+                mom2 = data_cons['mom2'][:, th_l:th_u, :]
+                mom3 = data_cons['mom3'][:, th_l:th_u, :]
+            if 'temp' in args.profile_data:
+                dens = data_cons['dens'][:, th_l:th_u, :]
+                press = data_prim['press'][:, th_l:th_u, :]
+                temp = press/dens
+            if 'Bcc' in args.profile_data:
+                Bcc1 = data_cons['Bcc1'][:, th_l:th_u, :]
+                Bcc2 = data_cons['Bcc2'][:, th_l:th_u, :]
+                Bcc3 = data_cons['Bcc3'][:, th_l:th_u, :]
+            if 'alpha' in args.profile_data:
+                GM = 1.
+                x1v = data_cons['x1v']
 
-            # calculate Shakura-Sunyaev alpha from stresses
-            stress_Rey = dens*mom1*dmom3
-            stress_Max = -Bcc1*Bcc3
-            T_rphi = stress_Rey + stress_Max
-            alpha = T_rphi/press
+                dens = data_cons['dens'][:, th_l:th_u, :]
+                mom3 = data_cons['mom3'][:, th_l:th_u, :]
+                mom1 = data_cons['mom1'][:, th_l:th_u, :]
+                Bcc1 = data_cons['Bcc1'][:, th_l:th_u, :]
+                Bcc3 = data_cons['Bcc3'][:, th_l:th_u, :]
+                press = data_prim['press'][:, th_l:th_u, :]
+
+                # calculate rotational velocity for Reynolds stress
+                Omega_kep = np.sqrt(GM/(x1v**3.))
+                Omega_kep = np.broadcast_to(Omega_kep, (np.shape(dens)[0], np.shape(dens)[1], np.shape(dens)[2]))
+                dmom3 = mom3 - Omega_kep
+
+                # calculate Shakura-Sunyaev alpha from stresses
+                stress_Rey = dens*mom1*dmom3
+                stress_Max = -Bcc1*Bcc3
+                T_rphi = stress_Rey + stress_Max
+                alpha = T_rphi/press
+
 
             # average over theta and phi
-            dens_profile = np.average(dens, axis=(0,1))
-            mom1_profile = np.average(mom1, axis=(0,1))
-            mom2_profile = np.average(mom2, axis=(0,1))
-            mom3_profile = np.average(mom3, axis=(0,1))
-            temp_profile = np.average(temp, axis=(0,1))
-            Bcc1_profile = np.average(Bcc1, axis=(0,1))
-            Bcc2_profile = np.average(Bcc2, axis=(0,1))
-            Bcc3_profile = np.average(Bcc3, axis=(0,1))
-            alpha_profile = np.average(alpha, axis=(0,1))
-
-            del dens, mom1, mom2, mom3, temp, Bcc1, Bcc2, Bcc3, alpha
-            gc.collect()
+            if 'dens' in args.profile_data:
+                dens_profile = np.average(dens, axis=(0,1))
+            if 'mom' in args.profile_data:
+                mom1_profile = np.average(mom1, axis=(0,1))
+                mom2_profile = np.average(mom2, axis=(0,1))
+                mom3_profile = np.average(mom3, axis=(0,1))
+            if 'temp' in args.profile_data:
+                temp_profile = np.average(temp, axis=(0,1))
+            if 'Bcc' in args.profile_data:
+                Bcc1_profile = np.average(Bcc1, axis=(0,1))
+                Bcc2_profile = np.average(Bcc2, axis=(0,1))
+                Bcc3_profile = np.average(Bcc3, axis=(0,1))
+            if 'alpha' in args.profile_data:
+                alpha_profile = np.average(alpha, axis=(0,1))
 
             if num_elem==0:
-                dens_av_local = [dens_profile]
-                mom1_av_local = [mom1_profile]
-                mom2_av_local = [mom2_profile]
-                mom3_av_local = [mom3_profile]
-                temp_av_local = [temp_profile]
-                Bcc1_av_local = [Bcc1_profile]
-                Bcc2_av_local = [Bcc2_profile]
-                Bcc3_av_local = [Bcc3_profile]
-                alpha_av_local = [alpha_profile]
+                if 'dens' in args.profile_data:
+                    dens_av_local = [dens_profile]
+                if 'mom' in args.profile_data:
+                    mom1_av_local = [mom1_profile]
+                    mom2_av_local = [mom2_profile]
+                    mom3_av_local = [mom3_profile]
+                if 'temp' in args.profile_data:
+                    temp_av_local = [temp_profile]
+                if 'Bcc' in args.profile_data:
+                    Bcc1_av_local = [Bcc1_profile]
+                    Bcc2_av_local = [Bcc2_profile]
+                    Bcc3_av_local = [Bcc3_profile]
+                if 'alpha' in args.profile_data:
+                    alpha_av_local = [alpha_profile]
             else:
-                dens_av_local = addToAverage(dens_av_local, num_elem, dens_profile)
-                mom1_av_local = addToAverage(mom1_av_local, num_elem, mom1_profile)
-                mom2_av_local = addToAverage(mom2_av_local, num_elem, mom2_profile)
-                mom3_av_local = addToAverage(mom3_av_local, num_elem, mom3_profile)
-                temp_av_local = addToAverage(temp_av_local, num_elem, temp_profile)
-                Bcc1_av_local = addToAverage(Bcc1_av_local, num_elem, Bcc1_profile)
-                Bcc2_av_local = addToAverage(Bcc2_av_local, num_elem, Bcc2_profile)
-                Bcc3_av_local = addToAverage(Bcc3_av_local, num_elem, Bcc3_profile)
-                alpha_av_local = addToAverage(alpha_av_local, num_elem, alpha_profile)
-
-            del dens_profile
-            del mom1_profile, mom2_profile, mom3_profile
-            del temp_profile
-            del Bcc1_profile, Bcc2_profile, Bcc3_profile
-            del alpha_profile
-            gc.collect()
-
+                if 'dens' in args.profile_data:
+                    dens_av_local = addToAverage(dens_av_local, num_elem, dens_profile)
+                if 'mom' in args.profile_data:
+                    mom1_av_local = addToAverage(mom1_av_local, num_elem, mom1_profile)
+                    mom2_av_local = addToAverage(mom2_av_local, num_elem, mom2_profile)
+                    mom3_av_local = addToAverage(mom3_av_local, num_elem, mom3_profile)
+                if 'temp' in args.profile_data:
+                    temp_av_local = addToAverage(temp_av_local, num_elem, temp_profile)
+                if 'Bcc' in args.profile_data:
+                    Bcc1_av_local = addToAverage(Bcc1_av_local, num_elem, Bcc1_profile)
+                    Bcc2_av_local = addToAverage(Bcc2_av_local, num_elem, Bcc2_profile)
+                    Bcc3_av_local = addToAverage(Bcc3_av_local, num_elem, Bcc3_profile)
+                if 'alpha' in args.profile_data:
+                    alpha_av_local = addToAverage(alpha_av_local, num_elem, alpha_profile)
 
         N = num_elem+1
 
-        weighted_dens = dens_av_local*N
-        weighted_mom1 = mom1_av_local*N
-        weighted_mom2 = mom2_av_local*N
-        weighted_mom3 = mom3_av_local*N
-        weighted_temp = temp_av_local*N
-        weighted_Bcc1 = Bcc1_av_local*N
-        weighted_Bcc2 = Bcc2_av_local*N
-        weighted_Bcc3 = Bcc3_av_local*N
-        weighted_alpha = alpha_av_local*N
-
-        all_weighted_dens = comm.gather(weighted_dens, root=0)
-        all_weighted_mom1 = comm.gather(weighted_mom1, root=0)
-        all_weighted_mom2 = comm.gather(weighted_mom2, root=0)
-        all_weighted_mom3 = comm.gather(weighted_mom3, root=0)
-        all_weighted_temp = comm.gather(weighted_temp, root=0)
-        all_weighted_Bcc1 = comm.gather(weighted_Bcc1, root=0)
-        all_weighted_Bcc2 = comm.gather(weighted_Bcc2, root=0)
-        all_weighted_Bcc3 = comm.gather(weighted_Bcc3, root=0)
-        all_weighted_alpha = comm.gather(weighted_alpha, root=0)
+        if 'dens' in args.profile_data:
+            weighted_dens = dens_av_local*N
+            all_weighted_dens = comm.gather(weighted_dens, root=0)
+        if 'mom' in args.profile_data:
+            weighted_mom1 = mom1_av_local*N
+            weighted_mom2 = mom2_av_local*N
+            weighted_mom3 = mom3_av_local*N
+            all_weighted_mom1 = comm.gather(weighted_mom1, root=0)
+            all_weighted_mom2 = comm.gather(weighted_mom2, root=0)
+            all_weighted_mom3 = comm.gather(weighted_mom3, root=0)
+        if 'temp' in args.profile_data:
+            weighted_temp = temp_av_local*N
+            all_weighted_temp = comm.gather(weighted_temp, root=0)
+        if 'Bcc' in args.profile_data:
+            weighted_Bcc1 = Bcc1_av_local*N
+            weighted_Bcc2 = Bcc2_av_local*N
+            weighted_Bcc3 = Bcc3_av_local*N
+            all_weighted_Bcc1 = comm.gather(weighted_Bcc1, root=0)
+            all_weighted_Bcc2 = comm.gather(weighted_Bcc2, root=0)
+            all_weighted_Bcc3 = comm.gather(weighted_Bcc3, root=0)
+        if 'alpha' in args.profile_data:
+            weighted_alpha = alpha_av_local*N
+            all_weighted_alpha = comm.gather(weighted_alpha, root=0)
 
         all_elem = comm.gather(N, root=0)
 
     if rank == 0:
-        dens_av = np.sum(all_weighted_dens, axis=0)/np.sum(all_elem, axis=0)
-        mom1_av = np.sum(all_weighted_mom1, axis=0)/np.sum(all_elem, axis=0)
-        mom2_av = np.sum(all_weighted_mom2, axis=0)/np.sum(all_elem, axis=0)
-        mom3_av = np.sum(all_weighted_mom3, axis=0)/np.sum(all_elem, axis=0)
-        temp_av = np.sum(all_weighted_temp, axis=0)/np.sum(all_elem, axis=0)
-        Bcc1_av = np.sum(all_weighted_Bcc1, axis=0)/np.sum(all_elem, axis=0)
-        Bcc2_av = np.sum(all_weighted_Bcc2, axis=0)/np.sum(all_elem, axis=0)
-        Bcc3_av = np.sum(all_weighted_Bcc3, axis=0)/np.sum(all_elem, axis=0)
-        alpha_av = np.sum(all_weighted_alpha, axis=0)/np.sum(all_elem, axis=0)
+        if 'dens' in args.profile_data:
+            dens_av = np.sum(all_weighted_dens, axis=0)/np.sum(all_elem, axis=0)
+        if 'mom' in args.profile_data:
+            mom1_av = np.sum(all_weighted_mom1, axis=0)/np.sum(all_elem, axis=0)
+            mom2_av = np.sum(all_weighted_mom2, axis=0)/np.sum(all_elem, axis=0)
+            mom3_av = np.sum(all_weighted_mom3, axis=0)/np.sum(all_elem, axis=0)
+        if 'temp' in args.profile_data:
+            temp_av = np.sum(all_weighted_temp, axis=0)/np.sum(all_elem, axis=0)
+        if 'Bcc' in args.profile_data:
+            Bcc1_av = np.sum(all_weighted_Bcc1, axis=0)/np.sum(all_elem, axis=0)
+            Bcc2_av = np.sum(all_weighted_Bcc2, axis=0)/np.sum(all_elem, axis=0)
+            Bcc3_av = np.sum(all_weighted_Bcc3, axis=0)/np.sum(all_elem, axis=0)
+        if 'alpha' in args.profile_data:
+            alpha_av = np.sum(all_weighted_alpha, axis=0)/np.sum(all_elem, axis=0)
+
+
 
         if filetime_short is not None:
-            np.save(args.output + 'dens_profile_short.npy', dens_av)
-            np.save(args.output + 'mom1_profile_short.npy', mom1_av)
-            np.save(args.output + 'mom2_profile_short.npy', mom2_av)
-            np.save(args.output + 'mom3_profile_short.npy', mom3_av)
-            np.save(args.output + 'temp_profile_short.npy', temp_av)
-            np.save(args.output + 'Bcc1_profile_short.npy', Bcc1_av)
-            np.save(args.output + 'Bcc2_profile_short.npy', Bcc2_av)
-            np.save(args.output + 'Bcc3_profile_short.npy', Bcc3_av)
-            np.save(args.output + 'alpha_profile_short.npy', alpha_av)
+            if 'dens' in args.profile_data:
+                np.save(args.output + 'dens_profile_short.npy', dens_av)
+            if 'mom' in args.profile_data:
+                np.save(args.output + 'mom1_profile_short.npy', mom1_av)
+                np.save(args.output + 'mom2_profile_short.npy', mom2_av)
+                np.save(args.output + 'mom3_profile_short.npy', mom3_av)
+            if 'temp' in args.profile_data:
+                np.save(args.output + 'temp_profile_short.npy', temp_av)
+            if 'Bcc' in args.profile_data:
+                np.save(args.output + 'Bcc1_profile_short.npy', Bcc1_av)
+                np.save(args.output + 'Bcc2_profile_short.npy', Bcc2_av)
+                np.save(args.output + 'Bcc3_profile_short.npy', Bcc3_av)
+            if 'alpha' in args.profile_data:
+                np.save(args.output + 'alpha_profile_short.npy', alpha_av)
         else:
-            np.save(args.output + 'dens_profile.npy', dens_av)
-            np.save(args.output + 'mom1_profile.npy', mom1_av)
-            np.save(args.output + 'mom2_profile.npy', mom2_av)
-            np.save(args.output + 'mom3_profile.npy', mom3_av)
-            np.save(args.output + 'temp_profile.npy', temp_av)
-            np.save(args.output + 'Bcc1_profile.npy', Bcc1_av)
-            np.save(args.output + 'Bcc2_profile.npy', Bcc2_av)
-            np.save(args.output + 'Bcc3_profile.npy', Bcc3_av)
-            np.save(args.output + 'alpha_profile.npy', alpha_av)
+            if 'dens' in args.profile_data:
+                np.save(args.output + 'dens_profile.npy', dens_av)
+            if 'mom' in args.profile_data:
+                np.save(args.output + 'mom1_profile.npy', mom1_av)
+                np.save(args.output + 'mom2_profile.npy', mom2_av)
+                np.save(args.output + 'mom3_profile.npy', mom3_av)
+            if 'temp' in args.profile_data:
+                np.save(args.output + 'temp_profile.npy', temp_av)
+            if 'Bcc' in args.profile_data:
+                np.save(args.output + 'Bcc1_profile.npy', Bcc1_av)
+                np.save(args.output + 'Bcc2_profile.npy', Bcc2_av)
+                np.save(args.output + 'Bcc3_profile.npy', Bcc3_av)
+            if 'alpha' in args.profile_data:
+                np.save(args.output + 'alpha_profile.npy', alpha_av)
 
 
 def addToAverage(average, size, value):
@@ -255,6 +306,10 @@ if __name__ == '__main__':
                         help='location of time file, possibly including path')
     parser.add_argument('output',
                         help='location of output folder, including path')
+    parser.add_argument('profile_data',
+                        choices=['dens','mom','temp','Bcc','alpha','all'],
+                        nargs='*',
+                        help='possible profiles to calculate')
     parser.add_argument('-s', '--filetime_short',
                         help='location of short time file, possibly including path')
     args = parser.parse_args()
