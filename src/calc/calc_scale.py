@@ -36,8 +36,7 @@ def main(**kwargs):
     size = comm.Get_size()
 
     # check that the output file has type .csv
-    output_file = args.output
-    root, ext = os.path.splitext(output_file)
+    root, ext = os.path.splitext(args.output)
     if ext != '.csv':
         ext = '.csv'
     output_file = root + ext
