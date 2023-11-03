@@ -91,15 +91,15 @@ def problem_dictionary(problem_id, presentation_quality_flag):
     else:
         label_list = ['b200','b5','b5_hi','b200_hi']
     color_list = ['tab:blue', 'tab:orange', 'tab:purple', 'tab:red']
-    weak_min_time = 1.23125e5 # 2000 ISCO orbits
-    strong_min_time = 3.07812e4 # 500 ISCO orbits
+    weak_min_time = 1.2e5 # ~2000 ISCO orbits
+    strong_min_time = 3.0e4 # ~500 ISCO orbits
     time_list = [weak_min_time, strong_min_time, strong_min_time, weak_min_time]
 
     prob_dict = {
-    'high_res': {'label': label_list[0], 'color': color_list[0], 'min_time': time_list[0]},
-    'high_beta': {'label': label_list[1], 'color': color_list[1], 'min_time': time_list[1]},
-    'super_res': {'label': label_list[2], 'color': color_list[2], 'min_time': time_list[2]},
-    'b200_super_res': {'label': label_list[3], 'color': color_list[3], 'min_time': time_list[3]}
+    'b200': {'label': label_list[0], 'color': color_list[0], 'min_time': time_list[0]},
+    'b5': {'label': label_list[1], 'color': color_list[1], 'min_time': time_list[1]},
+    'b5_hi': {'label': label_list[2], 'color': color_list[2], 'min_time': time_list[2]},
+    'b200_hi': {'label': label_list[3], 'color': color_list[3], 'min_time': time_list[3]}
     }
 
     l = prob_dict[problem_id]['label']

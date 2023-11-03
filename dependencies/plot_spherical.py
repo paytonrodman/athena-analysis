@@ -293,11 +293,7 @@ def main(**kwargs):
     plt.figure()
     #im = plt.pcolormesh(x_grid, y_grid, vals, cmap=cmap, vmin=vmin, vmax=vmax, norm=norm)
     im = plt.pcolormesh(x_grid, y_grid, vals, cmap=cmap, norm=norm)
-    if kwargs['midplane']:
-        magnitude = np.sqrt(vals_x.T**2 + vals_y.T**2)
-    else:
-        magnitude = np.sqrt(vals_x.T**2 + vals_z.T**2)
-    lw = 5*magnitude/np.nanmax(magnitude)
+
     if kwargs['stream'] is not None:
         with warnings.catch_warnings():
             warnings.filterwarnings(
@@ -305,6 +301,11 @@ def main(**kwargs):
                 'invalid value encountered in greater_equal',
                 RuntimeWarning,
                 'numpy')
+            if kwargs['midplane']:
+                magnitude = np.sqrt(vals_x.T**2 + vals_y.T**2)
+            else:
+                magnitude = np.sqrt(vals_x.T**2 + vals_z.T**2)
+            lw = 5*magnitude/np.nanmax(magnitude)
             if kwargs['midplane']:
                 plt.streamplot(x_stream, y_stream, vals_x.T, vals_y.T,
                                density=kwargs['stream_density'], linewidth=lw, arrowsize=0.2, color='k')
