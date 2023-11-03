@@ -6,6 +6,12 @@
 #
 # Usage: mpirun -n [nprocs] calc_scale.py [options]
 #
+# Output: a .csv file containing
+#         (1) simulation file number
+#         (2) simulation time in GM/c^3
+#         (3) simulation time in N_(ISCO orbits)
+#         (4) disk-averaged geometric scale height, H
+#
 # Python standard modules
 import argparse
 import sys
@@ -14,9 +20,6 @@ import os
 dir_path = os.path.dirname(__file__)
 lib_path = os.path.join(dir_path, '..', '..', 'dependencies')
 sys.path.append(lib_path)
-
-#sys.path.insert(0, '/home/per29/rds/rds-accretion-zyNhkonJSR8/athena-analysis/dependencies')
-#sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies')
 
 # Other Python modules
 import numpy as np
@@ -32,10 +35,17 @@ def main(**kwargs):
     rank = comm.Get_rank()
     size = comm.Get_size()
 
+    # check that the output file has type .csv
+    output = args.output
+    root, ext = os.path.splitext(output)
+    if ext != '.csv':
+        ext = '.csv'
+    output = root + ext
+
     os.chdir(args.data)
 
     # make list of files/times to analyse, distribute to cores
-    file_times = AAT.add_time_to_list(args.update, args.output)
+    file_times = AAT.add_time_to_list(args.update, output)
     local_times = AAT.distribute_files_to_cores(file_times, size, rank)
 
     # get mesh data for all files (static)
@@ -55,7 +65,7 @@ def main(**kwargs):
 
     if rank==0:
         if not args.update: # create output file with header
-            with open(args.output, 'w', newline='') as f:
+            with open(output, 'w', newline='') as f:
                 writer = csv.writer(f, delimiter='\t')
                 writer.writerow(['sim_time', 'orbit_time', 'scale_height'])
     for t in local_times:
@@ -74,7 +84,7 @@ def main(**kwargs):
         sim_t = data_cons['Time']
         orbit_t = AAT.calculate_orbit_time(sim_t)
 
-        with open(args.output, 'a', newline='') as f:
+        with open(output, 'a', newline='') as f:
             writer = csv.writer(f, delimiter='\t')
             row = [sim_t,orbit_t,scale_h_av]
             writer.writerow(row)
@@ -84,11 +94,14 @@ def main(**kwargs):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Calculates the average geometric scale height over the disk')
     parser.add_argument('problem_id',
-                        help='root name for data files, e.g. high_res')
+                        type=str,
+                        help='root name for data files, e.g. b200')
     parser.add_argument('data',
+                        type=str,
                         help='location of data folder, possibly including path')
     parser.add_argument('output',
-                        help='name of output to be (over)written, possibly including path')
+                        type=str,
+                        help='name of csv output to be (over)written, possibly including path')
     parser.add_argument('-u', '--update',
                         action='store_true',
                         help='append new results to an existing data file')

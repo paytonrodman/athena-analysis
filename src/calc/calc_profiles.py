@@ -21,48 +21,12 @@ sys.path.append(lib_path)
 import numpy as np
 from mpi4py import MPI
 import pandas as pd
-import gc # only necessary for very big files
 
 # Athena++ modules (require sys.path.append above)
 import athena_read
 import AAT
 
 def main(**kwargs):
-    if args.filetime_short and args.problem_id not in ['high_res','high_beta']:
-        sys.exit('--filetime_short argument can only be used with high_res or high_beta. Exiting.')
-    if 'all' in args.profile_data:
-        args.profile_data = ['dens','mom','temp','Bcc','alpha']
-        quantities_cons = ['dens','mom1','mom2','mom3','Bcc1','Bcc2','Bcc3']
-        quantities_prim = ['press']
-    else:
-        quantities_cons = []
-        quantities_prim = []
-        if 'dens' in args.profile_data:
-            quantities_cons.append('dens')
-        if 'mom' in args.profile_data:
-            quantities_cons.append('mom1')
-            quantities_cons.append('mom2')
-            quantities_cons.append('mom3')
-        if 'temp' in args.profile_data:
-            quantities_cons.append('dens')
-            quantities_prim.append('press')
-        if 'Bcc' in args.profile_data:
-            quantities_cons.append('Bcc1')
-            quantities_cons.append('Bcc2')
-            quantities_cons.append('Bcc3')
-        if 'alpha' in args.profile_data:
-            quantities_cons.append('x1v')
-            quantities_cons.append('dens')
-            quantities_cons.append('mom1')
-            quantities_cons.append('mom3')
-            quantities_cons.append('Bcc1')
-            quantities_cons.append('Bcc3')
-            quantities_prim.append('press')
-
-    # remove duplicates
-    quantities_cons = (list(set(quantities_cons)))
-    quantities_prim = (list(set(quantities_prim)))
-
     # get number of processors and processor rank
     comm = MPI.COMM_WORLD
     size = comm.Get_size()
@@ -70,29 +34,71 @@ def main(**kwargs):
 
     os.chdir(args.data)
 
-    # retrieve lists of file times and file names
+    # create list of quantities to read from data
+    if rank==0: # master node only
+        if args.filetime_short and args.problem_id not in ['b200','b5']:
+            sys.exit('--filetime_short argument can only be used with long simulations. Exiting.')
+        if 'all' in args.profile_data:
+            args.profile_data = ['dens','mom','temp','Bcc','alpha']
+            quantities_cons = ['dens','mom1','mom2','mom3','Bcc1','Bcc2','Bcc3']
+            quantities_prim = ['press']
+        else:
+            quantities_cons = []
+            quantities_prim = []
+            if 'dens' in args.profile_data:
+                quantities_cons.append('dens')
+            if 'mom' in args.profile_data:
+                quantities_cons.append('mom1')
+                quantities_cons.append('mom2')
+                quantities_cons.append('mom3')
+            if 'temp' in args.profile_data:
+                quantities_cons.append('dens')
+                quantities_prim.append('press')
+            if 'Bcc' in args.profile_data:
+                quantities_cons.append('Bcc1')
+                quantities_cons.append('Bcc2')
+                quantities_cons.append('Bcc3')
+            if 'alpha' in args.profile_data:
+                quantities_cons.append('x1v')
+                quantities_cons.append('dens')
+                quantities_cons.append('mom1')
+                quantities_cons.append('mom3')
+                quantities_cons.append('Bcc1')
+                quantities_cons.append('Bcc3')
+                quantities_prim.append('press')
+
+        # remove duplicates
+        quantities_cons = (list(set(quantities_cons)))
+        quantities_prim = (list(set(quantities_prim)))
+    else:
+        quantities_cons = None
+        quantities_prim = None
+    comm.barrier()
+    quantities_cons = comm.bcast(quantities_cons, root=0)
+    quantities_prim = comm.bcast(quantities_prim, root=0)
+
+    # retrieve lists of file names and simulation times
     if rank==0:
         df = pd.read_csv(args.filetime, delimiter='\t', usecols=['file_time', 'sim_time'])
         filetime_list = df['file_time'].to_list()
         simtime_list = df['sim_time'].to_list()
 
-        _,_,t_min = AAT.problem_dictionary(args.problem_id, False) # get minimum required time
+        _,_,t_min = AAT.problem_dictionary(args.problem_id, False) # get minimum required time for this simulation
 
-        # if applicable, use maximum time of the higher resolution simulation
+        # restrict file list to times above minimum (and below maximum, if applicable)
         if args.filetime_short is not None:
             df = pd.read_csv(args.filetime_short, delimiter='\t', usecols=['file_time', 'sim_time'])
-            simtime_list = df['sim_time'].to_list()
-            t_max = np.max(simtime_list)
+            t_max = np.max(df['sim_time'].to_list())
             file_times_restricted = [f for ii,f in enumerate(filetime_list) if simtime_list[ii]>t_min and simtime_list[ii]<t_max]
         else:
             file_times_restricted = [f for ii,f in enumerate(filetime_list) if simtime_list[ii]>t_min]
+
+        if len(file_times_restricted)==0:
+            sys.exit('No file times meet requirements. Exiting.')
     else:
         file_times_restricted = None
-    file_times_restricted = comm.bcast(file_times_restricted, root=0)
     comm.barrier()
-
-    if not file_times_restricted: # if list is empty
-        sys.exit('No file times meet requirements. Exiting.')
+    file_times_restricted = comm.bcast(file_times_restricted, root=0)
 
     local_times = AAT.distribute_files_to_cores(file_times_restricted, size, rank)
 
@@ -104,18 +110,20 @@ def main(**kwargs):
     else:
         scale_time_list = None
         scale_height_list = None
+    comm.barrier()
     scale_height_list = comm.bcast(scale_height_list, root=0)
     scale_time_list = comm.bcast(scale_time_list, root=0)
-    comm.barrier()
 
     if len(local_times)>0: # skip for nodes that have no assigned times
         for num_elem,t in enumerate(local_times):
-            print("Time: ", t)
             str_t = str(int(t)).zfill(5)
-            data_prim = athena_read.athdf(args.problem_id + '.prim.' + str_t + '.athdf',
-                                            quantities=quantities_prim)
+
             data_cons = athena_read.athdf(args.problem_id + '.cons.' + str_t + '.athdf',
                                             quantities=quantities_cons)
+            if len(quantities_prim)>0:
+                data_prim = athena_read.athdf(args.problem_id + '.prim.' + str_t + '.athdf',
+                                                quantities=quantities_prim)
+
 
             # find corresponding entry in scale height data
             scale_index = AAT.find_nearest(scale_time_list, data_cons['Time'])
@@ -180,6 +188,7 @@ def main(**kwargs):
             if 'alpha' in args.profile_data:
                 alpha_profile = np.average(alpha, axis=(0,1))
 
+            # add current value to running average
             if num_elem==0:
                 if 'dens' in args.profile_data:
                     dens_av_local = [dens_profile]
@@ -213,6 +222,7 @@ def main(**kwargs):
 
         N = num_elem+1
 
+        # send local averages to master
         if 'dens' in args.profile_data:
             weighted_dens = dens_av_local*N
             all_weighted_dens = comm.gather(weighted_dens, root=0)
@@ -239,6 +249,7 @@ def main(**kwargs):
 
         all_elem = comm.gather(N, root=0)
 
+    # master performs average over all locals
     if rank == 0:
         if 'dens' in args.profile_data:
             dens_av = np.sum(all_weighted_dens, axis=0)/np.sum(all_elem, axis=0)
@@ -254,7 +265,6 @@ def main(**kwargs):
             Bcc3_av = np.sum(all_weighted_Bcc3, axis=0)/np.sum(all_elem, axis=0)
         if 'alpha' in args.profile_data:
             alpha_av = np.sum(all_weighted_alpha, axis=0)/np.sum(all_elem, axis=0)
-
 
 
         if args.filetime_short is not None:
@@ -297,14 +307,19 @@ def addToAverage(average, size, value):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Calculate plasma beta from raw simulation data.')
     parser.add_argument('problem_id',
-                        help='root name for data files, e.g. high_res')
+                        type=str,
+                        help='root name for data files, e.g. b200')
     parser.add_argument('data',
+                        type=str,
                         help='location of data folder, including path')
     parser.add_argument('scale',
+                        type=str,
                         help='location of scale height file, possibly including path')
     parser.add_argument('filetime',
-                        help='location of time file, possibly including path')
+                        type=str,
+                        help='location of time file (generated by create_timelist.py), possibly including path')
     parser.add_argument('output',
+                        type=str,
                         help='location of output folder, including path')
     parser.add_argument('profile_data',
                         choices=['dens','mom','temp','Bcc','alpha','all'],
