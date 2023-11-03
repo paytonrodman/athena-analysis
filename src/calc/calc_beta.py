@@ -38,16 +38,16 @@ def main(**kwargs):
     rank = comm.Get_rank()
 
     # check that the output file has type .csv
-    output = args.output
-    root, ext = os.path.splitext(output)
+    output_file = args.output
+    root, ext = os.path.splitext(output_file)
     if ext != '.csv':
         ext = '.csv'
-    output = root + ext
+    output_file = root + ext
 
     os.chdir(args.data)
 
     # make list of files/times to analyse, distribute to cores
-    file_times = AAT.add_time_to_list(args.update, output)
+    file_times = AAT.add_time_to_list(args.update, output_file)
     local_times = AAT.distribute_files_to_cores(file_times, size, rank)
 
     # find bounds of high resolution region
@@ -75,7 +75,7 @@ def main(**kwargs):
     # assign one core the job of creating output file with header
     if rank==0:
         if not args.update: # create output file with header
-            with open(output, 'w', newline='') as f:
+            with open(output_file, 'w', newline='') as f:
                 writer = csv.writer(f, delimiter='\t')
                 writer.writerow(['file_time', 'sim_time', 'orbit_time', 'plasma_beta'])
 
