@@ -72,7 +72,7 @@ def main(**kwargs):
 
     norm = matplotlib.colors.LogNorm(vmin=1e-3, vmax=0.5e-1)
     extent = [r_min,r_max,t_min,t_max]
-    pos = ax.imshow(z, extent=extent, cmap='viridis', norm=norm, origin='lower', aspect='auto', interpolation='none')
+    pos = ax.imshow(z, extent=extent, cmap='viridis', norm=norm, origin='lower', aspect='auto', interpolation='none', rasterized=True)
 
     # sub region of the original image
     x1, x2 = r_min, r_max
@@ -81,16 +81,16 @@ def main(**kwargs):
             y1, y2 = 0.2e5, 0.6e5
         else:
             y1, y2 = 2.5e5, 3.5e5
-    elif prob_id=='high_beta':
+    elif prob_id=='b5':
         y1, y2 = 0.2e5, 0.6e5
-    elif prob_id=='b200_super_res':
+    elif prob_id=='b200_hi':
         y1, y2 = 0.2e5, 0.6e5
-    elif prob_id=='super_res':
+    elif prob_id=='b5_hi':
         y1, y2 = 0.2e5, 0.6e5
 
     axins = fig.add_subplot(132)
     # inset axes....
-    axins.imshow(z, extent=extent, cmap='viridis', norm=norm, origin='lower', aspect='auto', interpolation='none')
+    axins.imshow(z, extent=extent, cmap='viridis', norm=norm, origin='lower', aspect='auto', interpolation='none', rasterized=True)
 
     axins.set_xlim(x1, x2)
     axins.set_ylim(y1, y2)

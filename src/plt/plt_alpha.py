@@ -76,17 +76,17 @@ def main(**kwargs):
     if n>1:
         for ii in range(n):
             if not args.stresses:
-                ax1.plot(t_lists[ii], a_lists[ii], linewidth=lw, color=colors[ii], label=labels[ii])
+                ax1.plot(t_lists[ii], a_lists[ii], linewidth=lw, color=colors[ii], label=labels[ii], rasterized=True)
             else:
                 ax1.plot([],[], color=colors[ii], label=labels[ii])
-                ax1.plot(t_lists[ii], Rey_lists[ii], linewidth=0.5, linestyle='dashed', alpha=0.5, color=colors[ii])
-                ax1.plot(t_lists[ii], Max_lists[ii], linewidth=0.5, linestyle='dotted', color=colors[ii])
+                ax1.plot(t_lists[ii], Rey_lists[ii], linewidth=0.5, linestyle='dashed', alpha=0.5, color=colors[ii], rasterized=True)
+                ax1.plot(t_lists[ii], Max_lists[ii], linewidth=0.5, linestyle='dotted', color=colors[ii], rasterized=True)
     else:
         if not args.stresses:
-            ax1.plot(t_lists[ii], a_lists[ii], linewidth=lw, color=colors[ii], label=r'$\langle\alpha_{\rm SS, eff}\rangle$')
+            ax1.plot(t_lists[ii], a_lists[ii], linewidth=lw, color=colors[ii], label=r'$\langle\alpha_{\rm SS, eff}\rangle$', rasterized=True)
         else:
-            ax1.plot(t_lists[ii], Rey_lists[ii], linewidth=0.5, linestyle='dashed', alpha=0.5, color=colors[ii], label='Reynolds stress')
-            ax1.plot(t_lists[ii], Max_lists[ii], linewidth=0.5, linestyle='dotted', color=colors[ii], label='Maxwell stress')
+            ax1.plot(t_lists[ii], Rey_lists[ii], linewidth=0.5, linestyle='dashed', alpha=0.5, color=colors[ii], label='Reynolds stress', rasterized=True)
+            ax1.plot(t_lists[ii], Max_lists[ii], linewidth=0.5, linestyle='dotted', color=colors[ii], label='Maxwell stress', rasterized=True)
 
     if args.ymax is not None:
         ax1.set_ylim(top=args.ymax)

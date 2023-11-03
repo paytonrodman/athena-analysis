@@ -27,9 +27,13 @@ def main(**kwargs):
     t1 = [[] for _ in range(n)]
     t2 = [[] for _ in range(n)]
     t3 = [[] for _ in range(n)]
+    t4 = [[] for _ in range(n)]
+
     mass = [[] for _ in range(n)]
     beta = [[] for _ in range(n)]
     scale = [[] for _ in range(n)]
+    alpha = [[] for _ in range(n)]
+
     labels = []
     colors = []
     if args.orbits:
@@ -48,6 +52,7 @@ def main(**kwargs):
         mass_file = f + 'mass_with_time.csv'
         beta_file = f + 'beta_with_time.csv'
         scale_file = f + 'scale_with_time.csv'
+        alpha_file = f + 'alpha_with_time.csv'
 
         df = pd.read_csv(mass_file, delimiter='\t', usecols=[time_col, 'mass_flux'])
         t = df[time_col].to_list()
@@ -79,22 +84,36 @@ def main(**kwargs):
             t3[count] = [ti/1e5 for ti in t] # convert time to units of 10^5 GM/c3
         scale[count] = s
 
+        df = pd.read_csv(alpha_file, delimiter='\t', usecols=[time_col, 'alpha'])
+        t = df[time_col].to_list()
+        a = df['alpha'].to_list()
+        if args.orbits:
+            t4[count] = t
+        else:
+            t4[count] = [ti/1e5 for ti in t] # convert time to units of 10^5 GM/c3
+        alpha[count] = a
+
     for ii in range(n):
         t1[ii],mass[ii] = zip(*sorted(zip(t1[ii],mass[ii])))
         t2[ii],beta[ii] = zip(*sorted(zip(t2[ii],beta[ii])))
         t3[ii],scale[ii] = zip(*sorted(zip(t3[ii],scale[ii])))
+        t4[ii],alpha[ii] = zip(*sorted(zip(t4[ii],alpha[ii])))
 
-    ylabels = [r'$\dot{M}$', r'$\langle \beta \rangle$', r'$\langle H \rangle$']
+    ylabels = [r'$\dot{M}$',
+               r'$\langle \beta \rangle$',
+               r'$\langle H \rangle$',
+               r'$\langle \alpha_{\rm SS} \rangle$']
     lw = 1.5
 
-    fig, axs = plt.subplots(nrows=3, ncols=1, sharex=True, figsize=(4,6))
+    fig, axs = plt.subplots(nrows=len(ylabels), ncols=1, sharex=True, figsize=(4,2*len(ylabels)))
     fig.subplots_adjust(hspace=0.0)
     for ii in range(n):
-        axs[0].plot(t1[ii], mass[ii], linewidth=lw, color=colors[ii], label=labels[ii])
-        axs[1].semilogy(t2[ii], beta[ii], linewidth=lw, color=colors[ii], label=labels[ii])
-        axs[2].plot(t3[ii], scale[ii], linewidth=lw, color=colors[ii], label=labels[ii])
+        axs[0].plot(t1[ii], mass[ii], linewidth=lw, color=colors[ii], label=labels[ii], rasterized=True)
+        axs[1].semilogy(t2[ii], beta[ii], linewidth=lw, color=colors[ii], label=labels[ii], rasterized=True)
+        axs[2].plot(t3[ii], scale[ii], linewidth=lw, color=colors[ii], label=labels[ii], rasterized=True)
+        axs[3].semilogy(t4[ii], alpha[ii], linewidth=lw, color=colors[ii], label=labels[ii], rasterized=True)
 
-    for ii in range(3):
+    for ii in range(len(ylabels)):
         axs[ii].set_ylabel(ylabels[ii])
     for ax in axs:
         ax.set_xlim(left=0)

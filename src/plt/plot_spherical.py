@@ -21,14 +21,19 @@ Requires scipy if making a stream plot.
 import argparse
 import warnings
 import sys
-sys.path.insert(0, '/home/per29/rds/rds-accretion-zyNhkonJSR8/athena-analysis/dependencies')
-#sys.path.insert(0, '/Users/paytonrodman/athena-sim/athena-analysis/dependencies')
+import os
+
+dir_path = os.path.dirname(__file__)
+lib_path = os.path.join(dir_path, '..', '..', 'dependencies')
+sys.path.append(lib_path)
 
 # Other Python modules
 import numpy as np
+from mpl_toolkits.axes_grid1.inset_locator import TransformedBbox, BboxPatch, BboxConnector
 
 # Athena++ modules
 import athena_read
+import AAT
 
 
 # Main function
@@ -43,6 +48,7 @@ def main(**kwargs):
     import matplotlib.pyplot as plt
     import matplotlib.colors as colors
     from matplotlib.offsetbox import AnchoredText
+
     #from mpl_toolkits.axes_grid1 import make_axes_locatable
     matplotlib.use('pdf')
     #plt.rcParams['axes.facecolor'] = 'black'
@@ -80,12 +86,7 @@ def main(**kwargs):
                 quantities.append(kwargs['stream'] + '2')
 
     n = len(kwargs['data_file'])
-    fig, axs = plt.subplots(nrows=1, ncols=n, constrained_layout=True, figsize=(n*4, 4),
-                            sharex=True, sharey=True)
-    #fig = plt.figure(figsize=(n*4, 4))
-    #gs = fig.add_gridspec(nrows=1, ncols=n, wspace=0)
-    #axs = gs.subplots(sharex=True, sharey=True)
-    #fig, axs = plt.subplots(nrows=1, ncols=n, constrained_layout=True, figsize=(n*4, 4), sharey=True, sharex=True)
+    fig, axs = plt.subplots(nrows=2, ncols=n, figsize=(n*4, 8))
 
     grid_X = [[] for _ in range(n)]
     grid_Y = [[] for _ in range(n)]
@@ -102,27 +103,13 @@ def main(**kwargs):
         file = f[f.rindex('/'):][1:]
         prob_id = file[:file.index('.')]
 
-        l,_,_ = AAT.problem_dictionary(prob_id, args.pres)
+        l,_,_ = AAT.problem_dictionary(prob_id, False)
         labels.append(l)
-
-        #if prob_id=='high_res':
-        #    id_f = 'b200'
-        #elif prob_id=='high_beta':
-        #    id_f = 'b5'
-        #elif prob_id=='super_res':
-        #    id_f = 'b5_hi'
-        #elif prob_id=='b200_super_res':
-        #    id_f = 'b200_hi'
-        #sim_IDs.append(id_f)
 
         data = athena_read.athdf(f, quantities=quantities)
         if kwargs['quantity']=='beta':
             prim_f = f.replace("cons", "prim")
             data_p = athena_read.athdf(prim_f, quantities=prim_quantities)
-
-        # Set resolution of plot in dots per square inch
-        #if kwargs['dpi'] is not None:
-        #    resolution = kwargs['dpi']
 
         # Extract basic coordinate information
         coordinates = data['Coordinates']
@@ -136,7 +123,6 @@ def main(**kwargs):
         nx2 = len(theta)
         nx3 = len(phi)
         titles.append(int(data['Time']))
-        #titles.append("{:.2e}".format(int(data['Time'])))
 
         # Set radial extent
         if kwargs['r_max'] is not None:
@@ -355,16 +341,22 @@ def main(**kwargs):
     if kwargs['stream'] is not None:
         max_mag = np.nanmax(np.sqrt([[num**2 for num in lst] for lst in vals_X] + [[num**2 for num in lst] for lst in vals_Y]))
 
+
     for i in range(n):
         if n>1:
-            ax = axs[i]
+            ax = axs[0][i]
+            ax_insert = axs[1][i]#fig.add_subplot(2, n, i+2)
         else:
-            ax = axs
+            ax = axs[0]
+            ax_insert = axs[1]#fig.add_subplot(2, n, 3)
+
         PCM = ax.pcolormesh(grid_X[i][0], grid_Y[i][0], bg[i][0], cmap=cmap, norm=norm)
+        ax_insert.pcolormesh(grid_X[i][0], grid_Y[i][0], bg[i][0], cmap=cmap, norm=norm)
+
         if kwargs['streamline_width']:
             magnitude = np.sqrt(vals_X[i][0].T**2 + vals_Y[i][0].T**2)
             lw = 5*magnitude/max_mag
-            lw[lw<0.05] = 0.05
+            lw[lw<0.15] = 0.15
             lw[lw>1.0] = 1.0
         else:
             lw = 0.5
@@ -377,24 +369,46 @@ def main(**kwargs):
                     'numpy')
                 ax.streamplot(stream_X[i][0], stream_Y[i][0], vals_X[i][0], vals_Y[i][0],
                                density=kwargs['stream_density'], broken_streamlines=False,
-                               linewidth=lw, arrowsize=0.2, color='w')
+                               linewidth=lw, arrowsize=0.3, color='w')
+
+                U = vals_X[i][0]
+                mask = np.zeros(U.shape, dtype=bool)
+                mask[0:100, 0:100] = True
+                mask[25:75, 25:75] = False
+                #U[:50, :100] = np.nan
+                U = np.ma.array(U, mask=mask)
+                ax_insert.streamplot(stream_X[i][0], stream_Y[i][0], U, vals_Y[i][0],
+                               density=1.5*kwargs['stream_density'], broken_streamlines=False,
+                               linewidth=lw, arrowsize=1, color='w')
+
         ax.set_xlim((-r_max, r_max))
         ax.set_ylim((-r_max, r_max))
-        #plt.gca().set_aspect('equal')
+        ax_insert.set_xlim(-100, 100)
+        ax_insert.set_ylim(-100, 100)
+
+        # define corners to connect, clockwise from top left
+        l1a, l2a = 1, 2 # start location of lines on original axis
+        l1b, l2b = 4, 3 # end point of lines on zoom axis
+        mark_inset(ax, ax_insert, loc1a=l1a, loc1b=l1b, loc2a=l2a, loc2b=l2b, facecolor="none", edgecolor="black")
+
         if kwargs['logr']:
+            ax.set_xlabel(r'$\log_{10}(r)\ x / r$')
+            ax_insert.set_xlabel(r'$\log_{10}(r)\ x / r$')
             if kwargs['midplane']:
-                ax.set_xlabel(r'$\log_{10}(r)\ x / r$')
                 ax.set_ylabel(r'$\log_{10}(r)\ y / r$')
+                ax_insert.set_ylabel(r'$\log_{10}(r)\ y / r$')
             else:
-                ax.set_xlabel(r'$\log_{10}(r)\ x / r$')
                 ax.set_ylabel(r'$\log_{10}(r)\ z / r$')
+                ax_insert.set_ylabel(r'$\log_{10}(r)\ z / r$')
         else:
+            ax.set_xlabel(r'$x$')
+            ax_insert.set_xlabel(r'$x$')
             if kwargs['midplane']:
-                ax.set_xlabel(r'$x$')
                 ax.set_ylabel(r'$y$')
+                ax_insert.set_ylabel(r'$y$')
             else:
-                ax.set_xlabel(r'$x$')
                 ax.set_ylabel(r'$z$')
+                ax_insert.set_ylabel(r'$z$')
         if kwargs['time']:
             ax.set_title("Time: {:.2e}".format(titles[i]))
         if kwargs['minmax']:
@@ -403,33 +417,47 @@ def main(**kwargs):
             txt = 'Min: %f Max: %f' % (min_all,max_all)
             plt.figtext(0.5, 0.01, txt, wrap=True, horizontalalignment='center', fontsize=12)
         ax.set_aspect('equal')
+        ax_insert.set_aspect('equal')
 
         if n>1:
             for ax_f in axs.flat:
                 ax_f.label_outer()
 
-        at = AnchoredText(sim_IDs[i], prop=dict(size=15), frameon=True, loc='upper left')
+        at = AnchoredText(labels[i], prop=dict(size=15), frameon=True, loc='upper left')
         at.patch.set_boxstyle("round,pad=0.,rounding_size=0.2")
         ax.add_artist(at)
 
     # make colorbar
-    #divider = make_axes_locatable(axs[n-1])
-    #cax = divider.append_axes("right", size="7%", pad="2%")
-    #cbar = fig.colorbar(PCM, cax=cax, orientation='vertical')
-    #cbar = fig.colorbar(PCM, cax=None)
     if n>1:
-        ax = axs[n-1]
+        ax = axs[0][n-1]
     else:
-        ax = axs
+        ax = axs[0][n-1]
     cax = ax.inset_axes([1.04, 0, 0.05, 1.0])
     cbar = fig.colorbar(PCM, ax=ax, cax=cax)
-    #cbar.set_label(r'$\rho$', rotation=0, loc='top')
     cbar.ax.set_title(cbar_title)
 
     if kwargs['output_file'] == 'show':
         plt.show()
     else:
         plt.savefig(kwargs['output_file'], bbox_inches='tight', dpi=kwargs['dpi'])
+
+# draw a bbox of the region of the inset axes in the parent axes and
+# connecting lines between the bbox and the inset axes area
+# loc1, loc2 : {1, 2, 3, 4}
+def mark_inset(parent_axes, inset_axes, loc1a=1, loc1b=1, loc2a=2, loc2b=2, **kwargs):
+    rect = TransformedBbox(inset_axes.viewLim, parent_axes.transData)
+
+    pp = BboxPatch(rect, fill=False, zorder=10, **kwargs)
+    parent_axes.add_patch(pp)
+
+    p1 = BboxConnector(inset_axes.bbox, rect, loc1=loc1a, loc2=loc1b, **kwargs)
+    inset_axes.add_patch(p1)
+    p1.set_clip_on(False)
+    p2 = BboxConnector(inset_axes.bbox, rect, loc1=loc2a, loc2=loc2b, **kwargs)
+    inset_axes.add_patch(p2)
+    p2.set_clip_on(False)
+
+    return pp, p1, p2
 
 
 # Execute main function

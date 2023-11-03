@@ -118,8 +118,8 @@ def main(**kwargs):
     y1_label = r'$\Phi / \sqrt{\langle\langle\dot{M}\rangle\rangle r_g c^2}$'
     y2_label = r'$\Phi /|\Phi|$'
     for i in range(n):
-        axs[0].plot(t_lists[i],data[i],label=labels[i],linewidth=lw,color=colors[i])
-        axs[1].plot(t_lists[i],data_ratio[i],label=labels[i],linewidth=lw,color=colors[i])
+        axs[0].plot(t_lists[i], data[i], label=labels[i], linewidth=lw, color=colors[i], rasterized=True)
+        axs[1].plot(t_lists[i], data_ratio[i], label=labels[i], linewidth=lw, color=colors[i], rasterized=True)
 
     axs[0].set_ylabel(y1_label)
     axs[1].set_ylabel(y2_label)

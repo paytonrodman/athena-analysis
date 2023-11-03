@@ -114,7 +114,7 @@ def main(**kwargs):
     for idx in range(n):
         X = t_lists[idx]
         Y = np.linspace(theta_min,theta_max,theta_N[idx])
-        Z = data_b[idx].T*1000.
+        Z = data_b[idx].T#*1000.
         max_extent = np.max(np.abs(Z))
 
         if args.log:
@@ -126,9 +126,9 @@ def main(**kwargs):
         else:
             ax = axs[idx]
 
-        pos = ax.pcolorfast(X, Y, Z[:-1,:-1], cmap=cm, vmin=-0.5*max_extent, vmax=0.5*max_extent)
-        ax.plot(t_redundant[idx],3.*data_s[idx],'k--')
-        ax.plot(t_redundant[idx],-3.*data_s[idx],'k--')
+        pos = ax.pcolorfast(X, Y, Z[:-1,:-1], cmap=cm, vmin=-0.5*max_extent, vmax=0.5*max_extent, rasterized=True)
+        ax.plot(t_redundant[idx], 3.*data_s[idx], 'k--', rasterized=True)
+        ax.plot(t_redundant[idx], -3.*data_s[idx], 'k--', rasterized=True)
         ax.set_ylabel(ylab)
         at = AnchoredText(labels[idx], prop=dict(size=15), frameon=True, loc='upper left')
         at.patch.set_boxstyle("round,pad=0.,rounding_size=0.2")
@@ -150,7 +150,7 @@ def main(**kwargs):
                 cbar = fig.colorbar(pos, ax=axs, extend='both')
             else:
                 cbar = fig.colorbar(pos, ax=axs[idx], extend='both')
-        cbar.set_label(cbar_label, rotation=0)
+        cbar.set_label(cbar_label, rotation=0, y=0.54)
 
     fig.supxlabel(x_label)#, x=0.45, y=-0.03)
     plt.tick_params(axis='both', which='major')

@@ -64,9 +64,9 @@ def main(**kwargs):
     _, ax = plt.subplots(nrows=1, ncols=1, constrained_layout=True, sharex=True)
     for ii in range(n):
         if args.logy:
-            ax.semilogy(t_lists[ii], m_lists[ii], linewidth=lw, color=colors[ii], label=labels[ii])
+            ax.semilogy(t_lists[ii], m_lists[ii], linewidth=lw, color=colors[ii], label=labels[ii], rasterized=True)
         else:
-            ax.plot(t_lists[ii], m_lists[ii], linewidth=lw, color=colors[ii], label=labels[ii])
+            ax.plot(t_lists[ii], m_lists[ii], linewidth=lw, color=colors[ii], label=labels[ii], rasterized=True)
             ax.ticklabel_format(axis="y", style="sci", scilimits=(0,0), useMathText=True)
     plt.axhline(color="grey")
     ax.set_xlabel(x_label)

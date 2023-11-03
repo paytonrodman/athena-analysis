@@ -76,9 +76,9 @@ def main(**kwargs):
     axs[1].axhline(y=20, color='k',linestyle='dashed')
 
     for ii in range(n):
-        axs[0].plot(t_lists[ii], qt_lists[ii], linewidth=lw, color=colors[ii], label=labels[ii])
-        axs[1].plot(t_lists[ii], qp_lists[ii], linewidth=lw, color=colors[ii], label=labels[ii])
-        axs[2].plot(t_lists[ii], tb_lists[ii], linewidth=lw, color=colors[ii], label=labels[ii])
+        axs[0].plot(t_lists[ii], qt_lists[ii], linewidth=lw, color=colors[ii], label=labels[ii], rasterized=True)
+        axs[1].plot(t_lists[ii], qp_lists[ii], linewidth=lw, color=colors[ii], label=labels[ii], rasterized=True)
+        axs[2].plot(t_lists[ii], tb_lists[ii], linewidth=lw, color=colors[ii], label=labels[ii], rasterized=True)
 
     axs[0].set_ylabel(y1_label)
     axs[1].set_ylabel(y2_label)

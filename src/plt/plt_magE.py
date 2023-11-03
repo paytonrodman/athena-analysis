@@ -77,16 +77,16 @@ def main(**kwargs):
         else:
             ax = axs
         if args.logy:
-            ax.semilogy(t_lists[ii], ME_1_lists[ii], linewidth=1, linestyle='dotted', color=colors[ii], label=r'$r$')
-            ax.semilogy(t_lists[ii], ME_2_lists[ii], linewidth=1, linestyle='dashed', color=colors[ii], label=r'$\theta$')
-            ax.semilogy(t_lists[ii], ME_3_lists[ii], linewidth=1, linestyle='dashdot', color=colors[ii], label=r'$\phi$')
-            ax.semilogy(t_lists[ii], ME_lists[ii], linewidth=lw, color=colors[ii], label='Total')
+            ax.semilogy(t_lists[ii], ME_1_lists[ii], linewidth=1, linestyle='dotted', color=colors[ii], label=r'$r$', rasterized=True)
+            ax.semilogy(t_lists[ii], ME_2_lists[ii], linewidth=1, linestyle='dashed', color=colors[ii], label=r'$\theta$', rasterized=True)
+            ax.semilogy(t_lists[ii], ME_3_lists[ii], linewidth=1, linestyle='dashdot', color=colors[ii], label=r'$\phi$', rasterized=True)
+            ax.semilogy(t_lists[ii], ME_lists[ii], linewidth=lw, color=colors[ii], label='Total', rasterized=True)
             ax.set_ylim(bottom=0.01)
         else:
-            ax.plot(t_lists[ii], ME_1_lists[ii], linewidth=1, linestyle='dotted', color=colors[ii], label=r'$r$')
-            ax.plot(t_lists[ii], ME_2_lists[ii], linewidth=1, linestyle='dashed', color=colors[ii], label=r'$\theta$')
-            ax.plot(t_lists[ii], ME_3_lists[ii], linewidth=1, linestyle='dashdot', color=colors[ii], label=r'$\phi$')
-            ax.plot(t_lists[ii], ME_lists[ii], linewidth=lw, color=colors[ii], label='Total')
+            ax.plot(t_lists[ii], ME_1_lists[ii], linewidth=1, linestyle='dotted', color=colors[ii], label=r'$r$', rasterized=True)
+            ax.plot(t_lists[ii], ME_2_lists[ii], linewidth=1, linestyle='dashed', color=colors[ii], label=r'$\theta$', rasterized=True)
+            ax.plot(t_lists[ii], ME_3_lists[ii], linewidth=1, linestyle='dashdot', color=colors[ii], label=r'$\phi$', rasterized=True)
+            ax.plot(t_lists[ii], ME_lists[ii], linewidth=lw, color=colors[ii], label='Total', rasterized=True)
 
         ax.set_xlabel(x_label)#, x=0.5, y=-0.03)
         ax.set_ylabel(y_label)
