@@ -19,7 +19,9 @@ Most core scripts rely on a slightly modified version of Athena++'s `athena_read
 
 ## Running the scripts
 
-**Note: Location of the `dependencies/` folder is hard-coded for all files. You must change these to match your system!**
+**Note 1: The location of the `dependencies/` folder is hard-coded to follow the structure in this repository. If you move it, make sure to change the address!**
+
+**Note 2: Many scripts rely on results from `calc/calc_scale.py` (to average within 3 scale heights) and `calc/create_timelist.py` (for selecting certain times). Where required, these are to be supplied under `<args>`**
 
 For parallel `calc/` scripts, run using `mpirun`
 
@@ -34,3 +36,5 @@ For any given script, running
 `python <script_name> -h`
 
 will show you the arguments (required and optional) that can be passed to that script.
+
+
